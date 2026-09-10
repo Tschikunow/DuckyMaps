@@ -1,7 +1,8 @@
 "use strict";
 
 // ============================================================
-// DUCKYMAPS V4.5 CLIENT
+// DUCKYMAPS V4.9 CLIENT
+// SURVIVAL / HP / POTIONS / FISH / HIDEOUTS
 // ============================================================
 
 const $ =
@@ -10,10 +11,6 @@ const $ =
       id
     );
 
-
-// ============================================================
-// CANVAS
-// ============================================================
 
 const canvas =
   $("gameCanvas");
@@ -34,189 +31,255 @@ const minimapCtx =
 
 
 let screenWidth = 0;
-
 let screenHeight = 0;
-
 let dpr = 1;
 
 
+const introScreen = $("introScreen");
+const mainMenu = $("mainMenu");
+const mapsMenu = $("mapsMenu");
+const settingsMenu = $("settingsMenu");
+const mapIntro = $("mapIntro");
+const gameHud = $("gameHud");
+const pauseMenu = $("pauseMenu");
+
+const playButton = $("playButton");
+const mapsButton = $("mapsButton");
+const settingsButton = $("settingsButton");
+const mapsBackButton = $("mapsBackButton");
+const settingsBackButton = $("settingsBackButton");
+const saveSettingsButton = $("saveSettingsButton");
+
+const pauseButton = $("pauseButton");
+const continueButton = $("continueButton");
+const pauseSettingsButton = $("pauseSettingsButton");
+const exitButton = $("exitButton");
+
+const jumpButton = $("jumpButton");
+const actionButton = $("actionButton");
+
+const onlineCount = $("onlineCount");
+const hudPlayers = $("hudPlayers");
+const connectionText = $("connectionText");
+const connectionDot = $("connectionDot");
+
+const hudMapName = $("hudMapName");
+const playMapName = $("playMapName");
+const introMapName = $("introMapName");
+const introMapSubtitle = $("introMapSubtitle");
+
+const profileName = $("profileName");
+const profileCoins = $("profileCoins");
+const coinCount = $("coinCount");
+
+const playerListPanel = $("playerListPanel");
+const playerList = $("playerList");
+const minimapPanel = $("minimapPanel");
+
+const speedHud = $("speedHud");
+const speedValue = $("speedValue");
+
+const notifications = $("notifications");
+
+const nameInput = $("nameInput");
+const themeSelect = $("themeSelect");
+const minimapToggle = $("minimapToggle");
+const playerListToggle = $("playerListToggle");
+const zoomSlider = $("zoomSlider");
+const zoomValue = $("zoomValue");
+const musicToggle = $("musicToggle");
+const musicVolume = $("musicVolume");
+const musicVolumeValue = $("musicVolumeValue");
+const soundToggle = $("soundToggle");
+
+const moveZone = $("moveZone");
+const joystickElement = $("joystick");
+const joystickStick = $("joystickStick");
+
+
 // ============================================================
-// UI
+// SURVIVAL HUD
+// Wird dynamisch erstellt.
+// index.html muss nicht geändert werden.
 // ============================================================
 
-const introScreen =
-  $("introScreen");
-
-const mainMenu =
-  $("mainMenu");
-
-const mapsMenu =
-  $("mapsMenu");
-
-const settingsMenu =
-  $("settingsMenu");
-
-const mapIntro =
-  $("mapIntro");
-
-const gameHud =
-  $("gameHud");
-
-const pauseMenu =
-  $("pauseMenu");
-
-
-const playButton =
-  $("playButton");
-
-const mapsButton =
-  $("mapsButton");
-
-const settingsButton =
-  $("settingsButton");
-
-const mapsBackButton =
-  $("mapsBackButton");
-
-const settingsBackButton =
-  $("settingsBackButton");
-
-const saveSettingsButton =
-  $("saveSettingsButton");
-
-
-const pauseButton =
-  $("pauseButton");
-
-const continueButton =
-  $("continueButton");
-
-const pauseSettingsButton =
-  $("pauseSettingsButton");
-
-const exitButton =
-  $("exitButton");
-
-
-const jumpButton =
-  $("jumpButton");
-
-const actionButton =
-  $("actionButton");
-
-
-const onlineCount =
-  $("onlineCount");
-
-const hudPlayers =
-  $("hudPlayers");
-
-const connectionText =
-  $("connectionText");
-
-const connectionDot =
-  $("connectionDot");
-
-
-const hudMapName =
-  $("hudMapName");
-
-const playMapName =
-  $("playMapName");
-
-const introMapName =
-  $("introMapName");
-
-const introMapSubtitle =
-  $("introMapSubtitle");
-
-
-const profileName =
-  $("profileName");
-
-const profileCoins =
-  $("profileCoins");
-
-const coinCount =
-  $("coinCount");
-
-
-const playerListPanel =
-  $("playerListPanel");
-
-const playerList =
-  $("playerList");
-
-
-const minimapPanel =
-  $("minimapPanel");
-
-
-const speedHud =
-  $("speedHud");
-
-const speedValue =
-  $("speedValue");
-
-
-const notifications =
-  $("notifications");
-
-
-const nameInput =
-  $("nameInput");
-
-const themeSelect =
-  $("themeSelect");
-
-const minimapToggle =
-  $("minimapToggle");
-
-const playerListToggle =
-  $("playerListToggle");
-
-const zoomSlider =
-  $("zoomSlider");
-
-const zoomValue =
-  $("zoomValue");
-
-const musicToggle =
-  $("musicToggle");
-
-const musicVolume =
-  $("musicVolume");
-
-const musicVolumeValue =
-  $("musicVolumeValue");
-
-const soundToggle =
-  $("soundToggle");
-
-
-const moveZone =
-  $("moveZone");
-
-const joystickElement =
-  $("joystick");
-
-const joystickStick =
-  $("joystickStick");
-
-
-// Desktop-Hinweis aktualisieren.
-const desktopHint =
-  document.querySelector(
-    ".desktopHint"
+const survivalHud =
+  document.createElement(
+    "div"
   );
 
 
-if (
-  desktopHint
-) {
-  desktopHint.textContent =
-    "WASD · LEERTASTE SPRINGEN · E INTERAGIEREN";
-}
+survivalHud.id =
+  "survivalHud";
+
+
+survivalHud.innerHTML = `
+  <div id="statusBadges">
+    <span id="hideBadge">VERSTECKT</span>
+    <span id="speedBadge">⚡ SPEED</span>
+  </div>
+
+  <div id="fishHud">
+    <span class="fishIcon">🐟</span>
+    <span id="fishCount">0</span>
+  </div>
+
+  <div id="hpLabel">
+    <span>HP</span>
+    <strong id="hpText">100 / 100</strong>
+  </div>
+
+  <div id="hpTrack">
+    <div id="hpFill"></div>
+  </div>
+`;
+
+
+document.body.appendChild(
+  survivalHud
+);
+
+
+const hudStyle =
+  document.createElement(
+    "style"
+  );
+
+
+hudStyle.textContent = `
+  #survivalHud {
+    position: fixed;
+    right: max(18px, env(safe-area-inset-right));
+    bottom: max(20px, env(safe-area-inset-bottom));
+    width: min(260px, calc(100vw - 40px));
+    z-index: 120;
+    color: white;
+    font-family: system-ui, sans-serif;
+    pointer-events: none;
+    display: none;
+  }
+
+  #survivalHud.active {
+    display: block;
+  }
+
+  #hpLabel {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: .08em;
+    text-shadow: 0 2px 5px rgba(0,0,0,.7);
+  }
+
+  #hpTrack {
+    height: 15px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: rgba(10,12,14,.75);
+    border: 2px solid rgba(255,255,255,.75);
+    box-shadow: 0 4px 14px rgba(0,0,0,.3);
+  }
+
+  #hpFill {
+    width: 100%;
+    height: 100%;
+    background:
+      linear-gradient(
+        90deg,
+        #dc3345,
+        #f0525f
+      );
+    transition:
+      width .2s ease,
+      background .2s ease;
+  }
+
+  #fishHud {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 7px;
+    font-weight: 900;
+    font-size: 15px;
+    text-shadow: 0 2px 5px rgba(0,0,0,.7);
+  }
+
+  #statusBadges {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    min-height: 25px;
+    margin-bottom: 5px;
+  }
+
+  #hideBadge,
+  #speedBadge {
+    display: none;
+    padding: 5px 8px;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .06em;
+  }
+
+  #hideBadge.active {
+    display: inline-block;
+    background: rgba(42,48,55,.9);
+    border: 1px solid rgba(255,255,255,.35);
+  }
+
+  #speedBadge.active {
+    display: inline-block;
+    background: rgba(43,151,84,.92);
+    border: 1px solid rgba(145,255,178,.65);
+  }
+
+  @media (max-width: 600px) {
+    #survivalHud {
+      width: 180px;
+      right: max(14px, env(safe-area-inset-right));
+      bottom: max(128px, calc(env(safe-area-inset-bottom) + 110px));
+    }
+
+    #hpTrack {
+      height: 13px;
+    }
+
+    #hpLabel {
+      font-size: 10px;
+    }
+  }
+`;
+
+
+document.head.appendChild(
+  hudStyle
+);
+
+
+const hpText =
+  $("hpText");
+
+const hpFill =
+  $("hpFill");
+
+const fishCount =
+  $("fishCount");
+
+const hideBadge =
+  $("hideBadge");
+
+const speedBadge =
+  $("speedBadge");
+
+
+let myHp = 100;
+let myMaxHp = 100;
+let myFish = 0;
 
 
 // ============================================================
@@ -224,29 +287,14 @@ if (
 // ============================================================
 
 const defaultSettings = {
-  name:
-    "Spieler",
-
-  theme:
-    "dark",
-
-  minimap:
-    true,
-
-  playerList:
-    true,
-
-  zoom:
-    100,
-
-  music:
-    true,
-
-  musicVolume:
-    30,
-
-  sounds:
-    true
+  name: "Spieler",
+  theme: "dark",
+  minimap: true,
+  playerList: true,
+  zoom: 100,
+  music: true,
+  musicVolume: 30,
+  sounds: true
 };
 
 
@@ -281,14 +329,9 @@ let selectedMap =
 
 
 const mapNames = {
-  industry:
-    "Industrie",
-
-  harbor:
-    "Hafen",
-
-  labs:
-    "Labs"
+  industry: "Industrie",
+  harbor: "Hafen",
+  labs: "Labs"
 };
 
 
@@ -297,13 +340,8 @@ const mapNames = {
 // ============================================================
 
 let socket = null;
-
-let reconnectTimer =
-  null;
-
+let reconnectTimer = null;
 let myId = null;
-
-let onlinePlayers = 0;
 
 let currentMap = null;
 
@@ -313,19 +351,16 @@ let currentDoorStates = {};
 
 let worldState = {
   lightsOn: true,
-
   powerOn: true,
-
-  interactables: {}
+  alarmOn: false,
+  interactables: {},
+  noise: null
 };
 
 
 let playing = false;
-
 let paused = false;
-
-let settingsFromPause =
-  false;
+let settingsFromPause = false;
 
 let coins = 0;
 
@@ -344,10 +379,6 @@ let lastFrameTime =
   performance.now();
 
 
-// ============================================================
-// INPUT
-// ============================================================
-
 const keys =
   new Set();
 
@@ -360,38 +391,41 @@ const input = {
 
 const joystick = {
   active: false,
-
   pointerId: null,
-
   centerX: 0,
   centerY: 0,
-
   x: 0,
   y: 0
 };
 
 
 // ============================================================
+// AUTO JUMP
+// ============================================================
+
+let jumpHeld = false;
+
+let jumpPointerId = null;
+
+let lastJumpRequest = 0;
+
+const AUTO_JUMP_INTERVAL =
+  70;
+
+
+// ============================================================
 // AUDIO
 // ============================================================
 
-let audioContext =
-  null;
+let audioContext = null;
+let musicGain = null;
 
-let musicGain =
-  null;
-
-
-// ============================================================
-// RESIZE
-// ============================================================
 
 function resize() {
   dpr =
     Math.min(
       window.devicePixelRatio ||
       1,
-
       2
     );
 
@@ -454,38 +488,29 @@ function refreshSettingsUI() {
   nameInput.value =
     settings.name;
 
-
   themeSelect.value =
     settings.theme;
-
 
   minimapToggle.checked =
     settings.minimap;
 
-
   playerListToggle.checked =
     settings.playerList;
-
 
   zoomSlider.value =
     settings.zoom;
 
-
   zoomValue.textContent =
     `${settings.zoom}%`;
-
 
   musicToggle.checked =
     settings.music;
 
-
   musicVolume.value =
     settings.musicVolume;
 
-
   musicVolumeValue.textContent =
     `${settings.musicVolume}%`;
-
 
   soundToggle.checked =
     settings.sounds;
@@ -565,7 +590,6 @@ function saveSettings() {
 
   localStorage.setItem(
     "duckymaps-settings",
-
     JSON.stringify(
       settings
     )
@@ -573,9 +597,7 @@ function saveSettings() {
 
 
   applySettings();
-
   sendName();
-
   uiSound();
 
 
@@ -667,9 +689,7 @@ function ensureAudio() {
     window.webkitAudioContext;
 
 
-  if (
-    !AudioContext
-  ) {
+  if (!AudioContext) {
     return;
   }
 
@@ -687,17 +707,13 @@ function ensureAudio() {
   );
 
 
-  const frequencies =
-    [
+  for (
+    const frequency
+    of [
       73,
       110,
       146
-    ];
-
-
-  for (
-    const frequency
-    of frequencies
+    ]
   ) {
     const oscillator =
       audioContext.createOscillator();
@@ -756,7 +772,8 @@ function applyMusic() {
   musicGain.gain
     .setTargetAtTime(
       musicToggle.checked
-        ? volume * 0.22
+        ? volume *
+          0.22
         : 0,
 
       audioContext.currentTime,
@@ -766,7 +783,11 @@ function applyMusic() {
 }
 
 
-function uiSound() {
+function shortTone(
+  frequency,
+  duration,
+  volume
+) {
   if (
     !settings.sounds
   ) {
@@ -777,37 +798,35 @@ function uiSound() {
   ensureAudio();
 
 
-  if (
-    !audioContext
-  ) {
+  if (!audioContext) {
     return;
   }
 
 
   const oscillator =
-    audioContext.createOscillator();
+    audioContext
+      .createOscillator();
 
 
   const gain =
-    audioContext.createGain();
+    audioContext
+      .createGain();
 
 
   oscillator.frequency.value =
-    430;
+    frequency;
 
 
   gain.gain.setValueAtTime(
-    0.025,
-
+    volume,
     audioContext.currentTime
   );
 
 
   gain.gain.exponentialRampToValueAtTime(
     0.001,
-
     audioContext.currentTime +
-    0.06
+      duration
   );
 
 
@@ -826,7 +845,43 @@ function uiSound() {
 
   oscillator.stop(
     audioContext.currentTime +
-    0.07
+      duration
+  );
+}
+
+
+function uiSound() {
+  shortTone(
+    430,
+    0.06,
+    0.025
+  );
+}
+
+
+function jumpSound() {
+  shortTone(
+    210,
+    0.09,
+    0.035
+  );
+}
+
+
+function bellSound() {
+  shortTone(
+    760,
+    0.22,
+    0.06
+  );
+}
+
+
+function potionSound() {
+  shortTone(
+    540,
+    0.13,
+    0.04
   );
 }
 
@@ -858,7 +913,7 @@ setTimeout(
 
 
 // ============================================================
-// MAP SELECT
+// MAP SELECTION
 // ============================================================
 
 function updateSelectedMap() {
@@ -888,7 +943,7 @@ function updateSelectedMap() {
           "selected",
 
           card.dataset.map ===
-          selectedMap
+            selectedMap
         );
       }
     );
@@ -915,7 +970,6 @@ document
 
 
           updateSelectedMap();
-
           uiSound();
         }
       );
@@ -927,17 +981,15 @@ updateSelectedMap();
 
 
 // ============================================================
-// MENU
+// MENUS
 // ============================================================
 
 playButton.addEventListener(
   "click",
   () => {
     ensureAudio();
-
-    uiSound();
-
     startGame();
+    uiSound();
   }
 );
 
@@ -985,6 +1037,9 @@ function openSettings(
     fromPause;
 
 
+  stopAutoJump();
+
+
   refreshSettingsUI();
 
 
@@ -1009,19 +1064,21 @@ function openSettings(
 
 settingsButton.addEventListener(
   "click",
-  () =>
+  () => {
     openSettings(
       false
-    )
+    );
+  }
 );
 
 
 pauseSettingsButton.addEventListener(
   "click",
-  () =>
+  () => {
     openSettings(
       true
-    )
+    );
+  }
 );
 
 
@@ -1047,7 +1104,6 @@ settingsBackButton.addEventListener(
 
 
     applySettings();
-
     uiSound();
   }
 );
@@ -1072,8 +1128,10 @@ function startGame() {
 
 
   playing = true;
-
   paused = false;
+
+
+  stopAutoJump();
 
 
   currentMap =
@@ -1102,6 +1160,11 @@ function startGame() {
   );
 
 
+  survivalHud.classList.add(
+    "active"
+  );
+
+
   sendName();
 
 
@@ -1122,14 +1185,14 @@ function startGame() {
 // ============================================================
 
 function openPause() {
-  if (
-    !playing
-  ) {
+  if (!playing) {
     return;
   }
 
 
   paused = true;
+
+  stopAutoJump();
 
 
   pauseMenu.classList.remove(
@@ -1170,8 +1233,10 @@ exitButton.addEventListener(
   "click",
   () => {
     playing = false;
-
     paused = false;
+
+
+    stopAutoJump();
 
 
     keys.clear();
@@ -1179,6 +1244,11 @@ exitButton.addEventListener(
 
     input.x = 0;
     input.y = 0;
+
+
+    survivalHud.classList.remove(
+      "active"
+    );
 
 
     if (
@@ -1263,6 +1333,21 @@ function connect() {
 
 
       sendName();
+
+
+      if (
+        playing
+      ) {
+        socket.send(
+          JSON.stringify({
+            type:
+              "joinMap",
+
+            mapId:
+              selectedMap
+          })
+        );
+      }
     }
   );
 
@@ -1280,6 +1365,9 @@ function connect() {
   socket.addEventListener(
     "close",
     () => {
+      stopAutoJump();
+
+
       connectionText.textContent =
         "NEU VERBINDEN...";
 
@@ -1315,6 +1403,7 @@ function handleMessage(
       myId =
         message.playerId;
 
+
       sendName();
 
       return;
@@ -1325,15 +1414,12 @@ function handleMessage(
       message.type ===
       "status"
     ) {
-      onlinePlayers =
-        Number(
-          message.online
-        ) ||
-        0;
-
-
       onlineCount.textContent =
-        `${onlinePlayers} SPIELER ONLINE`;
+        `${
+          Number(
+            message.online
+          ) || 0
+        } SPIELER ONLINE`;
 
       return;
     }
@@ -1423,7 +1509,7 @@ function handleMessage(
 
       updatePlayerList();
 
-      updateSpeed();
+      updatePlayerStatus();
 
       return;
     }
@@ -1431,11 +1517,32 @@ function handleMessage(
 
     if (
       message.type ===
-      "rewardState"
+      "playerState"
     ) {
       setCoins(
         message.coins
       );
+
+
+      myHp =
+        Number(
+          message.hp
+        ) || 100;
+
+
+      myMaxHp =
+        Number(
+          message.maxHp
+        ) || 100;
+
+
+      myFish =
+        Number(
+          message.fish
+        ) || 0;
+
+
+      updateSurvivalHud();
 
       return;
     }
@@ -1464,19 +1571,275 @@ function handleMessage(
       message.type ===
       "interactionMessage"
     ) {
+      if (
+        message.text.includes(
+          "DING"
+        )
+      ) {
+        bellSound();
+      }
+
+
       showNotification(
         message.text
       );
+
+      return;
+    }
+
+
+    if (
+      message.type ===
+      "vendingLoot"
+    ) {
+      if (
+        Number.isFinite(
+          Number(
+            message.hp
+          )
+        )
+      ) {
+        myHp =
+          Number(
+            message.hp
+          );
+      }
+
+
+      if (
+        Number.isFinite(
+          Number(
+            message.maxHp
+          )
+        )
+      ) {
+        myMaxHp =
+          Number(
+            message.maxHp
+          );
+      }
+
+
+      if (
+        Number.isFinite(
+          Number(
+            message.fish
+          )
+        )
+      ) {
+        myFish =
+          Number(
+            message.fish
+          );
+      }
+
+
+      updateSurvivalHud();
+
+      potionSound();
+
+
+      if (
+        message.loot ===
+        "heal"
+      ) {
+        showLootNotification(
+          "🧪",
+          message.text
+        );
+      }
+
+
+      if (
+        message.loot ===
+        "speed"
+      ) {
+        showLootNotification(
+          "🍾",
+          message.text
+        );
+      }
+
+
+      if (
+        message.loot ===
+        "fish"
+      ) {
+        showLootNotification(
+          "🐟",
+          message.text
+        );
+      }
     }
 
   } catch {
-    // Ungültige Nachricht.
+    // Ignore invalid message.
   }
 }
 
 
 // ============================================================
-// NAME
+// HUD
+// ============================================================
+
+function updatePlayerStatus() {
+  const me =
+    serverPlayers.find(
+      player =>
+        player.id ===
+        myId
+    );
+
+
+  if (!me) {
+    return;
+  }
+
+
+  myHp =
+    Number(
+      me.hp
+    ) || 0;
+
+
+  myMaxHp =
+    Number(
+      me.maxHp
+    ) || 100;
+
+
+  myFish =
+    Number(
+      me.fish
+    ) || 0;
+
+
+  hideBadge.classList.toggle(
+    "active",
+    Boolean(
+      me.hidden
+    )
+  );
+
+
+  speedBadge.classList.toggle(
+    "active",
+    Boolean(
+      me.speedBoosted
+    )
+  );
+
+
+  const actualSpeed =
+    Math.hypot(
+      me.vx || 0,
+      me.vy || 0
+    );
+
+
+  const percent =
+    Math.round(
+      actualSpeed /
+      175 *
+      100
+    );
+
+
+  speedValue.textContent =
+    `${percent}%`;
+
+
+  speedHud.classList.toggle(
+    "hidden",
+    percent < 110
+  );
+
+
+  updateSurvivalHud();
+}
+
+
+function updateSurvivalHud() {
+  hpText.textContent =
+    `${myHp} / ${myMaxHp}`;
+
+
+  fishCount.textContent =
+    String(
+      myFish
+    );
+
+
+  const percent =
+    Math.max(
+      0,
+      Math.min(
+        100,
+        myHp /
+        myMaxHp *
+        100
+      )
+    );
+
+
+  hpFill.style.width =
+    `${percent}%`;
+
+
+  if (
+    percent >
+    60
+  ) {
+    hpFill.style.background =
+      "linear-gradient(90deg,#d93646,#ef5360)";
+  } else if (
+    percent >
+    30
+  ) {
+    hpFill.style.background =
+      "linear-gradient(90deg,#e28c30,#efb344)";
+  } else {
+    hpFill.style.background =
+      "linear-gradient(90deg,#a71f2d,#e12d3f)";
+  }
+}
+
+
+function showLootNotification(
+  icon,
+  text
+) {
+  const element =
+    document.createElement(
+      "div"
+    );
+
+
+  element.className =
+    "notification reward";
+
+
+  element.textContent =
+    `${icon} ${text}`;
+
+
+  notifications.appendChild(
+    element
+  );
+
+
+  setTimeout(
+    () => {
+      element.remove();
+    },
+
+    3000
+  );
+}
+
+
+// ============================================================
+// PLAYER DATA
 // ============================================================
 
 function sendName() {
@@ -1501,18 +1864,13 @@ function sendName() {
 }
 
 
-// ============================================================
-// COINS
-// ============================================================
-
 function setCoins(
   value
 ) {
   coins =
     Number(
       value
-    ) ||
-    0;
+    ) || 0;
 
 
   coinCount.textContent =
@@ -1527,10 +1885,6 @@ function setCoins(
     );
 }
 
-
-// ============================================================
-// NOTIFICATIONS
-// ============================================================
 
 function showNotification(
   text,
@@ -1568,7 +1922,7 @@ function showNotification(
 
 
 // ============================================================
-// SMOOTH NETWORKING
+// NETWORK SMOOTHING
 // ============================================================
 
 function updateRenderTargets() {
@@ -1597,6 +1951,12 @@ function updateRenderTargets() {
       renderPlayer = {
         ...player,
 
+        x:
+          player.x,
+
+        y:
+          player.y,
+
         targetX:
           player.x,
 
@@ -1620,10 +1980,8 @@ function updateRenderTargets() {
     }
 
 
-    // Kleine Extrapolation:
-    // reduziert das sichtbare Netzwerkzittern.
     const prediction =
-      0.045;
+      0.035;
 
 
     renderPlayer.targetX =
@@ -1649,34 +2007,42 @@ function updateRenderTargets() {
       0;
 
 
-    renderPlayer.vx =
-      player.vx ||
-      0;
+    Object.assign(
+      renderPlayer,
+      {
+        name:
+          player.name,
 
+        vx:
+          player.vx || 0,
 
-    renderPlayer.vy =
-      player.vy ||
-      0;
+        vy:
+          player.vy || 0,
 
+        hidden:
+          Boolean(
+            player.hidden
+          ),
 
-    renderPlayer.name =
-      player.name;
+        hp:
+          player.hp,
 
+        maxHp:
+          player.maxHp,
 
-    renderPlayer.bunnyhop =
-      player.bunnyhop ||
-      0;
+        fish:
+          player.fish,
 
+        speedBoosted:
+          Boolean(
+            player.speedBoosted
+          ),
 
-    renderPlayer.hidden =
-      Boolean(
-        player.hidden
-      );
-
-
-    renderPlayer.coins =
-      player.coins ||
-      0;
+        bunnyhopChain:
+          player.bunnyhopChain ||
+          0
+      }
+    );
   }
 
 
@@ -1703,7 +2069,7 @@ function smoothPlayers(
   const positionFactor =
     1 -
     Math.exp(
-      -16 *
+      -17 *
       dt
     );
 
@@ -1780,7 +2146,8 @@ function updatePlayerList() {
 
 
     dot.className =
-      player.id === myId
+      player.id ===
+      myId
         ? "playerDot me"
         : "playerDot";
 
@@ -1792,7 +2159,8 @@ function updatePlayerList() {
 
 
     name.textContent =
-      player.id === myId
+      player.id ===
+      myId
         ? `${player.name} (Du)`
         : player.name;
 
@@ -1811,48 +2179,6 @@ function updatePlayerList() {
       line
     );
   }
-}
-
-
-// ============================================================
-// SPEED
-// ============================================================
-
-function updateSpeed() {
-  const me =
-    serverPlayers.find(
-      player =>
-        player.id ===
-        myId
-    );
-
-
-  if (!me) {
-    return;
-  }
-
-
-  const percent =
-    Math.round(
-      100 +
-      (
-        me.bunnyhop ||
-        0
-      ) *
-      100
-    );
-
-
-  speedValue.textContent =
-    `${percent}%`;
-
-
-  speedHud.classList.toggle(
-    "hidden",
-
-    percent <
-    108
-  );
 }
 
 
@@ -1896,7 +2222,7 @@ window.addEventListener(
 
     if (
       event.key ===
-      "Escape" &&
+        "Escape" &&
       playing
     ) {
       if (
@@ -1914,17 +2240,27 @@ window.addEventListener(
 
 
     if (
-      key === " " &&
-      !keys.has(
-        " "
-      )
+      key ===
+      " "
     ) {
-      requestJump();
+      if (
+        !jumpHeld
+      ) {
+        startAutoJump();
+      }
+
+
+      keys.add(
+        key
+      );
+
+      return;
     }
 
 
     if (
-      key === "e" &&
+      key ===
+        "e" &&
       !keys.has(
         "e"
       )
@@ -1943,9 +2279,31 @@ window.addEventListener(
 window.addEventListener(
   "keyup",
   event => {
+    const key =
+      event.key.toLowerCase();
+
+
     keys.delete(
-      event.key.toLowerCase()
+      key
     );
+
+
+    if (
+      key ===
+      " "
+    ) {
+      stopAutoJump();
+    }
+  }
+);
+
+
+window.addEventListener(
+  "blur",
+  () => {
+    keys.clear();
+
+    stopAutoJump();
   }
 );
 
@@ -2072,17 +2430,17 @@ function sendInput() {
 
 setInterval(
   sendInput,
-
-  1000 /
-  30
+  1000 / 30
 );
 
 
 // ============================================================
-// JUMP / BHOP
+// AUTO BUNNYHOP
 // ============================================================
 
-function requestJump() {
+function sendJumpRequest(
+  sound = false
+) {
   if (
     !playing ||
     paused ||
@@ -2100,6 +2458,70 @@ function requestJump() {
         "jump"
     })
   );
+
+
+  lastJumpRequest =
+    performance.now();
+
+
+  if (
+    sound
+  ) {
+    jumpSound();
+  }
+}
+
+
+function startAutoJump() {
+  if (
+    !playing ||
+    paused
+  ) {
+    return;
+  }
+
+
+  jumpHeld =
+    true;
+
+
+  sendJumpRequest(
+    true
+  );
+}
+
+
+function stopAutoJump() {
+  jumpHeld =
+    false;
+
+
+  jumpPointerId =
+    null;
+}
+
+
+function updateAutoJump(
+  time
+) {
+  if (
+    !jumpHeld ||
+    !playing ||
+    paused
+  ) {
+    return;
+  }
+
+
+  if (
+    time -
+    lastJumpRequest >=
+    AUTO_JUMP_INTERVAL
+  ) {
+    sendJumpRequest(
+      false
+    );
+  }
 }
 
 
@@ -2108,8 +2530,32 @@ jumpButton.addEventListener(
   event => {
     event.preventDefault();
 
-    requestJump();
+
+    jumpPointerId =
+      event.pointerId;
+
+
+    try {
+      jumpButton.setPointerCapture(
+        event.pointerId
+      );
+    } catch {}
+
+
+    startAutoJump();
   }
+);
+
+
+jumpButton.addEventListener(
+  "pointerup",
+  stopAutoJump
+);
+
+
+jumpButton.addEventListener(
+  "pointercancel",
+  stopAutoJump
 );
 
 
@@ -2135,6 +2581,9 @@ function requestInteraction() {
         "interact"
     })
   );
+
+
+  uiSound();
 }
 
 
@@ -2167,32 +2616,30 @@ function positionJoystickBase(
 
   const x =
     Math.max(
-      zone.left +
-      15,
+      zone.left + 15,
 
       Math.min(
         clientX -
-        size / 2,
+          size / 2,
 
         zone.right -
-        size -
-        15
+          size -
+          15
       )
     );
 
 
   const y =
     Math.max(
-      zone.top +
-      15,
+      zone.top + 15,
 
       Math.min(
         clientY -
-        size / 2,
+          size / 2,
 
         zone.bottom -
-        size -
-        15
+          size -
+          15
       )
     );
 
@@ -2263,13 +2710,11 @@ function updateJoystick(
 
 
   joystick.x =
-    dx /
-    max;
+    dx / max;
 
 
   joystick.y =
-    dy /
-    max;
+    dy / max;
 
 
   joystickStick.style.transform =
@@ -2281,18 +2726,14 @@ function resetJoystick() {
   joystick.active =
     false;
 
-
   joystick.pointerId =
     null;
 
-
   joystick.x = 0;
-
   joystick.y = 0;
 
-
   joystickStick.style.transform =
-    "translate(0, 0)";
+    "translate(0,0)";
 }
 
 
@@ -2367,7 +2808,7 @@ moveZone.addEventListener(
 
 
 // ============================================================
-// CAMERA
+// CAMERA / ZOOM
 // ============================================================
 
 function getMyRenderPlayer() {
@@ -2392,7 +2833,7 @@ function updateCamera(
   const factor =
     1 -
     Math.exp(
-      -10 *
+      -11 *
       dt
     );
 
@@ -2413,10 +2854,6 @@ function updateCamera(
     factor;
 }
 
-
-// ============================================================
-// ZOOM
-// ============================================================
 
 function isTouchDevice() {
   return window.matchMedia(
@@ -2523,8 +2960,8 @@ function drawFloor() {
       (
         camera.x -
         screenWidth /
-        zoom /
-        2
+          zoom /
+          2
       ) /
       tile
     ) *
@@ -2536,8 +2973,8 @@ function drawFloor() {
       (
         camera.y -
         screenHeight /
-        zoom /
-        2
+          zoom /
+          2
       ) /
       tile
     ) *
@@ -2547,22 +2984,23 @@ function drawFloor() {
   const endX =
     camera.x +
     screenWidth /
-    zoom /
-    2;
+      zoom /
+      2;
 
 
   const endY =
     camera.y +
     screenHeight /
-    zoom /
-    2;
+      zoom /
+      2;
 
 
   ctx.strokeStyle =
     currentMap.colors.grid;
 
 
-  ctx.lineWidth = 1;
+  ctx.lineWidth =
+    1;
 
 
   for (
@@ -2645,81 +3083,273 @@ function drawFloor() {
       currentMap.water.h *
       zoom
     );
-
-
-    ctx.strokeStyle =
-      "rgba(255,255,255,.10)";
-
-
-    for (
-      let y = 25;
-      y < currentMap.water.h;
-      y += 50
-    ) {
-      ctx.beginPath();
-
-
-      ctx.moveTo(
-        p.x +
-        20,
-
-        p.y +
-        y *
-        zoom
-      );
-
-
-      ctx.lineTo(
-        p.x +
-        currentMap.water.w *
-        zoom -
-        20,
-
-        p.y +
-        y *
-        zoom
-      );
-
-
-      ctx.stroke();
-    }
   }
 }
 
 
 // ============================================================
-// RECT
+// DECORATIONS
 // ============================================================
 
-function drawRect(
-  item,
-  color
-) {
-  const p =
-    worldToScreen(
-      item.x,
-      item.y
-    );
+function drawDecorations() {
+  if (
+    !currentMap ||
+    !currentMap.decorations
+  ) {
+    return;
+  }
 
 
   const zoom =
     getZoom();
 
 
-  ctx.fillStyle =
-    color;
+  for (
+    const item
+    of currentMap.decorations
+  ) {
+    const p =
+      worldToScreen(
+        item.x,
+        item.y
+      );
 
 
-  ctx.fillRect(
-    p.x,
-    p.y,
+    if (
+      item.type ===
+        "yellowStripe" ||
+      item.type ===
+        "roadStripe"
+    ) {
+      ctx.fillStyle =
+        "#d6b637";
 
-    item.w *
-    zoom,
 
-    item.h *
-    zoom
-  );
+      ctx.fillRect(
+        p.x,
+        p.y,
+        item.w * zoom,
+        item.h * zoom
+      );
+    }
+
+
+    if (
+      item.type ===
+      "dockLine"
+    ) {
+      ctx.fillStyle =
+        "#e9dd8a";
+
+
+      ctx.fillRect(
+        p.x,
+        p.y,
+        item.w * zoom,
+        item.h * zoom
+      );
+    }
+
+
+    if (
+      item.type ===
+      "waterWave"
+    ) {
+      ctx.fillStyle =
+        "rgba(255,255,255,.12)";
+
+
+      ctx.fillRect(
+        p.x,
+        p.y,
+        item.w * zoom,
+        2 * zoom
+      );
+    }
+
+
+    if (
+      item.type ===
+      "oil"
+    ) {
+      ctx.fillStyle =
+        "rgba(25,28,28,.24)";
+
+
+      ctx.beginPath();
+
+
+      ctx.ellipse(
+        p.x +
+          item.w *
+          zoom /
+          2,
+
+        p.y +
+          item.h *
+          zoom /
+          2,
+
+        item.w *
+          zoom /
+          2,
+
+        item.h *
+          zoom /
+          2,
+
+        0.2,
+        0,
+        Math.PI * 2
+      );
+
+
+      ctx.fill();
+    }
+
+
+    if (
+      item.type ===
+        "cable" ||
+      item.type ===
+        "pipe"
+    ) {
+      ctx.fillStyle =
+        item.type ===
+        "pipe"
+          ? "#596368"
+          : "#292a2d";
+
+
+      ctx.fillRect(
+        p.x,
+        p.y,
+        item.w * zoom,
+        item.h * zoom
+      );
+    }
+
+
+    if (
+      item.type ===
+        "warningBox" ||
+      item.type ===
+        "hazardStripe"
+    ) {
+      ctx.fillStyle =
+        "rgba(216,175,44,.2)";
+
+
+      ctx.fillRect(
+        p.x,
+        p.y,
+        item.w * zoom,
+        item.h * zoom
+      );
+
+
+      ctx.strokeStyle =
+        "#c5a331";
+
+
+      ctx.strokeRect(
+        p.x,
+        p.y,
+        item.w * zoom,
+        item.h * zoom
+      );
+    }
+
+
+    if (
+      item.type ===
+        "floorPlate" ||
+      item.type ===
+        "glassFloor"
+    ) {
+      ctx.fillStyle =
+        item.type ===
+        "glassFloor"
+          ? "rgba(95,180,210,.12)"
+          : "rgba(30,35,38,.08)";
+
+
+      ctx.fillRect(
+        p.x,
+        p.y,
+        item.w * zoom,
+        item.h * zoom
+      );
+    }
+
+
+    if (
+      item.type ===
+      "labLine"
+    ) {
+      ctx.fillStyle =
+        "#735ed0";
+
+
+      ctx.fillRect(
+        p.x,
+        p.y,
+        item.w * zoom,
+        item.h * zoom
+      );
+    }
+
+
+    if (
+      item.type ===
+      "sign"
+    ) {
+      ctx.fillStyle =
+        "rgba(20,22,25,.8)";
+
+
+      ctx.fillRect(
+        p.x,
+        p.y,
+        item.w * zoom,
+        item.h * zoom
+      );
+
+
+      ctx.fillStyle =
+        "#fff";
+
+
+      ctx.font =
+        `800 ${Math.max(
+          8,
+          12 * zoom
+        )}px system-ui`;
+
+
+      ctx.textAlign =
+        "center";
+
+
+      ctx.textBaseline =
+        "middle";
+
+
+      ctx.fillText(
+        item.text || "",
+
+        p.x +
+          item.w *
+          zoom /
+          2,
+
+        p.y +
+          item.h *
+          zoom /
+          2
+      );
+    }
+  }
 }
 
 
@@ -2728,9 +3358,7 @@ function drawRect(
 // ============================================================
 
 function drawWalls() {
-  if (
-    !currentMap
-  ) {
+  if (!currentMap) {
     return;
   }
 
@@ -2751,23 +3379,19 @@ function drawWalls() {
 
 
     ctx.fillStyle =
-      "rgba(0,0,0,.20)";
+      "rgba(0,0,0,.2)";
 
 
     ctx.fillRect(
       p.x +
-      8 *
-      zoom,
+        8 * zoom,
 
       p.y +
-      8 *
-      zoom,
+        8 * zoom,
 
-      wall.w *
-      zoom,
+      wall.w * zoom,
 
-      wall.h *
-      zoom
+      wall.h * zoom
     );
 
 
@@ -2779,11 +3403,9 @@ function drawWalls() {
       p.x,
       p.y,
 
-      wall.w *
-      zoom,
+      wall.w * zoom,
 
-      wall.h *
-      zoom
+      wall.h * zoom
     );
 
 
@@ -2795,15 +3417,11 @@ function drawWalls() {
       p.x,
       p.y,
 
-      wall.w *
-      zoom,
+      wall.w * zoom,
 
       Math.min(
-        8 *
-        zoom,
-
-        wall.h *
-        zoom
+        8 * zoom,
+        wall.h * zoom
       )
     );
   }
@@ -2811,13 +3429,11 @@ function drawWalls() {
 
 
 // ============================================================
-// REAL SWINGING DOORS
+// DOORS
 // ============================================================
 
 function drawDoors() {
-  if (
-    !currentMap
-  ) {
+  if (!currentMap) {
     return;
   }
 
@@ -2841,8 +3457,7 @@ function drawDoors() {
     const amount =
       Number(
         state.amount
-      ) ||
-      0;
+      ) || 0;
 
 
     const p =
@@ -2852,42 +3467,38 @@ function drawDoors() {
       );
 
 
-    const doorWidth =
+    const width =
       door.w *
       zoom;
 
 
-    const doorThickness =
-      14 *
+    const thickness =
+      15 *
       zoom;
 
 
-    const hingeLeft =
+    const left =
       door.hinge !==
       "right";
 
 
     const hingeX =
-      hingeLeft
+      left
         ? p.x
-        : p.x +
-          doorWidth;
+        : p.x + width;
 
 
     const hingeY =
       p.y +
-      doorThickness /
-      2;
-
-
-    const direction =
-      hingeLeft
-        ? -1
-        : 1;
+      thickness / 2;
 
 
     const angle =
-      direction *
+      (
+        left
+          ? -1
+          : 1
+      ) *
       amount *
       Math.PI /
       2;
@@ -2907,49 +3518,30 @@ function drawDoors() {
     );
 
 
-    // Schatten
-    ctx.fillStyle =
-      "rgba(0,0,0,.25)";
-
-
-    ctx.fillRect(
-      hingeLeft
-        ? 5
-        : -doorWidth -
-          5,
-
-      5,
-
-      doorWidth,
-      doorThickness
-    );
-
-
-    // Holz
     const gradient =
       ctx.createLinearGradient(
         0,
         0,
-        doorWidth,
+        width,
         0
       );
 
 
     gradient.addColorStop(
       0,
-      "#74451f"
+      "#553014"
     );
 
 
     gradient.addColorStop(
       0.5,
-      "#a66c32"
+      "#9c622e"
     );
 
 
     gradient.addColorStop(
       1,
-      "#633817"
+      "#613817"
     );
 
 
@@ -2958,68 +3550,57 @@ function drawDoors() {
 
 
     ctx.fillRect(
-      hingeLeft
+      left
         ? 0
-        : -doorWidth,
+        : -width,
 
-      -doorThickness /
-      2,
+      -thickness / 2,
 
-      doorWidth,
-      doorThickness
+      width,
+      thickness
     );
 
 
     ctx.strokeStyle =
-      "#4b2911";
+      "#3d210e";
 
 
     ctx.lineWidth =
-      2 *
-      zoom;
+      2 * zoom;
 
 
     ctx.strokeRect(
-      hingeLeft
+      left
         ? 0
-        : -doorWidth,
+        : -width,
 
-      -doorThickness /
-      2,
+      -thickness / 2,
 
-      doorWidth,
-      doorThickness
+      width,
+      thickness
     );
 
 
-    // Türklinke
     ctx.fillStyle =
-      "#d4b36e";
-
-
-    const knobX =
-      hingeLeft
-        ? doorWidth -
-          15 *
-          zoom
-        : -doorWidth +
-          15 *
-          zoom;
+      "#d6b36b";
 
 
     ctx.beginPath();
 
 
     ctx.arc(
-      knobX,
+      left
+        ? width -
+          14 * zoom
+        : -width +
+          14 * zoom,
+
       0,
 
-      3.5 *
-      zoom,
+      3.5 * zoom,
 
       0,
-      Math.PI *
-      2
+      Math.PI * 2
     );
 
 
@@ -3027,30 +3608,6 @@ function drawDoors() {
 
 
     ctx.restore();
-
-
-    // Scharnier
-    ctx.fillStyle =
-      "#35322e";
-
-
-    ctx.beginPath();
-
-
-    ctx.arc(
-      hingeX,
-      hingeY,
-
-      4 *
-      zoom,
-
-      0,
-      Math.PI *
-      2
-    );
-
-
-    ctx.fill();
   }
 }
 
@@ -3063,74 +3620,55 @@ function furnitureColor(
   type
 ) {
   const colors = {
-    machine:
-      "#50575a",
+    machine: "#52595d",
+    compressor: "#4e5d63",
+    generator: "#3f4a50",
+    crate: "#91663b",
+    pallet: "#806044",
+    shelf: "#555b5e",
+    workbench: "#745537",
+    desk: "#86705a",
+    chair: "#404549",
+    locker: "#68747b",
+    hideCabinet: "#646f75",
+    cabinet: "#59636a",
+    chemicalCabinet: "#d5c33b",
+    powerbox: "#596269",
+    electricalCabinet: "#57656b",
+    vent: "#737b80",
+    toolcart: "#b3483d",
+    barrel: "#455359",
+    warningCone: "#e07b2f",
+    coffee: "#4b3c31",
+    trash: "#444c50",
+    fan: "#586268",
+    conveyor: "#596167",
+    computer: "#45515a",
+    terminal: "#3d4851",
+    serverrack: "#303840",
+    scanner: "#829099",
+    microscope: "#d9dcde",
+    sampleRack: "#8aa2ad",
+    plant: "#3e7552",
+    emergency: "#c83d40",
+    medicalCart: "#ced7db",
+    vending: "#39474a",
+    bell: "#b8943d",
+    alarm: "#b63a40",
+    pipeStack: "#59646a",
 
-    crate:
-      "#90683f",
+    "container-red": "#b83e46",
+    "container-blue": "#3e719b",
+    "container-yellow": "#be8b38",
 
-    pallet:
-      "#806040",
-
-    shelf:
-      "#555b5e",
-
-    workbench:
-      "#725538",
-
-    desk:
-      "#866f59",
-
-    chair:
-      "#3f4448",
-
-    locker:
-      "#68737a",
-
-    powerbox:
-      "#596269",
-
-    vent:
-      "#737b80",
-
-    toolcart:
-      "#b4483d",
-
-    barrel:
-      "#48555a",
-
-    radio:
-      "#34393d",
-
-    terminal:
-      "#3d4851",
-
-    "container-red":
-      "#b83e46",
-
-    "container-blue":
-      "#3e719b",
-
-    "container-yellow":
-      "#be8b38",
-
-    forklift:
-      "#c99b32",
-
-    bollard:
-      "#34383b",
-
-    labtable:
-      "#eef1f2",
-
-    computer:
-      "#49545d",
-
-    serverrack:
-      "#303840",
-
-    scanner:
-      "#829099"
+    forklift: "#c99b32",
+    bollard: "#34383b",
+    radio: "#34393d",
+    rope: "#a58b58",
+    lifeRing: "#da583f",
+    cranePanel: "#4c5a62",
+    bench: "#6f5b45",
+    labtable: "#eef1f2"
   };
 
 
@@ -3144,9 +3682,7 @@ function furnitureColor(
 
 
 function drawFurniture() {
-  if (
-    !currentMap
-  ) {
+  if (!currentMap) {
     return;
   }
 
@@ -3172,18 +3708,14 @@ function drawFurniture() {
 
     ctx.fillRect(
       p.x +
-      6 *
-      zoom,
+        6 * zoom,
 
       p.y +
-      7 *
-      zoom,
+        7 * zoom,
 
-      item.w *
-      zoom,
+      item.w * zoom,
 
-      item.h *
-      zoom
+      item.h * zoom
     );
 
 
@@ -3197,70 +3729,241 @@ function drawFurniture() {
       p.x,
       p.y,
 
-      item.w *
-      zoom,
+      item.w * zoom,
 
-      item.h *
-      zoom
+      item.h * zoom
     );
 
 
     ctx.strokeStyle =
-      "rgba(0,0,0,.18)";
-
-
-    ctx.lineWidth =
-      1.5 *
-      zoom;
+      "rgba(0,0,0,.2)";
 
 
     ctx.strokeRect(
       p.x,
       p.y,
 
-      item.w *
-      zoom,
+      item.w * zoom,
 
-      item.h *
-      zoom
+      item.h * zoom
     );
 
 
-    // Container-Linien
+    // ========================================================
+    // VENDING MACHINE
+    // Green glass bottles visible inside
+    // ========================================================
+
     if (
-      item.type.startsWith(
-        "container"
-      )
+      item.type ===
+      "vending"
     ) {
-      ctx.strokeStyle =
-        "rgba(0,0,0,.24)";
+      ctx.fillStyle =
+        "#182225";
+
+
+      ctx.fillRect(
+        p.x +
+          10 * zoom,
+
+        p.y +
+          10 * zoom,
+
+        (
+          item.w -
+          20
+        ) *
+          zoom,
+
+        58 * zoom
+      );
 
 
       for (
-        let lineX = 20;
-        lineX < item.w;
-        lineX += 28
+        let row = 0;
+        row < 2;
+        row++
+      ) {
+        for (
+          let column = 0;
+          column < 3;
+          column++
+        ) {
+          const bottleX =
+            p.x +
+            (
+              18 +
+              column *
+              16
+            ) *
+            zoom;
+
+
+          const bottleY =
+            p.y +
+            (
+              18 +
+              row *
+              25
+            ) *
+            zoom;
+
+
+          ctx.fillStyle =
+            "rgba(65,220,105,.8)";
+
+
+          ctx.fillRect(
+            bottleX,
+            bottleY +
+              6 * zoom,
+
+            8 * zoom,
+            13 * zoom
+          );
+
+
+          ctx.fillStyle =
+            "rgba(130,255,160,.9)";
+
+
+          ctx.fillRect(
+            bottleX +
+              2 * zoom,
+
+            bottleY,
+
+            4 * zoom,
+            7 * zoom
+          );
+        }
+      }
+
+
+      ctx.fillStyle =
+        "#53db7e";
+
+
+      ctx.fillRect(
+        p.x +
+          12 * zoom,
+
+        p.y +
+          78 * zoom,
+
+        (
+          item.w -
+          24
+        ) *
+          zoom,
+
+        8 * zoom
+      );
+    }
+
+
+    if (
+      item.type ===
+      "locker" ||
+      item.type ===
+      "hideCabinet"
+    ) {
+      ctx.strokeStyle =
+        "rgba(255,255,255,.18)";
+
+
+      ctx.beginPath();
+
+
+      ctx.moveTo(
+        p.x +
+          item.w *
+          zoom /
+          2,
+
+        p.y
+      );
+
+
+      ctx.lineTo(
+        p.x +
+          item.w *
+          zoom /
+          2,
+
+        p.y +
+          item.h *
+          zoom
+      );
+
+
+      ctx.stroke();
+
+
+      ctx.fillStyle =
+        "#30383c";
+
+
+      ctx.beginPath();
+
+
+      ctx.arc(
+        p.x +
+          item.w *
+          zoom *
+          0.75,
+
+        p.y +
+          item.h *
+          zoom /
+          2,
+
+        2.5 * zoom,
+
+        0,
+        Math.PI * 2
+      );
+
+
+      ctx.fill();
+    }
+
+
+    if (
+      item.type ===
+      "vent"
+    ) {
+      ctx.strokeStyle =
+        "#373d40";
+
+
+      for (
+        let y = 8;
+        y < item.h;
+        y += 10
       ) {
         ctx.beginPath();
 
 
         ctx.moveTo(
           p.x +
-          lineX *
-          zoom,
+            8 * zoom,
 
-          p.y
+          p.y +
+            y * zoom
         );
 
 
         ctx.lineTo(
           p.x +
-          lineX *
-          zoom,
+            (
+              item.w -
+              8
+            ) *
+            zoom,
 
           p.y +
-          item.h *
-          zoom
+            y * zoom
         );
 
 
@@ -3269,48 +3972,51 @@ function drawFurniture() {
     }
 
 
-    // Server LEDs
     if (
-      item.type ===
-      "serverrack"
+      item.type.startsWith(
+        "container"
+      )
     ) {
-      ctx.fillStyle =
-        worldState.powerOn
-          ? "#58e6a0"
-          : "#462f2f";
+      ctx.strokeStyle =
+        "rgba(0,0,0,.25)";
 
 
       for (
-        let y = 15;
-        y <
-        item.h;
-        y += 24
+        let x = 20;
+        x < item.w;
+        x += 28
       ) {
-        ctx.fillRect(
+        ctx.beginPath();
+
+
+        ctx.moveTo(
           p.x +
-          10 *
-          zoom,
+            x * zoom,
+
+          p.y
+        );
+
+
+        ctx.lineTo(
+          p.x +
+            x * zoom,
 
           p.y +
-          y *
-          zoom,
-
-          8 *
-          zoom,
-
-          3 *
-          zoom
+            item.h *
+            zoom
         );
+
+
+        ctx.stroke();
       }
     }
 
 
-    // Computerbildschirm
     if (
       item.type ===
-      "computer" ||
+        "computer" ||
       item.type ===
-      "terminal"
+        "terminal"
     ) {
       ctx.fillStyle =
         worldState.powerOn
@@ -3320,82 +4026,93 @@ function drawFurniture() {
 
       ctx.fillRect(
         p.x +
-        15 *
-        zoom,
+          12 * zoom,
 
         p.y +
-        12 *
-        zoom,
+          10 * zoom,
 
         Math.max(
           20,
-          item.w -
-          30
+          item.w - 24
         ) *
-        zoom,
+          zoom,
 
         Math.min(
-          26,
-          item.h -
-          20
+          25,
+          item.h - 18
         ) *
-        zoom
+          zoom
       );
     }
 
 
-    // Vent
     if (
       item.type ===
-      "vent"
+      "serverrack"
     ) {
-      ctx.strokeStyle =
-        "#383d40";
+      ctx.fillStyle =
+        worldState.powerOn
+          ? "#57e39c"
+          : "#3c3333";
 
 
       for (
-        let lineY = 8;
-        lineY <
-        item.h;
-        lineY += 10
+        let y = 15;
+        y < item.h;
+        y += 22
       ) {
-        ctx.beginPath();
-
-
-        ctx.moveTo(
+        ctx.fillRect(
           p.x +
-          8 *
-          zoom,
+            10 * zoom,
 
           p.y +
-          lineY *
-          zoom
+            y * zoom,
+
+          8 * zoom,
+
+          3 * zoom
         );
-
-
-        ctx.lineTo(
-          p.x +
-          (
-            item.w -
-            8
-          ) *
-          zoom,
-
-          p.y +
-          lineY *
-          zoom
-        );
-
-
-        ctx.stroke();
       }
+    }
+
+
+    if (
+      item.type ===
+      "bell"
+    ) {
+      ctx.fillStyle =
+        "#d7b34f";
+
+
+      ctx.beginPath();
+
+
+      ctx.arc(
+        p.x +
+          item.w *
+          zoom /
+          2,
+
+        p.y +
+          item.h *
+          zoom /
+          2,
+
+        15 * zoom,
+
+        0,
+        Math.PI * 2
+      );
+
+
+      ctx.fill();
     }
   }
 }
 
 
 // ============================================================
-// INTERACTION MARKERS
+// INTERACTIONS
 // ============================================================
 
 function drawInteractables() {
@@ -3415,6 +4132,14 @@ function drawInteractables() {
   }
 
 
+  let nearest =
+    null;
+
+
+  let bestDistance =
+    Infinity;
+
+
   for (
     const item
     of currentMap.interactables
@@ -3422,165 +4147,101 @@ function drawInteractables() {
     const distance =
       Math.hypot(
         me.x -
-        item.x,
+          item.x,
 
         me.y -
-        item.y
+          item.y
       );
 
 
     if (
-      distance >
-      135
+      distance <
+      bestDistance
     ) {
-      continue;
+      nearest =
+        item;
+
+      bestDistance =
+        distance;
     }
-
-
-    const p =
-      worldToScreen(
-        item.x,
-        item.y
-      );
-
-
-    const alpha =
-      Math.max(
-        0.2,
-
-        1 -
-        distance /
-        150
-      );
-
-
-    ctx.save();
-
-
-    ctx.globalAlpha =
-      alpha;
-
-
-    ctx.font =
-      "700 11px system-ui";
-
-
-    ctx.textAlign =
-      "center";
-
-
-    ctx.textBaseline =
-      "middle";
-
-
-    const text =
-      isTouchDevice()
-        ? `AKTION · ${item.label}`
-        : `E · ${item.label}`;
-
-
-    const width =
-      ctx.measureText(
-        text
-      ).width +
-      20;
-
-
-    ctx.fillStyle =
-      "rgba(10,11,14,.80)";
-
-
-    ctx.beginPath();
-
-
-    ctx.roundRect(
-      p.x -
-      width /
-      2,
-
-      p.y -
-      45,
-
-      width,
-      27,
-
-      8
-    );
-
-
-    ctx.fill();
-
-
-    ctx.fillStyle =
-      "#ffffff";
-
-
-    ctx.fillText(
-      text,
-      p.x,
-      p.y -
-      31
-    );
-
-
-    ctx.restore();
   }
-}
 
 
-// ============================================================
-// CHECKPOINTS
-// ============================================================
-
-function drawCheckpoints() {
   if (
-    !currentMap
+    !nearest ||
+    bestDistance >
+    145
   ) {
     return;
   }
 
 
-  const zoom =
-    getZoom();
-
-
-  for (
-    const checkpoint
-    of currentMap.checkpoints
-  ) {
-    const p =
-      worldToScreen(
-        checkpoint.x,
-        checkpoint.y
-      );
-
-
-    ctx.strokeStyle =
-      "rgba(255,255,255,.10)";
-
-
-    ctx.lineWidth =
-      2;
-
-
-    ctx.beginPath();
-
-
-    ctx.arc(
-      p.x,
-      p.y,
-
-      checkpoint.radius *
-      zoom,
-
-      0,
-      Math.PI *
-      2
+  const p =
+    worldToScreen(
+      nearest.x,
+      nearest.y
     );
 
 
-    ctx.stroke();
-  }
+  const text =
+    isTouchDevice()
+      ? `AKTION · ${nearest.label}`
+      : `E · ${nearest.label}`;
+
+
+  ctx.font =
+    "700 11px system-ui";
+
+
+  ctx.textAlign =
+    "center";
+
+
+  ctx.textBaseline =
+    "middle";
+
+
+  const width =
+    ctx.measureText(
+      text
+    ).width +
+    20;
+
+
+  ctx.fillStyle =
+    "rgba(10,11,14,.88)";
+
+
+  ctx.beginPath();
+
+
+  ctx.roundRect(
+    p.x -
+      width / 2,
+
+    p.y -
+      48,
+
+    width,
+
+    28,
+
+    8
+  );
+
+
+  ctx.fill();
+
+
+  ctx.fillStyle =
+    "#fff";
+
+
+  ctx.fillText(
+    text,
+    p.x,
+    p.y - 34
+  );
 }
 
 
@@ -3636,13 +4297,12 @@ function drawPlayer(
     me
   ) {
     ctx.globalAlpha =
-      0.35;
+      0.3;
   }
 
 
-  // Schatten
   ctx.fillStyle =
-    "rgba(0,0,0,.23)";
+    "rgba(0,0,0,.24)";
 
 
   ctx.beginPath();
@@ -3651,26 +4311,20 @@ function drawPlayer(
   ctx.ellipse(
     p.x,
     p.y +
-    15 *
-    zoom,
+      15 * zoom,
 
-    18 *
-    zoom,
-
-    7 *
-    zoom,
+    18 * zoom,
+    7 * zoom,
 
     0,
     0,
-    Math.PI *
-    2
+    Math.PI * 2
   );
 
 
   ctx.fill();
 
 
-  // Körper
   ctx.fillStyle =
     me
       ? "#e33b46"
@@ -3683,13 +4337,9 @@ function drawPlayer(
   ctx.arc(
     p.x,
     bodyY,
-
-    18 *
-    zoom,
-
+    18 * zoom,
     0,
-    Math.PI *
-    2
+    Math.PI * 2
   );
 
 
@@ -3698,54 +4348,23 @@ function drawPlayer(
 
   ctx.strokeStyle =
     me
-      ? "#ffffff"
-      : "rgba(255,255,255,.62)";
+      ? "#fff"
+      : "rgba(255,255,255,.6)";
 
 
   ctx.lineWidth =
     me
       ? 2.5
-      : 1.7;
+      : 1.5;
 
 
   ctx.stroke();
 
 
-  // Highlight
-  ctx.fillStyle =
-    "rgba(255,255,255,.88)";
-
-
-  ctx.beginPath();
-
-
-  ctx.arc(
-    p.x -
-    6 *
-    zoom,
-
-    bodyY -
-    6 *
-    zoom,
-
-    4 *
-    zoom,
-
-    0,
-    Math.PI *
-    2
-  );
-
-
-  ctx.fill();
-
-
-  // Name
   ctx.font =
     `700 ${Math.max(
       10,
-      12 *
-      zoom
+      12 * zoom
     )}px system-ui`;
 
 
@@ -3753,12 +4372,8 @@ function drawPlayer(
     "center";
 
 
-  ctx.textBaseline =
-    "bottom";
-
-
   ctx.strokeStyle =
-    "rgba(0,0,0,.70)";
+    "rgba(0,0,0,.7)";
 
 
   ctx.lineWidth =
@@ -3767,29 +4382,27 @@ function drawPlayer(
 
   ctx.strokeText(
     player.name ||
-    "Spieler",
+      "Spieler",
 
     p.x,
 
     bodyY -
-    26 *
-    zoom
+      26 * zoom
   );
 
 
   ctx.fillStyle =
-    "#ffffff";
+    "#fff";
 
 
   ctx.fillText(
     player.name ||
-    "Spieler",
+      "Spieler",
 
     p.x,
 
     bodyY -
-    26 *
-    zoom
+      26 * zoom
   );
 
 
@@ -3804,7 +4417,44 @@ function drawPlayer(
 function drawLighting() {
   if (
     !playing ||
-    !currentMap ||
+    !currentMap
+  ) {
+    return;
+  }
+
+
+  if (
+    worldState.alarmOn
+  ) {
+    const pulse =
+      (
+        Math.sin(
+          performance.now() /
+          180
+        ) +
+        1
+      ) /
+      2;
+
+
+    ctx.fillStyle =
+      `rgba(190,20,25,${
+        0.05 +
+        pulse *
+        0.08
+      })`;
+
+
+    ctx.fillRect(
+      0,
+      0,
+      screenWidth,
+      screenHeight
+    );
+  }
+
+
+  if (
     worldState.lightsOn
   ) {
     return;
@@ -3848,12 +4498,10 @@ function drawLighting() {
       ctx.createRadialGradient(
         p.x,
         p.y,
-
         20,
 
         p.x,
         p.y,
-
         180
       );
 
@@ -3882,8 +4530,7 @@ function drawLighting() {
       p.y,
       180,
       0,
-      Math.PI *
-      2
+      Math.PI * 2
     );
 
 
@@ -3978,17 +4625,10 @@ function drawMinimap() {
     of currentMap.walls
   ) {
     minimapCtx.fillRect(
-      wall.x *
-      scaleX,
-
-      wall.y *
-      scaleY,
-
-      wall.w *
-      scaleX,
-
-      wall.h *
-      scaleY
+      wall.x * scaleX,
+      wall.y * scaleY,
+      wall.w * scaleX,
+      wall.h * scaleY
     );
   }
 
@@ -4010,11 +4650,8 @@ function drawMinimap() {
 
 
     minimapCtx.arc(
-      player.x *
-      scaleX,
-
-      player.y *
-      scaleY,
+      player.x * scaleX,
+      player.y * scaleY,
 
       player.id ===
       myId
@@ -4022,8 +4659,7 @@ function drawMinimap() {
         : 3,
 
       0,
-      Math.PI *
-      2
+      Math.PI * 2
     );
 
 
@@ -4031,75 +4667,52 @@ function drawMinimap() {
       player.id ===
       myId
         ? "#ee3f4a"
-        : "#ffffff";
+        : "#fff";
 
 
     minimapCtx.fill();
   }
-
-
-  minimapCtx.strokeStyle =
-    "rgba(255,255,255,.25)";
-
-
-  minimapCtx.lineWidth =
-    2;
-
-
-  minimapCtx.strokeRect(
-    1,
-    1,
-
-    width -
-    2,
-
-    height -
-    2
-  );
 }
 
 
 // ============================================================
-// WORLD BORDER
+// CAMERA
 // ============================================================
 
-function drawWorldBorder() {
-  if (
-    !currentMap
-  ) {
+function updateCamera(
+  dt
+) {
+  const me =
+    getMyRenderPlayer();
+
+
+  if (!me) {
     return;
   }
 
 
-  const p =
-    worldToScreen(
-      0,
-      0
+  const factor =
+    1 -
+    Math.exp(
+      -11 *
+      dt
     );
 
 
-  const zoom =
-    getZoom();
+  camera.x +=
+    (
+      me.x -
+      camera.x
+    ) *
+    factor;
 
 
-  ctx.strokeStyle =
-    "rgba(0,0,0,.35)";
-
-
-  ctx.lineWidth =
-    5;
-
-
-  ctx.strokeRect(
-    p.x,
-    p.y,
-
-    currentMap.width *
-    zoom,
-
-    currentMap.height *
-    zoom
-  );
+  camera.y +=
+    (
+      me.y -
+      camera.y
+    ) *
+    factor;
 }
 
 
@@ -4126,6 +4739,11 @@ function render(
     time;
 
 
+  updateAutoJump(
+    time
+  );
+
+
   smoothPlayers(
     dt
   );
@@ -4137,17 +4755,13 @@ function render(
 
 
   drawFloor();
-
-  drawCheckpoints();
-
+  drawDecorations();
   drawWalls();
-
   drawDoors();
-
   drawFurniture();
 
 
-  const sorted =
+  const sortedPlayers =
     [
       ...renderPlayers.values()
     ].sort(
@@ -4162,7 +4776,7 @@ function render(
 
   for (
     const player
-    of sorted
+    of sortedPlayers
   ) {
     drawPlayer(
       player
@@ -4171,11 +4785,7 @@ function render(
 
 
   drawInteractables();
-
-  drawWorldBorder();
-
   drawLighting();
-
   drawMinimap();
 
 
