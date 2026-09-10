@@ -1,37 +1,636 @@
 "use strict";
 
 // ============================================================
-// DUCKYMAPS V4
-// ZENTRALE MAP-DATEN
+// DUCKYMAPS V4.5
+// MAPS, MÖBEL, TÜREN & INTERAKTIONEN
+// ============================================================
+
+function addRow(
+  array,
+  type,
+  startX,
+  startY,
+  count,
+  spacing,
+  w,
+  h,
+  solid = true
+) {
+  for (let i = 0; i < count; i++) {
+    array.push({
+      type,
+      x: startX + i * spacing,
+      y: startY,
+      w,
+      h,
+      solid
+    });
+  }
+}
+
+
+function addColumn(
+  array,
+  type,
+  startX,
+  startY,
+  count,
+  spacing,
+  w,
+  h,
+  solid = true
+) {
+  for (let i = 0; i < count; i++) {
+    array.push({
+      type,
+      x: startX,
+      y: startY + i * spacing,
+      w,
+      h,
+      solid
+    });
+  }
+}
+
+
+// ============================================================
+// INDUSTRIE
+// ============================================================
+
+const industryFurniture = [
+  {
+    type: "machine",
+    x: 290,
+    y: 290,
+    w: 150,
+    h: 90,
+    solid: true
+  },
+  {
+    type: "machine",
+    x: 640,
+    y: 280,
+    w: 160,
+    h: 90,
+    solid: true
+  },
+  {
+    type: "machine",
+    x: 640,
+    y: 470,
+    w: 160,
+    h: 90,
+    solid: true
+  },
+
+  {
+    type: "workbench",
+    x: 340,
+    y: 1360,
+    w: 270,
+    h: 80,
+    solid: true
+  },
+  {
+    type: "workbench",
+    x: 750,
+    y: 1450,
+    w: 260,
+    h: 80,
+    solid: true
+  },
+
+  {
+    type: "desk",
+    x: 1920,
+    y: 1310,
+    w: 180,
+    h: 75,
+    solid: true
+  },
+  {
+    type: "desk",
+    x: 2340,
+    y: 1470,
+    w: 180,
+    h: 75,
+    solid: true
+  },
+
+  {
+    type: "locker",
+    x: 1940,
+    y: 1450,
+    w: 72,
+    h: 105,
+    solid: true
+  },
+
+  {
+    type: "locker",
+    x: 2040,
+    y: 1450,
+    w: 72,
+    h: 105,
+    solid: true
+  },
+
+  {
+    type: "powerbox",
+    x: 1110,
+    y: 900,
+    w: 55,
+    h: 80,
+    solid: true
+  },
+
+  {
+    type: "vent",
+    x: 850,
+    y: 820,
+    w: 110,
+    h: 52,
+    solid: false
+  },
+
+  {
+    type: "toolcart",
+    x: 530,
+    y: 1510,
+    w: 90,
+    h: 65,
+    solid: true
+  },
+
+  {
+    type: "barrel",
+    x: 1320,
+    y: 390,
+    w: 55,
+    h: 55,
+    solid: true
+  },
+
+  {
+    type: "barrel",
+    x: 1390,
+    y: 390,
+    w: 55,
+    h: 55,
+    solid: true
+  },
+
+  {
+    type: "barrel",
+    x: 1460,
+    y: 390,
+    w: 55,
+    h: 55,
+    solid: true
+  }
+];
+
+addColumn(
+  industryFurniture,
+  "shelf",
+  1970,
+  270,
+  3,
+  115,
+  90,
+  90
+);
+
+addColumn(
+  industryFurniture,
+  "shelf",
+  2190,
+  270,
+  3,
+  115,
+  90,
+  90
+);
+
+addColumn(
+  industryFurniture,
+  "shelf",
+  2500,
+  270,
+  3,
+  115,
+  90,
+  90
+);
+
+addRow(
+  industryFurniture,
+  "crate",
+  270,
+  510,
+  4,
+  78,
+  62,
+  62
+);
+
+addRow(
+  industryFurniture,
+  "crate",
+  1290,
+  520,
+  5,
+  72,
+  58,
+  58
+);
+
+addRow(
+  industryFurniture,
+  "pallet",
+  1280,
+  1110,
+  5,
+  95,
+  80,
+  58
+);
+
+addRow(
+  industryFurniture,
+  "chair",
+  1900,
+  1410,
+  4,
+  100,
+  48,
+  48
+);
+
+
+// ============================================================
+// HAFEN
+// ============================================================
+
+const harborFurniture = [
+  {
+    type: "container-red",
+    x: 1230,
+    y: 790,
+    w: 270,
+    h: 95,
+    solid: true
+  },
+  {
+    type: "container-blue",
+    x: 1550,
+    y: 800,
+    w: 270,
+    h: 95,
+    solid: true
+  },
+  {
+    type: "container-yellow",
+    x: 1880,
+    y: 780,
+    w: 270,
+    h: 95,
+    solid: true
+  },
+
+  {
+    type: "container-blue",
+    x: 1250,
+    y: 980,
+    w: 270,
+    h: 95,
+    solid: true
+  },
+  {
+    type: "container-red",
+    x: 1600,
+    y: 1030,
+    w: 270,
+    h: 95,
+    solid: true
+  },
+  {
+    type: "container-yellow",
+    x: 1950,
+    y: 1010,
+    w: 270,
+    h: 95,
+    solid: true
+  },
+
+  {
+    type: "forklift",
+    x: 650,
+    y: 1010,
+    w: 130,
+    h: 85,
+    solid: true
+  },
+  {
+    type: "forklift",
+    x: 2020,
+    y: 1310,
+    w: 130,
+    h: 85,
+    solid: true
+  },
+
+  {
+    type: "desk",
+    x: 1570,
+    y: 350,
+    w: 190,
+    h: 75,
+    solid: true
+  },
+  {
+    type: "desk",
+    x: 1780,
+    y: 475,
+    w: 170,
+    h: 75,
+    solid: true
+  },
+
+  {
+    type: "locker",
+    x: 1515,
+    y: 500,
+    w: 65,
+    h: 100,
+    solid: true
+  },
+
+  {
+    type: "radio",
+    x: 1870,
+    y: 360,
+    w: 65,
+    h: 45,
+    solid: false
+  },
+
+  {
+    type: "powerbox",
+    x: 2180,
+    y: 1220,
+    w: 55,
+    h: 80,
+    solid: true
+  },
+
+  {
+    type: "vent",
+    x: 960,
+    y: 560,
+    w: 100,
+    h: 48,
+    solid: false
+  }
+];
+
+addRow(
+  harborFurniture,
+  "pallet",
+  300,
+  310,
+  5,
+  115,
+  90,
+  72
+);
+
+addRow(
+  harborFurniture,
+  "crate",
+  330,
+  470,
+  5,
+  82,
+  65,
+  65
+);
+
+addColumn(
+  harborFurniture,
+  "bollard",
+  2260,
+  250,
+  6,
+  245,
+  42,
+  42
+);
+
+addRow(
+  harborFurniture,
+  "barrel",
+  400,
+  1460,
+  7,
+  72,
+  55,
+  55
+);
+
+
+// ============================================================
+// LABS
+// ============================================================
+
+const labsFurniture = [
+  {
+    type: "labtable",
+    x: 300,
+    y: 280,
+    w: 220,
+    h: 75,
+    solid: true
+  },
+  {
+    type: "labtable",
+    x: 720,
+    y: 320,
+    w: 220,
+    h: 75,
+    solid: true
+  },
+
+  {
+    type: "computer",
+    x: 730,
+    y: 475,
+    w: 170,
+    h: 70,
+    solid: true
+  },
+
+  {
+    type: "scanner",
+    x: 330,
+    y: 1390,
+    w: 180,
+    h: 110,
+    solid: true
+  },
+
+  {
+    type: "labtable",
+    x: 760,
+    y: 1420,
+    w: 220,
+    h: 75,
+    solid: true
+  },
+
+  {
+    type: "computer",
+    x: 1870,
+    y: 1260,
+    w: 170,
+    h: 70,
+    solid: true
+  },
+
+  {
+    type: "terminal",
+    x: 1420,
+    y: 500,
+    w: 90,
+    h: 70,
+    solid: true
+  },
+
+  {
+    type: "terminal",
+    x: 1410,
+    y: 1240,
+    w: 90,
+    h: 70,
+    solid: true
+  },
+
+  {
+    type: "locker",
+    x: 2450,
+    y: 1430,
+    w: 68,
+    h: 105,
+    solid: true
+  },
+
+  {
+    type: "locker",
+    x: 2540,
+    y: 1430,
+    w: 68,
+    h: 105,
+    solid: true
+  },
+
+  {
+    type: "powerbox",
+    x: 1160,
+    y: 930,
+    w: 52,
+    h: 78,
+    solid: true
+  },
+
+  {
+    type: "vent",
+    x: 1600,
+    y: 880,
+    w: 110,
+    h: 50,
+    solid: false
+  }
+];
+
+addColumn(
+  labsFurniture,
+  "serverrack",
+  1870,
+  265,
+  3,
+  115,
+  88,
+  95
+);
+
+addColumn(
+  labsFurniture,
+  "serverrack",
+  2480,
+  265,
+  3,
+  115,
+  88,
+  95
+);
+
+addRow(
+  labsFurniture,
+  "chair",
+  300,
+  450,
+  4,
+  120,
+  48,
+  48
+);
+
+addRow(
+  labsFurniture,
+  "chair",
+  1850,
+  1470,
+  4,
+  120,
+  48,
+  48
+);
+
+
+// ============================================================
+// MAPS
 // ============================================================
 
 const MAPS = {
   industry: {
     id: "industry",
+
     title: "INDUSTRIE",
-    subtitle: "Lagerhallen & Maschinenpark",
+
+    subtitle:
+      "Ducky Industrial District",
 
     width: 3000,
     height: 1900,
 
     colors: {
-      ground: "#b9b6ad",
-      grid: "rgba(60,55,48,0.09)",
-      wall: "#4d5052",
-      wallTop: "#727679",
-      door: "#db4049"
+      ground: "#adaaa3",
+      grid:
+        "rgba(55,50,45,0.08)",
+
+      wall: "#4e5153",
+      wallTop: "#777b7d"
     },
 
     spawnPoints: [
-      { x: 420, y: 950 },
-      { x: 700, y: 950 },
-      { x: 1400, y: 950 },
-      { x: 2250, y: 950 },
-      { x: 2600, y: 950 }
+      { x: 430, y: 950 },
+      { x: 720, y: 950 },
+      { x: 1450, y: 950 },
+      { x: 2250, y: 950 }
     ],
 
     walls: [
-      // Lagerhalle links
+      // Lagerhalle
       { x: 180, y: 170, w: 760, h: 34 },
       { x: 180, y: 170, w: 34, h: 540 },
       { x: 906, y: 170, w: 34, h: 540 },
@@ -39,7 +638,7 @@ const MAPS = {
       { x: 180, y: 676, w: 280, h: 34 },
       { x: 620, y: 676, w: 320, h: 34 },
 
-      // Lagerhalle rechts
+      // Maschinenhalle
       { x: 1840, y: 170, w: 900, h: 34 },
       { x: 1840, y: 170, w: 34, h: 540 },
       { x: 2706, y: 170, w: 34, h: 540 },
@@ -47,7 +646,7 @@ const MAPS = {
       { x: 1840, y: 676, w: 350, h: 34 },
       { x: 2350, y: 676, w: 390, h: 34 },
 
-      // Untere Werkstatt
+      // Werkstatt
       { x: 250, y: 1220, w: 950, h: 34 },
       { x: 250, y: 1220, w: 34, h: 470 },
       { x: 1166, y: 1220, w: 34, h: 470 },
@@ -55,7 +654,7 @@ const MAPS = {
       { x: 250, y: 1656, w: 380, h: 34 },
       { x: 800, y: 1656, w: 400, h: 34 },
 
-      // Unteres Büro
+      // Büro
       { x: 1810, y: 1210, w: 900, h: 34 },
       { x: 1810, y: 1210, w: 34, h: 480 },
       { x: 2676, y: 1210, w: 34, h: 480 },
@@ -63,10 +662,9 @@ const MAPS = {
       { x: 1810, y: 1656, w: 330, h: 34 },
       { x: 2300, y: 1656, w: 410, h: 34 },
 
-      // Kleine Innenwände
+      // Innenwände
       { x: 520, y: 350, w: 34, h: 220 },
       { x: 2070, y: 350, w: 330, h: 34 },
-
       { x: 2050, y: 1370, w: 34, h: 190 },
       { x: 2260, y: 1370, w: 280, h: 34 }
     ],
@@ -75,174 +673,69 @@ const MAPS = {
       {
         id: "industry-door-1",
         x: 460,
-        y: 666,
+        y: 676,
         w: 160,
-        h: 45,
-        direction: "horizontal"
+        h: 16,
+        hinge: "left"
       },
 
       {
         id: "industry-door-2",
         x: 2190,
-        y: 666,
+        y: 676,
         w: 160,
-        h: 45,
-        direction: "horizontal"
+        h: 16,
+        hinge: "right"
       },
 
       {
         id: "industry-door-3",
         x: 630,
-        y: 1646,
+        y: 1656,
         w: 170,
-        h: 45,
-        direction: "horizontal"
+        h: 16,
+        hinge: "left"
       },
 
       {
         id: "industry-door-4",
         x: 2140,
-        y: 1646,
+        y: 1656,
         w: 160,
-        h: 45,
-        direction: "horizontal"
+        h: 16,
+        hinge: "right"
       }
     ],
 
-    furniture: [
+    furniture:
+      industryFurniture,
+
+    interactables: [
       {
-        type: "machine",
-        x: 300,
-        y: 300,
-        w: 150,
-        h: 90,
-        solid: true
+        id: "industry-power",
+        type: "power",
+        x: 1135,
+        y: 940,
+        radius: 105,
+        label: "Stromkasten"
       },
 
       {
-        type: "machine",
-        x: 670,
-        y: 290,
-        w: 150,
-        h: 90,
-        solid: true
+        id: "industry-vent",
+        type: "vent",
+        x: 900,
+        y: 845,
+        radius: 100,
+        label: "Lüftungsschacht"
       },
 
       {
-        type: "machine",
-        x: 670,
-        y: 470,
-        w: 150,
-        h: 90,
-        solid: true
-      },
-
-      {
-        type: "crate",
-        x: 270,
-        y: 500,
-        w: 65,
-        h: 65,
-        solid: true
-      },
-
-      {
-        type: "crate",
-        x: 345,
-        y: 500,
-        w: 65,
-        h: 65,
-        solid: true
-      },
-
-      {
-        type: "crate",
-        x: 270,
-        y: 575,
-        w: 65,
-        h: 65,
-        solid: true
-      },
-
-      {
-        type: "shelf",
-        x: 1980,
-        y: 280,
-        w: 95,
-        h: 300,
-        solid: true
-      },
-
-      {
-        type: "shelf",
-        x: 2170,
-        y: 280,
-        w: 95,
-        h: 300,
-        solid: true
-      },
-
-      {
-        type: "shelf",
-        x: 2480,
-        y: 280,
-        w: 95,
-        h: 300,
-        solid: true
-      },
-
-      {
-        type: "workbench",
-        x: 390,
-        y: 1350,
-        w: 280,
-        h: 80,
-        solid: true
-      },
-
-      {
-        type: "workbench",
-        x: 750,
-        y: 1450,
-        w: 260,
-        h: 80,
-        solid: true
-      },
-
-      {
-        type: "desk",
-        x: 1950,
-        y: 1320,
-        w: 180,
-        h: 80,
-        solid: true
-      },
-
-      {
-        type: "desk",
-        x: 2350,
-        y: 1480,
-        w: 180,
-        h: 80,
-        solid: true
-      },
-
-      {
-        type: "chair",
-        x: 2000,
-        y: 1420,
-        w: 55,
-        h: 55,
-        solid: true
-      },
-
-      {
-        type: "chair",
-        x: 2400,
-        y: 1400,
-        w: 55,
-        h: 55,
-        solid: true
+        id: "industry-locker",
+        type: "hide",
+        x: 1975,
+        y: 1500,
+        radius: 100,
+        label: "Spind"
       }
     ],
 
@@ -252,15 +745,15 @@ const MAPS = {
         name: "Lagerhalle",
         x: 600,
         y: 430,
-        radius: 110
+        radius: 115
       },
 
       {
         id: "machines",
         name: "Maschinenpark",
-        x: 2240,
+        x: 2250,
         y: 430,
-        radius: 110
+        radius: 115
       },
 
       {
@@ -268,30 +761,37 @@ const MAPS = {
         name: "Werkstatt",
         x: 700,
         y: 1450,
-        radius: 110
+        radius: 115
       }
     ]
   },
 
 
-  // ==========================================================
-  // HAFEN
-  // ==========================================================
-
   harbor: {
     id: "harbor",
+
     title: "HAFEN",
-    subtitle: "Containerterminal",
+
+    subtitle:
+      "Ducky Harbor Terminal",
 
     width: 3200,
     height: 1900,
 
     colors: {
-      ground: "#9da4a1",
-      grid: "rgba(40,55,55,0.08)",
-      wall: "#51595c",
-      wallTop: "#747f82",
-      door: "#3988ac"
+      ground: "#999f9c",
+      grid:
+        "rgba(35,45,45,0.08)",
+
+      wall: "#50585b",
+      wallTop: "#778184"
+    },
+
+    water: {
+      x: 2440,
+      y: 0,
+      w: 760,
+      h: 1900
     },
 
     spawnPoints: [
@@ -301,15 +801,7 @@ const MAPS = {
       { x: 1800, y: 900 }
     ],
 
-    water: {
-      x: 2440,
-      y: 0,
-      w: 760,
-      h: 1900
-    },
-
     walls: [
-      // Lagerhaus
       { x: 180, y: 180, w: 900, h: 34 },
       { x: 180, y: 180, w: 34, h: 520 },
       { x: 1046, y: 180, w: 34, h: 520 },
@@ -317,7 +809,6 @@ const MAPS = {
       { x: 180, y: 666, w: 340, h: 34 },
       { x: 700, y: 666, w: 380, h: 34 },
 
-      // Hafenbüro
       { x: 1450, y: 250, w: 600, h: 34 },
       { x: 1450, y: 250, w: 34, h: 400 },
       { x: 2016, y: 250, w: 34, h: 400 },
@@ -325,7 +816,6 @@ const MAPS = {
       { x: 1450, y: 616, w: 210, h: 34 },
       { x: 1820, y: 616, w: 230, h: 34 },
 
-      // Unteres Lager
       { x: 300, y: 1290, w: 1100, h: 34 },
       { x: 300, y: 1290, w: 34, h: 430 },
       { x: 1366, y: 1290, w: 34, h: 430 },
@@ -341,165 +831,69 @@ const MAPS = {
       {
         id: "harbor-door-1",
         x: 520,
-        y: 656,
+        y: 666,
         w: 180,
-        h: 45,
-        direction: "horizontal"
+        h: 16,
+        hinge: "left"
       },
 
       {
         id: "harbor-door-2",
         x: 1660,
-        y: 606,
+        y: 616,
         w: 160,
-        h: 45,
-        direction: "horizontal"
+        h: 16,
+        hinge: "right"
       },
 
       {
         id: "harbor-door-3",
         x: 730,
-        y: 1676,
+        y: 1686,
         w: 170,
-        h: 45,
-        direction: "horizontal"
+        h: 16,
+        hinge: "left"
       }
     ],
 
-    furniture: [
-      {
-        type: "container-red",
-        x: 1250,
-        y: 800,
-        w: 260,
-        h: 95,
-        solid: true
-      },
+    furniture:
+      harborFurniture,
 
+    interactables: [
       {
-        type: "container-blue",
-        x: 1570,
-        y: 820,
-        w: 260,
-        h: 95,
-        solid: true
-      },
-
-      {
-        type: "container-yellow",
+        id: "harbor-radio",
+        type: "radio",
         x: 1900,
-        y: 790,
-        w: 260,
-        h: 95,
-        solid: true
+        y: 380,
+        radius: 100,
+        label: "Hafenfunk"
       },
 
       {
-        type: "container-blue",
-        x: 1270,
-        y: 980,
-        w: 260,
-        h: 95,
-        solid: true
+        id: "harbor-power",
+        type: "power",
+        x: 2205,
+        y: 1260,
+        radius: 105,
+        label: "Stromkasten"
       },
 
       {
-        type: "container-red",
-        x: 1620,
-        y: 1030,
-        w: 260,
-        h: 95,
-        solid: true
+        id: "harbor-vent",
+        type: "vent",
+        x: 1000,
+        y: 585,
+        radius: 100,
+        label: "Lüftung"
       },
 
       {
-        type: "pallet",
-        x: 330,
-        y: 320,
-        w: 90,
-        h: 90,
-        solid: true
-      },
-
-      {
-        type: "pallet",
-        x: 470,
-        y: 320,
-        w: 90,
-        h: 90,
-        solid: true
-      },
-
-      {
-        type: "crate",
-        x: 750,
-        y: 480,
-        w: 70,
-        h: 70,
-        solid: true
-      },
-
-      {
-        type: "desk",
-        x: 1570,
-        y: 350,
-        w: 190,
-        h: 75,
-        solid: true
-      },
-
-      {
-        type: "desk",
-        x: 1770,
-        y: 470,
-        w: 170,
-        h: 75,
-        solid: true
-      },
-
-      {
-        type: "forklift",
-        x: 650,
-        y: 1020,
-        w: 130,
-        h: 85,
-        solid: true
-      },
-
-      {
-        type: "forklift",
-        x: 2050,
-        y: 1320,
-        w: 130,
-        h: 85,
-        solid: true
-      },
-
-      {
-        type: "bollard",
-        x: 2250,
-        y: 300,
-        w: 40,
-        h: 40,
-        solid: true
-      },
-
-      {
-        type: "bollard",
-        x: 2250,
-        y: 600,
-        w: 40,
-        h: 40,
-        solid: true
-      },
-
-      {
-        type: "bollard",
-        x: 2250,
-        y: 1200,
-        w: 40,
-        h: 40,
-        solid: true
+        id: "harbor-locker",
+        type: "hide",
+        x: 1550,
+        y: 550,
+        radius: 100,
+        label: "Metallschrank"
       }
     ],
 
@@ -509,7 +903,7 @@ const MAPS = {
         name: "Hafenlager",
         x: 650,
         y: 430,
-        radius: 110
+        radius: 115
       },
 
       {
@@ -531,24 +925,24 @@ const MAPS = {
   },
 
 
-  // ==========================================================
-  // LABS
-  // ==========================================================
-
   labs: {
     id: "labs",
+
     title: "LABS",
-    subtitle: "Ducky Research Complex",
+
+    subtitle:
+      "Ducky Research Complex",
 
     width: 2900,
     height: 1850,
 
     colors: {
-      ground: "#d6d9dc",
-      grid: "rgba(70,80,90,0.075)",
+      ground: "#d4d7da",
+      grid:
+        "rgba(70,80,90,0.07)",
+
       wall: "#626d75",
-      wallTop: "#929da5",
-      door: "#755de0"
+      wallTop: "#98a3ab"
     },
 
     spawnPoints: [
@@ -558,7 +952,6 @@ const MAPS = {
     ],
 
     walls: [
-      // Nordwest Labor
       { x: 180, y: 160, w: 980, h: 32 },
       { x: 180, y: 160, w: 32, h: 560 },
       { x: 1128, y: 160, w: 32, h: 560 },
@@ -566,7 +959,6 @@ const MAPS = {
       { x: 180, y: 688, w: 390, h: 32 },
       { x: 750, y: 688, w: 410, h: 32 },
 
-      // Nordost
       { x: 1740, y: 160, w: 980, h: 32 },
       { x: 1740, y: 160, w: 32, h: 560 },
       { x: 2688, y: 160, w: 32, h: 560 },
@@ -574,7 +966,6 @@ const MAPS = {
       { x: 1740, y: 688, w: 390, h: 32 },
       { x: 2210, y: 688, w: 510, h: 32 },
 
-      // Südwest
       { x: 180, y: 1130, w: 980, h: 32 },
       { x: 180, y: 1130, w: 32, h: 540 },
       { x: 1128, y: 1130, w: 32, h: 540 },
@@ -582,7 +973,6 @@ const MAPS = {
       { x: 180, y: 1638, w: 400, h: 32 },
       { x: 760, y: 1638, w: 400, h: 32 },
 
-      // Südost
       { x: 1740, y: 1130, w: 980, h: 32 },
       { x: 1740, y: 1130, w: 32, h: 540 },
       { x: 2688, y: 1130, w: 32, h: 540 },
@@ -590,7 +980,6 @@ const MAPS = {
       { x: 1740, y: 1638, w: 410, h: 32 },
       { x: 2330, y: 1638, w: 390, h: 32 },
 
-      // Innenwände
       { x: 600, y: 300, w: 32, h: 270 },
       { x: 1950, y: 320, w: 500, h: 32 },
 
@@ -602,129 +991,87 @@ const MAPS = {
       {
         id: "labs-door-1",
         x: 570,
-        y: 678,
+        y: 688,
         w: 180,
-        h: 43,
-        direction: "horizontal"
+        h: 16,
+        hinge: "left"
       },
 
       {
         id: "labs-door-2",
         x: 2030,
-        y: 678,
+        y: 688,
         w: 180,
-        h: 43,
-        direction: "horizontal"
+        h: 16,
+        hinge: "right"
       },
 
       {
         id: "labs-door-3",
         x: 580,
-        y: 1628,
+        y: 1638,
         w: 180,
-        h: 43,
-        direction: "horizontal"
+        h: 16,
+        hinge: "left"
       },
 
       {
         id: "labs-door-4",
         x: 2150,
-        y: 1628,
+        y: 1638,
         w: 180,
-        h: 43,
-        direction: "horizontal"
+        h: 16,
+        hinge: "right"
       }
     ],
 
-    furniture: [
+    furniture:
+      labsFurniture,
+
+    interactables: [
       {
-        type: "labtable",
-        x: 300,
-        y: 280,
-        w: 220,
-        h: 75,
-        solid: true
+        id: "labs-terminal-a",
+        type: "terminal",
+        x: 1460,
+        y: 535,
+        radius: 100,
+        label: "Forschungsterminal"
       },
 
       {
-        type: "labtable",
-        x: 720,
-        y: 320,
-        w: 220,
-        h: 75,
-        solid: true
+        id: "labs-terminal-b",
+        type: "terminal",
+        x: 1450,
+        y: 1275,
+        radius: 100,
+        label: "Systemterminal"
       },
 
       {
-        type: "computer",
-        x: 730,
-        y: 470,
-        w: 170,
-        h: 70,
-        solid: true
+        id: "labs-power",
+        type: "power",
+        x: 1185,
+        y: 965,
+        radius: 100,
+        label: "Hauptstrom"
       },
 
       {
-        type: "serverrack",
-        x: 1880,
-        y: 280,
-        w: 90,
-        h: 240,
-        solid: true
+        id: "labs-vent",
+        type: "vent",
+        x: 1650,
+        y: 905,
+        radius: 100,
+        label: "Lüftungsschacht"
       },
 
       {
-        type: "serverrack",
-        x: 2500,
-        y: 280,
-        w: 90,
-        h: 240,
-        solid: true
-      },
-
-      {
-        type: "labtable",
-        x: 2150,
-        y: 430,
-        w: 230,
-        h: 75,
-        solid: true
-      },
-
-      {
-        type: "scanner",
-        x: 330,
-        y: 1400,
-        w: 180,
-        h: 110,
-        solid: true
-      },
-
-      {
-        type: "labtable",
-        x: 760,
-        y: 1420,
-        w: 220,
-        h: 75,
-        solid: true
-      },
-
-      {
-        type: "computer",
-        x: 1870,
-        y: 1260,
-        w: 170,
-        h: 70,
-        solid: true
-      },
-
-      {
-        type: "serverrack",
-        x: 2400,
-        y: 1320,
-        w: 90,
-        h: 230,
-        solid: true
+        id: "labs-locker",
+        type: "hide",
+        x: 2485,
+        y: 1480,
+        radius: 105,
+        label: "Laborschrank"
       }
     ],
 
