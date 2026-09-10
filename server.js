@@ -1,16 +1,9 @@
 "use strict";
 
-const http =
-  require("node:http");
-
-const fs =
-  require("node:fs");
-
-const path =
-  require("node:path");
-
-const crypto =
-  require("node:crypto");
+const http = require("node:http");
+const fs = require("node:fs");
+const path = require("node:path");
+const crypto = require("node:crypto");
 
 const {
   WebSocketServer,
@@ -21,10 +14,6 @@ const {
   MAPS
 } = require("./maps");
 
-
-// ============================================================
-// CONFIG
-// ============================================================
 
 const PORT =
   Number(process.env.PORT) ||
@@ -40,29 +29,43 @@ const TICK_MS =
 const PLAYER = {
   radius: 18,
 
-  // Normales Laufen absichtlich langsamer.
-  baseSpeed: 185,
+  maxHp: 100,
 
-  acceleration: 1200,
+  baseSpeed: 175,
 
-  airAcceleration: 720,
+  groundAcceleration: 1300,
 
-  // Bunnyhop kann bis ungefähr 2x Speed gehen.
-  bunnyhopGain: 0.18,
+  groundBrake: 1600,
 
-  bunnyhopMax: 1.0,
+  airAcceleration: 260,
 
-  bunnyhopDecay: 0.025,
+  airBrake: 35,
 
-  bunnyhopWindow: 520,
+  jumpBaseLaunch: 285,
+
+  jumpChainBonus: 24,
+
+  jumpMaxLaunch: 355,
 
   jumpDuration: 430,
 
   jumpBuffer: 180,
 
+  bunnyhopWindow: 500,
+
+  bunnyhopMaxChain: 4,
+
+  speedPotionMultiplier: 1.3,
+
+  speedPotionDuration: 10000,
+
+  healPotionAmount: 35,
+
   doorDistance: 145,
 
-  interactDistance: 120
+  interactDistance: 135,
+
+  vendingCooldown: 2500
 };
 
 
@@ -77,7 +80,8 @@ const players =
   new Map();
 
 
-const mapStates = {};
+const mapStates =
+  {};
 
 
 // ============================================================
@@ -85,8 +89,10 @@ const mapStates = {};
 // ============================================================
 
 for (
-  const [mapId, map]
-  of Object.entries(MAPS)
+  const [
+    mapId,
+    map
+  ] of Object.entries(MAPS)
 ) {
   mapStates[mapId] = {
     doors: {},
@@ -95,7 +101,11 @@ for (
 
     powerOn: true,
 
-    interactables: {}
+    alarmOn: false,
+
+    interactables: {},
+
+    noise: null
   };
 
 
@@ -109,7 +119,6 @@ for (
       door.id
     ] = {
       open: false,
-
       amount: 0
     };
   }
@@ -124,7 +133,9 @@ for (
     ].interactables[
       item.id
     ] = {
-      active: false
+      active: false,
+      count: 0,
+      lastUsedAt: 0
     };
   }
 }
@@ -134,11 +145,7 @@ for (
 // HELPERS
 // ============================================================
 
-function clamp(
-  value,
-  min,
-  max
-) {
+function clamp(value, min, max) {
   return Math.max(
     min,
     Math.min(
@@ -149,11 +156,7 @@ function clamp(
 }
 
 
-function moveToward(
-  current,
-  target,
-  amount
-) {
+function moveToward(current, target, amount) {
   if (
     Math.abs(
       target -
@@ -175,9 +178,33 @@ function moveToward(
 }
 
 
-function sanitizeName(
-  value
-) {
+function normalize(x, y) {
+  const length =
+    Math.hypot(
+      x,
+      y
+    );
+
+
+  if (
+    length <
+    0.0001
+  ) {
+    return {
+      x: 0,
+      y: 1
+    };
+  }
+
+
+  return {
+    x: x / length,
+    y: y / length
+  };
+}
+
+
+function sanitizeName(value) {
   if (
     typeof value !==
     "string"
@@ -193,16 +220,16 @@ function sanitizeName(
         ""
       )
       .trim()
-      .slice(0, 20)
-      ||
-      "Spieler"
+      .slice(
+        0,
+        20
+      ) ||
+    "Spieler"
   );
 }
 
 
-function randomSpawn(
-  map
-) {
+function randomSpawn(map) {
   return map.spawnPoints[
     Math.floor(
       Math.random() *
@@ -236,6 +263,9 @@ function createPlayer() {
     inputX: 0,
     inputY: 0,
 
+    lastDirX: 0,
+    lastDirY: 1,
+
     airborne: false,
 
     jumpStartedAt: 0,
@@ -246,12 +276,18 @@ function createPlayer() {
 
     jumpQueuedUntil: 0,
 
-    bunnyhop: 0,
+    bunnyhopChain: 0,
 
     hidden: false,
 
-    hiddenAt:
-      null,
+    hiddenAt: null,
+
+    hp:
+      PLAYER.maxHp,
+
+    speedBoostUntil: 0,
+
+    fish: 0,
 
     coins: 0,
 
@@ -262,6 +298,22 @@ function createPlayer() {
     visitedCheckpoints:
       new Set()
   };
+}
+
+
+// ============================================================
+// FUTURE MONSTER AI
+//
+// Wenn später Monster eingebaut werden, müssen sie Spieler,
+// die hier false zurückgeben, nicht verfolgen.
+// ============================================================
+
+function isPlayerVisibleToAI(player) {
+  return (
+    !player.hidden &&
+    player.hp > 0 &&
+    Boolean(player.mapId)
+  );
 }
 
 
@@ -279,7 +331,8 @@ function circleHitsRect(
     clamp(
       x,
       rect.x,
-      rect.x + rect.w
+      rect.x +
+      rect.w
     );
 
 
@@ -287,21 +340,26 @@ function circleHitsRect(
     clamp(
       y,
       rect.y,
-      rect.y + rect.h
+      rect.y +
+      rect.h
     );
 
 
   const dx =
-    x - nearestX;
+    x -
+    nearestX;
+
 
   const dy =
-    y - nearestY;
+    y -
+    nearestY;
 
 
   return (
     dx * dx +
     dy * dy
-  ) < radius * radius;
+  ) <
+  radius * radius;
 }
 
 
@@ -404,9 +462,10 @@ function isBlocked(
       ];
 
 
-    // Ab etwa 55 % Öffnung kann man hindurch.
     if (
-      doorState.amount < 0.55 &&
+      doorState.amount <
+        0.58 &&
+
       circleHitsRect(
         x,
         y,
@@ -424,13 +483,10 @@ function isBlocked(
 
 
 // ============================================================
-// NETWORK HELPERS
+// NETWORK
 // ============================================================
 
-function send(
-  socket,
-  message
-) {
+function send(socket, message) {
   if (
     socket.readyState !==
     WebSocket.OPEN
@@ -449,8 +505,7 @@ function send(
 
 function sendGlobalStatus() {
   const message = {
-    type:
-      "status",
+    type: "status",
 
     online:
       players.size
@@ -469,14 +524,18 @@ function sendGlobalStatus() {
 }
 
 
-function createMapState(
-  mapId
-) {
+function createMapState(mapId) {
   const now =
     Date.now();
 
 
-  const resultPlayers =
+  const state =
+    mapStates[
+      mapId
+    ];
+
+
+  const outputPlayers =
     [];
 
 
@@ -516,11 +575,11 @@ function createMapState(
           progress *
           Math.PI
         ) *
-        30;
+        31;
     }
 
 
-    resultPlayers.push({
+    outputPlayers.push({
       id:
         player.id,
 
@@ -541,22 +600,32 @@ function createMapState(
 
       jumpHeight,
 
-      bunnyhop:
-        player.bunnyhop,
+      airborne:
+        player.airborne,
+
+      bunnyhopChain:
+        player.bunnyhopChain,
 
       hidden:
         player.hidden,
+
+      hp:
+        player.hp,
+
+      maxHp:
+        PLAYER.maxHp,
+
+      fish:
+        player.fish,
+
+      speedBoosted:
+        player.speedBoostUntil >
+        now,
 
       coins:
         player.coins
     });
   }
-
-
-  const mapState =
-    mapStates[
-      mapId
-    ];
 
 
   return {
@@ -566,28 +635,32 @@ function createMapState(
     mapId,
 
     players:
-      resultPlayers,
+      outputPlayers,
 
     doors:
-      mapState.doors,
+      state.doors,
 
     worldState: {
       lightsOn:
-        mapState.lightsOn,
+        state.lightsOn,
 
       powerOn:
-        mapState.powerOn,
+        state.powerOn,
+
+      alarmOn:
+        state.alarmOn,
 
       interactables:
-        mapState.interactables
+        state.interactables,
+
+      noise:
+        state.noise
     }
   };
 }
 
 
-function broadcastMap(
-  mapId
-) {
+function broadcastMap(mapId) {
   if (!mapId) {
     return;
   }
@@ -655,7 +728,7 @@ function reward(
 
 
 // ============================================================
-// JOIN MAP
+// JOIN
 // ============================================================
 
 function joinMap(
@@ -694,6 +767,7 @@ function joinMap(
   player.y =
     spawn.y;
 
+
   player.vx = 0;
   player.vy = 0;
 
@@ -703,10 +777,17 @@ function joinMap(
   player.airborne =
     false;
 
-  player.bunnyhop = 0;
+  player.bunnyhopChain =
+    0;
 
   player.hidden =
     false;
+
+  player.hiddenAt =
+    null;
+
+  player.hp =
+    PLAYER.maxHp;
 
 
   send(
@@ -724,7 +805,16 @@ function joinMap(
     socket,
     {
       type:
-        "rewardState",
+        "playerState",
+
+      hp:
+        player.hp,
+
+      maxHp:
+        PLAYER.maxHp,
+
+      fish:
+        player.fish,
 
       coins:
         player.coins
@@ -734,7 +824,8 @@ function joinMap(
 
   if (
     oldMap &&
-    oldMap !== mapId
+    oldMap !==
+    mapId
   ) {
     broadcastMap(
       oldMap
@@ -749,12 +840,10 @@ function joinMap(
 
 
 // ============================================================
-// AUTOMATIC DOORS
+// DOORS
 // ============================================================
 
-function updateDoors(
-  dt
-) {
+function updateDoors(dt) {
   for (
     const [
       mapId,
@@ -776,12 +865,14 @@ function updateDoors(
     ) {
       const centerX =
         door.x +
-        door.w / 2;
+        door.w /
+        2;
 
 
       const centerY =
         door.y +
-        door.h / 2;
+        door.h /
+        2;
 
 
       let shouldOpen =
@@ -794,7 +885,8 @@ function updateDoors(
       ) {
         if (
           player.mapId !==
-          mapId
+          mapId ||
+          player.hidden
         ) {
           continue;
         }
@@ -840,7 +932,8 @@ function updateDoors(
             ? 1
             : 0,
 
-          2.8 * dt
+          2.7 *
+          dt
         );
     }
   }
@@ -857,8 +950,16 @@ function attemptJump(
 ) {
   if (
     player.airborne ||
+    player.hidden ||
+    player.hp <= 0
+  ) {
+    return;
+  }
+
+
+  if (
     player.jumpQueuedUntil <
-      now
+    now
   ) {
     return;
   }
@@ -868,37 +969,93 @@ function attemptJump(
     0;
 
 
-  const moving =
+  const inputLength =
     Math.hypot(
       player.inputX,
       player.inputY
-    ) > 0.15;
+    );
 
 
-  const quickHop =
-    (
-      player.landedAt ===
-      0
-    ) ||
-    (
-      now -
+  let direction;
+
+
+  if (
+    inputLength >
+    0.12
+  ) {
+    direction =
+      normalize(
+        player.inputX,
+        player.inputY
+      );
+
+
+    player.lastDirX =
+      direction.x;
+
+    player.lastDirY =
+      direction.y;
+  } else {
+    direction =
+      normalize(
+        player.lastDirX,
+        player.lastDirY
+      );
+  }
+
+
+  const chained =
+    player.landedAt >
+      0 &&
+
+    now -
       player.landedAt <=
-      PLAYER.bunnyhopWindow
+      PLAYER.bunnyhopWindow;
+
+
+  if (
+    chained
+  ) {
+    player.bunnyhopChain =
+      Math.min(
+        PLAYER.bunnyhopMaxChain,
+
+        player.bunnyhopChain +
+          1
+      );
+  } else {
+    player.bunnyhopChain =
+      0;
+  }
+
+
+  let launchSpeed =
+    Math.min(
+      PLAYER.jumpMaxLaunch,
+
+      PLAYER.jumpBaseLaunch +
+      player.bunnyhopChain *
+      PLAYER.jumpChainBonus
     );
 
 
   if (
-    moving &&
-    quickHop
+    player.speedBoostUntil >
+    now
   ) {
-    player.bunnyhop =
-      Math.min(
-        PLAYER.bunnyhopMax,
-
-        player.bunnyhop +
-        PLAYER.bunnyhopGain
-      );
+    launchSpeed *=
+      PLAYER.speedPotionMultiplier;
   }
+
+
+  player.vx =
+    direction.x *
+    launchSpeed;
+
+
+  player.vy =
+    direction.y *
+    launchSpeed;
 
 
   player.airborne =
@@ -951,7 +1108,9 @@ function checkCheckpoints(
       checkpoint.radius
     ) {
       player.visitedCheckpoints
-        .add(key);
+        .add(
+          key
+        );
 
 
       reward(
@@ -987,7 +1146,7 @@ function findNearestInteraction(
     null;
 
 
-  let nearestDistance =
+  let bestDistance =
     Infinity;
 
 
@@ -1010,13 +1169,13 @@ function findNearestInteraction(
         PLAYER.interactDistance &&
 
       distance <
-        nearestDistance
+        bestDistance
     ) {
       nearest =
         item;
 
 
-      nearestDistance =
+      bestDistance =
         distance;
     }
   }
@@ -1026,12 +1185,172 @@ function findNearestInteraction(
 }
 
 
+// ============================================================
+// VENDING MACHINE
+// 1 / 3 HEAL
+// 1 / 3 SPEED
+// 1 / 3 FISH
+// ============================================================
+
+function useVendingMachine(
+  socket,
+  player,
+  item,
+  itemState
+) {
+  const now =
+    Date.now();
+
+
+  if (
+    now -
+    itemState.lastUsedAt <
+    PLAYER.vendingCooldown
+  ) {
+    send(
+      socket,
+      {
+        type:
+          "interactionMessage",
+
+        text:
+          "Der Automat braucht kurz."
+      }
+    );
+
+    return;
+  }
+
+
+  itemState.lastUsedAt =
+    now;
+
+
+  const roll =
+    crypto.randomInt(
+      0,
+      3
+    );
+
+
+  if (
+    roll === 0
+  ) {
+    const before =
+      player.hp;
+
+
+    player.hp =
+      Math.min(
+        PLAYER.maxHp,
+
+        player.hp +
+        PLAYER.healPotionAmount
+      );
+
+
+    const healed =
+      player.hp -
+      before;
+
+
+    send(
+      socket,
+      {
+        type:
+          "vendingLoot",
+
+        loot:
+          "heal",
+
+        hp:
+          player.hp,
+
+        maxHp:
+          PLAYER.maxHp,
+
+        text:
+          healed > 0
+            ? `Grüner Heiltrank: +${healed} HP`
+            : "Grüner Heiltrank – HP bereits voll."
+      }
+    );
+
+    return;
+  }
+
+
+  if (
+    roll === 1
+  ) {
+    player.speedBoostUntil =
+      now +
+      PLAYER.speedPotionDuration;
+
+
+    send(
+      socket,
+      {
+        type:
+          "vendingLoot",
+
+        loot:
+          "speed",
+
+        duration:
+          PLAYER.speedPotionDuration,
+
+        hp:
+          player.hp,
+
+        maxHp:
+          PLAYER.maxHp,
+
+        text:
+          "Grüner Geschwindigkeitstrank: 10 Sekunden schneller!"
+      }
+    );
+
+    return;
+  }
+
+
+  player.fish +=
+    1;
+
+
+  send(
+    socket,
+    {
+      type:
+        "vendingLoot",
+
+      loot:
+        "fish",
+
+      fish:
+        player.fish,
+
+      hp:
+        player.hp,
+
+      maxHp:
+        PLAYER.maxHp,
+
+      text:
+        `Fisch erhalten. Du hast jetzt ${player.fish}.`
+    }
+  );
+}
+
+
 function interact(
   socket,
   player
 ) {
   if (
-    !player.mapId
+    !player.mapId ||
+    player.hp <= 0
   ) {
     return;
   }
@@ -1044,7 +1363,7 @@ function interact(
   if (
     now -
     player.lastInteraction <
-    350
+    280
   ) {
     return;
   }
@@ -1088,6 +1407,155 @@ function interact(
     ];
 
 
+  itemState.count +=
+    1;
+
+
+  // ========================================================
+  // HIDING
+  // ========================================================
+
+  if (
+    item.type ===
+    "hide"
+  ) {
+    if (
+      player.hidden &&
+      player.hiddenAt !==
+      item.id
+    ) {
+      player.hidden =
+        false;
+
+      player.hiddenAt =
+        null;
+    } else {
+      player.hidden =
+        !player.hidden;
+
+      player.hiddenAt =
+        player.hidden
+          ? item.id
+          : null;
+    }
+
+
+    player.vx = 0;
+    player.vy = 0;
+
+
+    send(
+      socket,
+      {
+        type:
+          "interactionMessage",
+
+        text:
+          player.hidden
+            ? `${item.label}: Du bist versteckt.`
+            : "Du kommst aus dem Versteck."
+      }
+    );
+
+
+    broadcastMap(
+      player.mapId
+    );
+
+    return;
+  }
+
+
+  // Aus Versteck raus, sobald etwas anderes benutzt wird.
+  if (
+    player.hidden
+  ) {
+    player.hidden =
+      false;
+
+    player.hiddenAt =
+      null;
+  }
+
+
+  // ========================================================
+  // VENDING
+  // ========================================================
+
+  if (
+    item.type ===
+    "vending"
+  ) {
+    useVendingMachine(
+      socket,
+      player,
+      item,
+      itemState
+    );
+
+
+    broadcastMap(
+      player.mapId
+    );
+
+    return;
+  }
+
+
+  // ========================================================
+  // BELL / NOISE
+  // ========================================================
+
+  if (
+    item.type ===
+    "bell"
+  ) {
+    state.noise = {
+      type:
+        "bell",
+
+      x:
+        item.x,
+
+      y:
+        item.y,
+
+      time:
+        now,
+
+      strength:
+        1
+    };
+
+
+    itemState.active =
+      true;
+
+
+    send(
+      socket,
+      {
+        type:
+          "interactionMessage",
+
+        text:
+          "DING! Die Glocke ist weit zu hören."
+      }
+    );
+
+
+    broadcastMap(
+      player.mapId
+    );
+
+    return;
+  }
+
+
+  // ========================================================
+  // POWER
+  // ========================================================
+
   if (
     item.type ===
     "power"
@@ -1112,19 +1580,27 @@ function interact(
 
         text:
           state.powerOn
-            ? "Strom eingeschaltet."
-            : "Strom ausgeschaltet."
+            ? "Hauptstrom eingeschaltet."
+            : "Hauptstrom ausgeschaltet."
       }
     );
   }
 
 
+  // ========================================================
+  // LIGHT
+  // ========================================================
+
   if (
     item.type ===
-    "vent"
+    "light"
   ) {
+    state.lightsOn =
+      !state.lightsOn;
+
+
     itemState.active =
-      !itemState.active;
+      !state.lightsOn;
 
 
     send(
@@ -1134,80 +1610,49 @@ function interact(
           "interactionMessage",
 
         text:
-          itemState.active
-            ? "Lüftung geöffnet."
-            : "Lüftung geschlossen."
+          state.lightsOn
+            ? "Beleuchtung eingeschaltet."
+            : "Beleuchtung ausgeschaltet."
       }
     );
   }
 
 
+  // ========================================================
+  // ALARM
+  // ========================================================
+
   if (
     item.type ===
-    "radio"
+    "alarm"
   ) {
+    state.alarmOn =
+      !state.alarmOn;
+
+
     itemState.active =
-      !itemState.active;
-
-
-    send(
-      socket,
-      {
-        type:
-          "interactionMessage",
-
-        text:
-          itemState.active
-            ? "Hafenfunk eingeschaltet."
-            : "Hafenfunk ausgeschaltet."
-      }
-    );
-  }
-
-
-  if (
-    item.type ===
-    "terminal"
-  ) {
-    itemState.active =
-      !itemState.active;
-
-
-    send(
-      socket,
-      {
-        type:
-          "interactionMessage",
-
-        text:
-          itemState.active
-            ? "Terminal aktiviert."
-            : "Terminal gesperrt."
-      }
-    );
-  }
-
-
-  if (
-    item.type ===
-    "hide"
-  ) {
-    player.hidden =
-      !player.hidden;
-
-
-    player.vx = 0;
-    player.vy = 0;
+      state.alarmOn;
 
 
     if (
-      player.hidden
+      state.alarmOn
     ) {
-      player.hiddenAt =
-        item.id;
-    } else {
-      player.hiddenAt =
-        null;
+      state.noise = {
+        type:
+          "alarm",
+
+        x:
+          item.x,
+
+        y:
+          item.y,
+
+        time:
+          now,
+
+        strength:
+          1.6
+      };
     }
 
 
@@ -1218,9 +1663,97 @@ function interact(
           "interactionMessage",
 
         text:
-          player.hidden
-            ? "Du versteckst dich."
-            : "Du kommst aus dem Versteck."
+          state.alarmOn
+            ? "Alarm aktiviert."
+            : "Alarm deaktiviert."
+      }
+    );
+  }
+
+
+  const simpleToggleMessages = {
+    generator: [
+      "Generator gestoppt.",
+      "Generator gestartet."
+    ],
+
+    conveyor: [
+      "Förderband gestoppt.",
+      "Förderband gestartet."
+    ],
+
+    fan: [
+      "Ventilator gestoppt.",
+      "Ventilator gestartet."
+    ],
+
+    radio: [
+      "Hafenfunk ausgeschaltet.",
+      "Hafenfunk eingeschaltet."
+    ],
+
+    crane: [
+      "Kransteuerung deaktiviert.",
+      "Kransteuerung aktiviert."
+    ],
+
+    terminal: [
+      "Terminal gesperrt.",
+      "Terminal entsperrt."
+    ],
+
+    server: [
+      "Serverdiagnose beendet.",
+      "Serverdiagnose gestartet."
+    ],
+
+    samples: [
+      "Probe zurückgestellt.",
+      "Probe entnommen."
+    ]
+  };
+
+
+  if (
+    simpleToggleMessages[
+      item.type
+    ]
+  ) {
+    itemState.active =
+      !itemState.active;
+
+
+    send(
+      socket,
+      {
+        type:
+          "interactionMessage",
+
+        text:
+          simpleToggleMessages[
+            item.type
+          ][
+            itemState.active
+              ? 1
+              : 0
+          ]
+      }
+    );
+  }
+
+
+  if (
+    item.type ===
+    "scanner"
+  ) {
+    send(
+      socket,
+      {
+        type:
+          "interactionMessage",
+
+        text:
+          `Scanner: ${player.hp}/${PLAYER.maxHp} HP.`
       }
     );
   }
@@ -1238,7 +1771,8 @@ function interact(
 
 function updateWorld() {
   const dt =
-    1 / TICK_RATE;
+    1 /
+    TICK_RATE;
 
 
   const now =
@@ -1270,7 +1804,6 @@ function updateWorld() {
       ];
 
 
-    // Landung
     if (
       player.airborne &&
       now >=
@@ -1279,23 +1812,20 @@ function updateWorld() {
       player.airborne =
         false;
 
-
       player.landedAt =
         now;
     }
 
 
-    // Jump Buffer
     attemptJump(
       player,
       now
     );
 
 
-    // Während man versteckt ist:
-    // keine Bewegung.
     if (
-      player.hidden
+      player.hidden ||
+      player.hp <= 0
     ) {
       player.vx = 0;
       player.vy = 0;
@@ -1320,90 +1850,168 @@ function updateWorld() {
 
 
     if (
-      inputLength > 1
+      inputLength >
+      1
     ) {
       inputX /=
         inputLength;
-
 
       inputY /=
         inputLength;
     }
 
 
-    // 0 Bunnyhop = 1x.
-    // 1 Bunnyhop = 2x.
-    const speedMultiplier =
-      1 +
-      player.bunnyhop;
-
-
-    const targetSpeed =
-      PLAYER.baseSpeed *
-      speedMultiplier;
-
-
-    const targetVX =
-      inputX *
-      targetSpeed;
-
-
-    const targetVY =
-      inputY *
-      targetSpeed;
-
-
-    const acceleration =
-      player.airborne
-        ? PLAYER.airAcceleration
-        : PLAYER.acceleration;
-
-
-    player.vx =
-      moveToward(
-        player.vx,
-        targetVX,
-        acceleration * dt
-      );
-
-
-    player.vy =
-      moveToward(
-        player.vy,
-        targetVY,
-        acceleration * dt
-      );
-
-
-    // Bodenbremsung.
     if (
-      inputLength <
-      0.05
+      inputLength >
+      0.12
     ) {
-      const braking =
-        player.airborne
-          ? 220
-          : 1500;
+      const direction =
+        normalize(
+          inputX,
+          inputY
+        );
+
+
+      player.lastDirX =
+        direction.x;
+
+      player.lastDirY =
+        direction.y;
+    }
+
+
+    const speedBoost =
+      player.speedBoostUntil >
+      now
+        ? PLAYER.speedPotionMultiplier
+        : 1;
+
+
+    // ========================================================
+    // GROUND MOVEMENT
+    // ========================================================
+
+    if (
+      !player.airborne
+    ) {
+      const targetSpeed =
+        PLAYER.baseSpeed *
+        speedBoost;
+
+
+      const targetVX =
+        inputX *
+        targetSpeed;
+
+
+      const targetVY =
+        inputY *
+        targetSpeed;
 
 
       player.vx =
         moveToward(
           player.vx,
-          0,
-          braking * dt
+          targetVX,
+          PLAYER.groundAcceleration *
+          dt
         );
 
 
       player.vy =
         moveToward(
           player.vy,
-          0,
-          braking * dt
+          targetVY,
+          PLAYER.groundAcceleration *
+          dt
         );
+
+
+      if (
+        inputLength <
+        0.05
+      ) {
+        player.vx =
+          moveToward(
+            player.vx,
+            0,
+            PLAYER.groundBrake *
+            dt
+          );
+
+
+        player.vy =
+          moveToward(
+            player.vy,
+            0,
+            PLAYER.groundBrake *
+            dt
+          );
+      }
+
+
+      if (
+        player.landedAt >
+          0 &&
+
+        now -
+          player.landedAt >
+          PLAYER.bunnyhopWindow
+      ) {
+        player.bunnyhopChain =
+          0;
+      }
     }
 
 
-    // X Kollisionsbewegung
+    // ========================================================
+    // AIR MOVEMENT
+    // ========================================================
+
+    if (
+      player.airborne
+    ) {
+      let airSpeed =
+        PLAYER.jumpMaxLaunch;
+
+
+      if (
+        player.speedBoostUntil >
+        now
+      ) {
+        airSpeed *=
+          PLAYER.speedPotionMultiplier;
+      }
+
+
+      if (
+        inputLength >
+        0.05
+      ) {
+        player.vx =
+          moveToward(
+            player.vx,
+            inputX *
+              airSpeed,
+
+            PLAYER.airAcceleration *
+              dt
+          );
+
+
+        player.vy =
+          moveToward(
+            player.vy,
+            inputY *
+              airSpeed,
+
+            PLAYER.airAcceleration *
+              dt
+          );
+      }
+    }
+
+
     const nextX =
       player.x +
       player.vx *
@@ -1422,17 +2030,11 @@ function updateWorld() {
     } else {
       player.vx = 0;
 
-
-      player.bunnyhop =
-        Math.max(
-          0,
-          player.bunnyhop -
-          0.12
-        );
+      player.bunnyhopChain =
+        0;
     }
 
 
-    // Y Kollisionsbewegung
     const nextY =
       player.y +
       player.vy *
@@ -1451,36 +2053,11 @@ function updateWorld() {
     } else {
       player.vy = 0;
 
-
-      player.bunnyhop =
-        Math.max(
-          0,
-          player.bunnyhop -
-          0.12
-        );
+      player.bunnyhopChain =
+        0;
     }
 
 
-    // Wer nach der Landung nicht schnell
-    // wieder springt, verliert Boost.
-    if (
-      !player.airborne &&
-      player.landedAt > 0 &&
-      now -
-      player.landedAt >
-      PLAYER.bunnyhopWindow
-    ) {
-      player.bunnyhop =
-        Math.max(
-          0,
-
-          player.bunnyhop -
-          PLAYER.bunnyhopDecay
-      );
-    }
-
-
-    // Aktiv-Spielzeit.
     if (
       inputLength >
       0.15
@@ -1521,6 +2098,25 @@ function updateWorld() {
       MAPS
     )
   ) {
+    const noise =
+      mapStates[
+        mapId
+      ].noise;
+
+
+    if (
+      noise &&
+      now -
+      noise.time >
+      5000
+    ) {
+      mapStates[
+        mapId
+      ].noise =
+        null;
+    }
+
+
     broadcastMap(
       mapId
     );
@@ -1529,7 +2125,7 @@ function updateWorld() {
 
 
 // ============================================================
-// STATIC FILE SERVER
+// STATIC SERVER
 // ============================================================
 
 const server =
@@ -1586,14 +2182,8 @@ const server =
             relative
           )
         ) {
-          res.writeHead(
-            403
-          );
-
-          res.end(
-            "Forbidden"
-          );
-
+          res.writeHead(403);
+          res.end("Forbidden");
           return;
         }
 
@@ -1606,14 +2196,8 @@ const server =
             filePath
           ).isFile()
         ) {
-          res.writeHead(
-            404
-          );
-
-          res.end(
-            "Not found"
-          );
-
+          res.writeHead(404);
+          res.end("Not found");
           return;
         }
 
@@ -1712,8 +2296,7 @@ const webSocketServer =
   new WebSocketServer({
     server,
 
-    maxPayload:
-      4096
+    maxPayload: 4096
   });
 
 
@@ -1820,10 +2403,11 @@ webSocketServer.on(
             player.mapId =
               null;
 
-
             player.hidden =
               false;
 
+            player.hiddenAt =
+              null;
 
             player.vx = 0;
             player.vy = 0;
@@ -1902,6 +2486,12 @@ webSocketServer.on(
               Date.now() +
               PLAYER.jumpBuffer;
 
+
+            attemptJump(
+              player,
+              Date.now()
+            );
+
             return;
           }
 
@@ -1917,7 +2507,7 @@ webSocketServer.on(
           }
 
         } catch {
-          // Ungültige Nachrichten ignorieren.
+          // Ignore invalid packets.
         }
       }
     );
@@ -1983,6 +2573,7 @@ const heartbeatInterval =
         }
       }
     },
+
     15000
   );
 
@@ -2018,7 +2609,7 @@ server.listen(
   "0.0.0.0",
   () => {
     console.log(
-      `DuckyMaps V4.5 läuft auf Port ${PORT}`
+      `DuckyMaps V4.9 läuft auf Port ${PORT}`
     );
   }
 );
