@@ -1,24 +1,98 @@
 "use strict";
 
+
 // ============================================================
-// DUCKYMAPS V2
-// Multiplayer Client
+// DUCKY MAPS V3
+// CLIENT
 // ============================================================
 
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
 
-const minimap = document.getElementById("minimap");
-const minimapCtx = minimap.getContext("2d");
+const canvas =
+  document.getElementById("gameCanvas");
 
-const connectionDot =
-  document.getElementById("connectionDot");
+const ctx =
+  canvas.getContext("2d");
 
-const connectionText =
-  document.getElementById("connectionText");
 
-const playerCount =
-  document.getElementById("playerCount");
+const minimapCanvas =
+  document.getElementById("minimapCanvas");
+
+const minimapCtx =
+  minimapCanvas.getContext("2d");
+
+
+// ============================================================
+// MENÜ ELEMENTE
+// ============================================================
+
+const introScreen =
+  document.getElementById("introScreen");
+
+const mainMenu =
+  document.getElementById("mainMenu");
+
+const mapsMenu =
+  document.getElementById("mapsMenu");
+
+const settingsMenu =
+  document.getElementById("settingsMenu");
+
+const mapIntro =
+  document.getElementById("mapIntro");
+
+const pauseMenu =
+  document.getElementById("pauseMenu");
+
+const gameHud =
+  document.getElementById("gameHud");
+
+
+const playButton =
+  document.getElementById("playButton");
+
+const mapsButton =
+  document.getElementById("mapsButton");
+
+const settingsButton =
+  document.getElementById("settingsButton");
+
+const settingsBackButton =
+  document.getElementById("settingsBackButton");
+
+const saveSettingsButton =
+  document.getElementById("saveSettingsButton");
+
+const pauseButton =
+  document.getElementById("pauseButton");
+
+const continueButton =
+  document.getElementById("continueButton");
+
+const pauseSettingsButton =
+  document.getElementById("pauseSettingsButton");
+
+const exitButton =
+  document.getElementById("exitButton");
+
+
+const selectedMapLabel =
+  document.getElementById("selectedMapLabel");
+
+const hudMapName =
+  document.getElementById("hudMapName");
+
+const mapIntroTitle =
+  document.getElementById("mapIntroTitle");
+
+const mapIntroPlayers =
+  document.getElementById("mapIntroPlayers");
+
+const menuPlayerCount =
+  document.getElementById("menuPlayerCount");
+
+const hudPlayerCount =
+  document.getElementById("hudPlayerCount");
+
 
 const playerList =
   document.getElementById("playerList");
@@ -26,47 +100,234 @@ const playerList =
 const notifications =
   document.getElementById("notifications");
 
-const nameInput =
-  document.getElementById("nameInput");
 
-const nameButton =
-  document.getElementById("nameButton");
+// ============================================================
+// SETTINGS
+// ============================================================
+
+const settingsNameInput =
+  document.getElementById("settingsNameInput");
+
+const musicEnabled =
+  document.getElementById("musicEnabled");
+
+const musicStyle =
+  document.getElementById("musicStyle");
+
+const musicVolume =
+  document.getElementById("musicVolume");
+
+const musicVolumeValue =
+  document.getElementById("musicVolumeValue");
+
+const sfxEnabled =
+  document.getElementById("sfxEnabled");
+
+const sfxVolume =
+  document.getElementById("sfxVolume");
+
+const sfxVolumeValue =
+  document.getElementById("sfxVolumeValue");
+
+
+// ============================================================
+// JOYSTICK
+// ============================================================
 
 const joystickElement =
   document.getElementById("joystick");
 
-const stickElement =
-  document.getElementById("stick");
+const joystickStick =
+  document.getElementById("joystickStick");
 
 
 // ============================================================
-// BILDSCHIRM
+// STATE
 // ============================================================
 
 let width = 0;
 let height = 0;
 let dpr = 1;
 
-function resize() {
-  dpr = Math.min(
-    window.devicePixelRatio || 1,
-    2
-  );
+let socket = null;
+let reconnectTimer = null;
 
-  width = window.innerWidth;
-  height = window.innerHeight;
+let myId = null;
+
+let players = [];
+
+let previousPlayers =
+  new Map();
+
+let receivedFirstState =
+  false;
+
+let gameRunning =
+  false;
+
+let paused =
+  false;
+
+let settingsOpenedFromPause =
+  false;
+
+
+let world = {
+  width: 2400,
+  height: 1400
+};
+
+
+const camera = {
+  x: world.width / 2,
+  y: world.height / 2
+};
+
+
+const input = {
+  x: 0,
+  y: 0
+};
+
+
+const keys =
+  new Set();
+
+
+const joystick = {
+  active: false,
+  pointerId: null,
+  x: 0,
+  y: 0
+};
+
+
+// ============================================================
+// MAPS
+// ============================================================
+
+const maps = {
+
+  industry: {
+    title: "INDUSTRIE",
+    menuName: "Industrie",
+
+    background: "#bbb9b2",
+    floor: "#aaa8a2",
+    road: "#4b4d50",
+    wall: "#5a5b5e",
+    accent: "#d3d0c9"
+  },
+
+  harbor: {
+    title: "HAFEN",
+    menuName: "Hafen",
+
+    background: "#7e9298",
+    floor: "#8f9998",
+    road: "#41474a",
+    wall: "#5a6264",
+    accent: "#39748b"
+  },
+
+  labs: {
+    title: "LABS",
+    menuName: "Labs",
+
+    background: "#d6d9dc",
+    floor: "#c7cbce",
+    road: "#858b90",
+    wall: "#707980",
+    accent: "#6f5caa"
+  }
+
+};
+
+
+let selectedMap =
+  localStorage.getItem(
+    "duckymaps-map"
+  ) || "industry";
+
+
+if (!maps[selectedMap]) {
+  selectedMap = "industry";
+}
+
+
+// ============================================================
+// SETTINGS DATA
+// ============================================================
+
+const defaultSettings = {
+
+  name: "Spieler",
+
+  musicEnabled: true,
+
+  musicStyle: "ambient",
+
+  musicVolume: 35,
+
+  sfxEnabled: true,
+
+  sfxVolume: 65
+
+};
+
+
+let settings =
+  loadSettings();
+
+
+// ============================================================
+// AUDIO
+// ============================================================
+
+let audioContext = null;
+
+let musicGain = null;
+
+let musicNodes = [];
+
+
+// ============================================================
+// RESIZE
+// ============================================================
+
+function resizeCanvas() {
+
+  dpr =
+    Math.min(
+      window.devicePixelRatio || 1,
+      2
+    );
+
+
+  width =
+    window.innerWidth;
+
+  height =
+    window.innerHeight;
+
 
   canvas.width =
-    Math.floor(width * dpr);
+    Math.floor(
+      width * dpr
+    );
 
   canvas.height =
-    Math.floor(height * dpr);
+    Math.floor(
+      height * dpr
+    );
+
 
   canvas.style.width =
     `${width}px`;
 
   canvas.style.height =
     `${height}px`;
+
 
   ctx.setTransform(
     dpr,
@@ -78,126 +339,822 @@ function resize() {
   );
 }
 
+
 window.addEventListener(
   "resize",
-  resize
+  resizeCanvas
 );
 
-resize();
+
+resizeCanvas();
 
 
 // ============================================================
-// SPIELDATEN
+// SETTINGS LADEN
 // ============================================================
 
-let socket = null;
+function loadSettings() {
 
-let reconnectTimer = null;
+  try {
 
-let myId = null;
-
-let players = [];
-
-let previousPlayers =
-  new Map();
-
-let world = {
-  width: 2400,
-  height: 1400
-};
+    const saved =
+      JSON.parse(
+        localStorage.getItem(
+          "duckymaps-settings"
+        )
+      );
 
 
-// ============================================================
-// KAMERA
-// ============================================================
+    return {
+      ...defaultSettings,
+      ...(saved || {})
+    };
 
-const camera = {
-  x: world.width / 2,
-  y: world.height / 2
-};
+  } catch {
 
-
-// ============================================================
-// EINGABE
-// ============================================================
-
-const keys = new Set();
-
-const input = {
-  x: 0,
-  y: 0
-};
-
-const joystick = {
-  active: false,
-  pointerId: null,
-  x: 0,
-  y: 0
-};
+    return {
+      ...defaultSettings
+    };
+  }
+}
 
 
-// ============================================================
-// NAME SPEICHERN
-// ============================================================
+function saveSettings() {
 
-const savedName =
-  localStorage.getItem(
-    "duckymaps-name"
+  settings.name =
+    settingsNameInput.value
+      .trim()
+      .slice(0, 20)
+      ||
+      "Spieler";
+
+
+  settings.musicEnabled =
+    musicEnabled.checked;
+
+
+  settings.musicStyle =
+    musicStyle.value;
+
+
+  settings.musicVolume =
+    Number(
+      musicVolume.value
+    );
+
+
+  settings.sfxEnabled =
+    sfxEnabled.checked;
+
+
+  settings.sfxVolume =
+    Number(
+      sfxVolume.value
+    );
+
+
+  localStorage.setItem(
+    "duckymaps-settings",
+    JSON.stringify(settings)
   );
 
-if (savedName) {
-  nameInput.value =
-    savedName;
+
+  sendName();
+
+
+  applyMusicSettings();
+
+
+  playUiSound();
+
+
+  if (
+    settingsOpenedFromPause
+  ) {
+
+    settingsMenu.classList.add(
+      "hidden"
+    );
+
+    pauseMenu.classList.remove(
+      "hidden"
+    );
+
+  } else {
+
+    settingsMenu.classList.add(
+      "hidden"
+    );
+
+    mainMenu.classList.remove(
+      "hidden"
+    );
+  }
 }
 
 
 // ============================================================
-// SPIELERFARBEN
+// SETTINGS UI
 // ============================================================
 
-const playerColors = [
-  "#00eaff",
-  "#8b5cff",
-  "#ff4fa3",
-  "#35ff8a",
-  "#ffce3a",
-  "#ff7548",
-  "#4f7cff",
-  "#00ffa6"
-];
+function updateSettingsUI() {
 
-function hashString(text) {
-  let hash = 0;
+  settingsNameInput.value =
+    settings.name;
+
+
+  musicEnabled.checked =
+    settings.musicEnabled;
+
+
+  musicStyle.value =
+    settings.musicStyle;
+
+
+  musicVolume.value =
+    settings.musicVolume;
+
+
+  musicVolumeValue.textContent =
+    `${settings.musicVolume}%`;
+
+
+  sfxEnabled.checked =
+    settings.sfxEnabled;
+
+
+  sfxVolume.value =
+    settings.sfxVolume;
+
+
+  sfxVolumeValue.textContent =
+    `${settings.sfxVolume}%`;
+}
+
+
+musicVolume.addEventListener(
+  "input",
+  () => {
+
+    musicVolumeValue.textContent =
+      `${musicVolume.value}%`;
+
+    settings.musicVolume =
+      Number(
+        musicVolume.value
+      );
+
+    applyMusicSettings();
+  }
+);
+
+
+sfxVolume.addEventListener(
+  "input",
+  () => {
+
+    sfxVolumeValue.textContent =
+      `${sfxVolume.value}%`;
+  }
+);
+
+
+musicEnabled.addEventListener(
+  "change",
+  () => {
+
+    settings.musicEnabled =
+      musicEnabled.checked;
+
+    applyMusicSettings();
+  }
+);
+
+
+musicStyle.addEventListener(
+  "change",
+  () => {
+
+    settings.musicStyle =
+      musicStyle.value;
+
+    restartMusic();
+  }
+);
+
+
+updateSettingsUI();
+
+
+// ============================================================
+// AUDIO ENGINE
+// ============================================================
+
+function ensureAudio() {
+
+  if (audioContext) {
+    return;
+  }
+
+
+  const AudioContext =
+    window.AudioContext ||
+    window.webkitAudioContext;
+
+
+  if (!AudioContext) {
+    return;
+  }
+
+
+  audioContext =
+    new AudioContext();
+
+
+  musicGain =
+    audioContext.createGain();
+
+
+  musicGain.connect(
+    audioContext.destination
+  );
+
+
+  startMusic();
+}
+
+
+function startMusic() {
+
+  if (!audioContext) {
+    return;
+  }
+
+
+  stopMusic();
+
+
+  const style =
+    settings.musicStyle;
+
+
+  const frequencies =
+    style === "pulse"
+      ? [82, 123, 164]
+      : style === "minimal"
+      ? [110, 165]
+      : [73, 110, 146];
+
+
+  frequencies.forEach(
+    (frequency, index) => {
+
+      const osc =
+        audioContext.createOscillator();
+
+      const gain =
+        audioContext.createGain();
+
+
+      osc.type =
+        style === "pulse"
+          ? "triangle"
+          : "sine";
+
+
+      osc.frequency.value =
+        frequency;
+
+
+      gain.gain.value =
+        0.018 /
+        (index + 1);
+
+
+      osc.connect(gain);
+
+      gain.connect(musicGain);
+
+
+      osc.start();
+
+
+      musicNodes.push({
+        osc,
+        gain
+      });
+    }
+  );
+
+
+  applyMusicSettings();
+}
+
+
+function stopMusic() {
 
   for (
-    let i = 0;
-    i < text.length;
-    i++
+    const node
+    of musicNodes
   ) {
-    hash =
-      (hash * 31 +
-        text.charCodeAt(i)) |
-      0;
+
+    try {
+      node.osc.stop();
+    } catch {}
   }
 
-  return Math.abs(hash);
+
+  musicNodes = [];
 }
 
-function getPlayerColor(player) {
-  if (player.id === myId) {
-    return "#00eaff";
+
+function restartMusic() {
+
+  if (!audioContext) {
+    return;
   }
 
-  const index =
-    hashString(player.id) %
-    playerColors.length;
 
-  return playerColors[index];
+  startMusic();
+}
+
+
+function applyMusicSettings() {
+
+  if (!musicGain) {
+    return;
+  }
+
+
+  const enabled =
+    musicEnabled.checked;
+
+
+  const volume =
+    Number(
+      musicVolume.value
+    ) / 100;
+
+
+  musicGain.gain.setTargetAtTime(
+    enabled
+      ? volume * 0.35
+      : 0,
+
+    audioContext.currentTime,
+
+    0.15
+  );
+}
+
+
+function playUiSound() {
+
+  if (
+    !settings.sfxEnabled
+  ) {
+    return;
+  }
+
+
+  ensureAudio();
+
+
+  if (!audioContext) {
+    return;
+  }
+
+
+  const osc =
+    audioContext.createOscillator();
+
+
+  const gain =
+    audioContext.createGain();
+
+
+  osc.type =
+    "sine";
+
+
+  osc.frequency.setValueAtTime(
+    360,
+    audioContext.currentTime
+  );
+
+
+  osc.frequency.exponentialRampToValueAtTime(
+    520,
+    audioContext.currentTime +
+      0.07
+  );
+
+
+  gain.gain.setValueAtTime(
+    settings.sfxVolume /
+      100 *
+      0.06,
+
+    audioContext.currentTime
+  );
+
+
+  gain.gain.exponentialRampToValueAtTime(
+    0.001,
+
+    audioContext.currentTime +
+      0.10
+  );
+
+
+  osc.connect(gain);
+
+  gain.connect(
+    audioContext.destination
+  );
+
+
+  osc.start();
+
+  osc.stop(
+    audioContext.currentTime +
+      0.11
+  );
 }
 
 
 // ============================================================
-// WEBSOCKET VERBINDUNG
+// INTRO
+// ============================================================
+
+setTimeout(
+  () => {
+
+    introScreen.classList.add(
+      "fadeOut"
+    );
+
+    setTimeout(
+      () => {
+
+        introScreen.classList.add(
+          "hidden"
+        );
+
+      },
+      700
+    );
+
+  },
+  1500
+);
+
+
+// ============================================================
+// MENÜ NAVIGATION
+// ============================================================
+
+playButton.addEventListener(
+  "click",
+  () => {
+
+    ensureAudio();
+
+    playUiSound();
+
+    startGame();
+  }
+);
+
+
+mapsButton.addEventListener(
+  "click",
+  () => {
+
+    playUiSound();
+
+    mainMenu.classList.add(
+      "hidden"
+    );
+
+    mapsMenu.classList.remove(
+      "hidden"
+    );
+  }
+);
+
+
+settingsButton.addEventListener(
+  "click",
+  () => {
+
+    openSettings(false);
+  }
+);
+
+
+document
+  .querySelector(
+    '[data-close-screen="maps"]'
+  )
+  .addEventListener(
+    "click",
+    () => {
+
+      playUiSound();
+
+      mapsMenu.classList.add(
+        "hidden"
+      );
+
+      mainMenu.classList.remove(
+        "hidden"
+      );
+    }
+  );
+
+
+settingsBackButton.addEventListener(
+  "click",
+  () => {
+
+    playUiSound();
+
+
+    settingsMenu.classList.add(
+      "hidden"
+    );
+
+
+    if (
+      settingsOpenedFromPause
+    ) {
+
+      pauseMenu.classList.remove(
+        "hidden"
+      );
+
+    } else {
+
+      mainMenu.classList.remove(
+        "hidden"
+      );
+    }
+  }
+);
+
+
+saveSettingsButton.addEventListener(
+  "click",
+  saveSettings
+);
+
+
+// ============================================================
+// MAP AUSWAHL
+// ============================================================
+
+function updateMapSelectionUI() {
+
+  document
+    .querySelectorAll(
+      ".mapCard"
+    )
+    .forEach(
+      card => {
+
+        card.classList.toggle(
+          "selected",
+          card.dataset.map ===
+            selectedMap
+        );
+      }
+    );
+
+
+  selectedMapLabel.textContent =
+    maps[selectedMap].menuName;
+
+
+  hudMapName.textContent =
+    maps[selectedMap].title;
+}
+
+
+document
+  .querySelectorAll(
+    ".mapCard"
+  )
+  .forEach(
+    card => {
+
+      card.addEventListener(
+        "click",
+        () => {
+
+          selectedMap =
+            card.dataset.map;
+
+
+          localStorage.setItem(
+            "duckymaps-map",
+            selectedMap
+          );
+
+
+          updateMapSelectionUI();
+
+
+          playUiSound();
+        }
+      );
+    }
+  );
+
+
+updateMapSelectionUI();
+
+
+// ============================================================
+// SETTINGS ÖFFNEN
+// ============================================================
+
+function openSettings(
+  fromPause
+) {
+
+  playUiSound();
+
+
+  settingsOpenedFromPause =
+    fromPause;
+
+
+  updateSettingsUI();
+
+
+  mainMenu.classList.add(
+    "hidden"
+  );
+
+
+  pauseMenu.classList.add(
+    "hidden"
+  );
+
+
+  settingsMenu.classList.remove(
+    "hidden"
+  );
+}
+
+
+// ============================================================
+// GAME START
+// ============================================================
+
+function startGame() {
+
+  gameRunning =
+    true;
+
+
+  paused =
+    false;
+
+
+  mainMenu.classList.add(
+    "hidden"
+  );
+
+
+  mapsMenu.classList.add(
+    "hidden"
+  );
+
+
+  settingsMenu.classList.add(
+    "hidden"
+  );
+
+
+  mapIntroTitle.textContent =
+    maps[selectedMap].title;
+
+
+  mapIntroPlayers.textContent =
+    `${players.length || 1} SPIELER ONLINE`;
+
+
+  mapIntro.classList.remove(
+    "hidden"
+  );
+
+
+  setTimeout(
+    () => {
+
+      mapIntro.classList.add(
+        "hidden"
+      );
+
+
+      gameHud.classList.remove(
+        "hidden"
+      );
+
+    },
+    1300
+  );
+
+
+  sendName();
+}
+
+
+// ============================================================
+// PAUSE
+// ============================================================
+
+pauseButton.addEventListener(
+  "click",
+  () => {
+
+    paused = true;
+
+    playUiSound();
+
+    pauseMenu.classList.remove(
+      "hidden"
+    );
+  }
+);
+
+
+continueButton.addEventListener(
+  "click",
+  () => {
+
+    paused = false;
+
+    playUiSound();
+
+    pauseMenu.classList.add(
+      "hidden"
+    );
+  }
+);
+
+
+pauseSettingsButton.addEventListener(
+  "click",
+  () => {
+
+    openSettings(true);
+  }
+);
+
+
+exitButton.addEventListener(
+  "click",
+  () => {
+
+    gameRunning =
+      false;
+
+    paused =
+      false;
+
+
+    keys.clear();
+
+
+    input.x = 0;
+    input.y = 0;
+
+
+    playUiSound();
+
+
+    pauseMenu.classList.add(
+      "hidden"
+    );
+
+
+    gameHud.classList.add(
+      "hidden"
+    );
+
+
+    mainMenu.classList.remove(
+      "hidden"
+    );
+  }
+);
+
+
+// ============================================================
+// WEBSOCKET
 // ============================================================
 
 function connect() {
@@ -206,32 +1163,31 @@ function connect() {
     reconnectTimer
   );
 
+
   const protocol =
     location.protocol === "https:"
       ? "wss:"
       : "ws:";
+
 
   socket =
     new WebSocket(
       `${protocol}//${location.host}`
     );
 
+
   socket.addEventListener(
     "open",
     () => {
 
-      setConnectionStatus(true);
-
-      setTimeout(
-        sendName,
-        100
-      );
+      sendName();
     }
   );
 
+
   socket.addEventListener(
     "message",
-    (event) => {
+    event => {
 
       handleServerMessage(
         event.data
@@ -239,93 +1195,33 @@ function connect() {
     }
   );
 
+
   socket.addEventListener(
     "close",
     () => {
 
-      setConnectionStatus(false);
-
-      scheduleReconnect();
-    }
-  );
-
-  socket.addEventListener(
-    "error",
-    () => {
-
-      setConnectionStatus(false);
+      reconnectTimer =
+        setTimeout(
+          connect,
+          1500
+        );
     }
   );
 }
 
 
-function scheduleReconnect() {
-
-  clearTimeout(
-    reconnectTimer
-  );
-
-  reconnectTimer =
-    setTimeout(
-      connect,
-      1500
-    );
-}
-
-
 // ============================================================
-// VERBINDUNGSSTATUS
-// ============================================================
-
-function setConnectionStatus(
-  connected
-) {
-
-  if (connected) {
-
-    connectionText.textContent =
-      "ONLINE";
-
-    connectionDot.style.background =
-      "#45ff9a";
-
-    connectionDot.style.color =
-      "#45ff9a";
-
-  } else {
-
-    connectionText.textContent =
-      "VERBINDE...";
-
-    connectionDot.style.background =
-      "#ffbf3c";
-
-    connectionDot.style.color =
-      "#ffbf3c";
-  }
-}
-
-
-// ============================================================
-// SERVER-NACHRICHTEN
+// SERVER MESSAGE
 // ============================================================
 
 function handleServerMessage(
-  rawMessage
+  raw
 ) {
 
   try {
 
     const message =
-      JSON.parse(rawMessage);
-
-    if (
-      !message ||
-      typeof message.type !==
-        "string"
-    ) {
-      return;
-    }
+      JSON.parse(raw);
 
 
     if (
@@ -335,11 +1231,14 @@ function handleServerMessage(
       myId =
         message.playerId;
 
-      if (message.world) {
 
+      if (message.world) {
         world =
           message.world;
       }
+
+
+      sendName();
 
       return;
     }
@@ -350,10 +1249,10 @@ function handleServerMessage(
     ) {
 
       if (message.world) {
-
         world =
           message.world;
       }
+
 
       const newPlayers =
         Array.isArray(
@@ -362,33 +1261,52 @@ function handleServerMessage(
           ? message.players
           : [];
 
+
       detectPlayerChanges(
         newPlayers
       );
 
+
       players =
         newPlayers;
 
-      playerCount.textContent =
-        String(
-          players.length
-        );
 
-      updatePlayerList();
+      updatePlayerUI();
     }
 
-  } catch {
-
-    // Ungültige Nachricht
-  }
+  } catch {}
 }
 
 
 // ============================================================
-// JOIN / LEAVE ERKENNEN
+// NAME
 // ============================================================
 
-let receivedFirstState = false;
+function sendName() {
+
+  if (
+    !socket ||
+    socket.readyState !==
+      WebSocket.OPEN
+  ) {
+    return;
+  }
+
+
+  socket.send(
+    JSON.stringify({
+      type: "setName",
+      name:
+        settings.name ||
+        "Spieler"
+    })
+  );
+}
+
+
+// ============================================================
+// JOIN / LEAVE
+// ============================================================
 
 function detectPlayerChanges(
   newPlayers
@@ -396,6 +1314,7 @@ function detectPlayerChanges(
 
   const newMap =
     new Map();
+
 
   for (
     const player
@@ -409,7 +1328,10 @@ function detectPlayerChanges(
   }
 
 
-  if (receivedFirstState) {
+  if (
+    receivedFirstState &&
+    gameRunning
+  ) {
 
     for (
       const player
@@ -424,18 +1346,14 @@ function detectPlayerChanges(
       ) {
 
         showNotification(
-          `${player.name || "Spieler"} ist beigetreten`,
-          "join"
+          `${player.name || "Spieler"} ist beigetreten`
         );
       }
     }
 
 
     for (
-      const [
-        id,
-        player
-      ]
+      const [id, player]
       of previousPlayers
     ) {
 
@@ -445,8 +1363,7 @@ function detectPlayerChanges(
       ) {
 
         showNotification(
-          `${player.name || "Spieler"} hat das Spiel verlassen`,
-          "leave"
+          `${player.name || "Spieler"} hat das Spiel verlassen`
         );
       }
     }
@@ -456,72 +1373,41 @@ function detectPlayerChanges(
   previousPlayers =
     newMap;
 
+
   receivedFirstState =
     true;
 }
 
 
 // ============================================================
-// MELDUNGEN
+// SPIELER UI
 // ============================================================
 
-function showNotification(
-  text,
-  type
-) {
+function updatePlayerUI() {
 
-  const element =
-    document.createElement(
-      "div"
-    );
-
-  element.className =
-    `notification ${type}`;
-
-  element.textContent =
-    text;
-
-  notifications.appendChild(
-    element
-  );
+  const count =
+    players.length;
 
 
-  setTimeout(
-    () => {
-
-      element.style.opacity =
-        "0";
-
-      element.style.transform =
-        "translateY(-8px)";
-
-      element.style.transition =
-        "0.3s";
-
-    },
-    2800
-  );
+  menuPlayerCount.textContent =
+    `${count} ${
+      count === 1
+        ? "SPIELER"
+        : "SPIELER"
+    } ONLINE`;
 
 
-  setTimeout(
-    () => {
+  hudPlayerCount.textContent =
+    `${count} ${
+      count === 1
+        ? "SPIELER"
+        : "SPIELER"
+    }`;
 
-      element.remove();
-
-    },
-    3200
-  );
-}
-
-
-// ============================================================
-// SPIELERLISTE
-// ============================================================
-
-function updatePlayerList() {
 
   playerList.innerHTML =
     "";
+
 
   const sorted =
     [...players].sort(
@@ -555,6 +1441,7 @@ function updatePlayerList() {
         "div"
       );
 
+
     item.className =
       "playerListItem";
 
@@ -564,17 +1451,15 @@ function updatePlayerList() {
         "span"
       );
 
+
     dot.className =
       "playerListDot";
 
-    const color =
-      getPlayerColor(player);
 
     dot.style.background =
-      color;
-
-    dot.style.color =
-      color;
+      player.id === myId
+        ? "#e6333c"
+        : "#65d898";
 
 
     const name =
@@ -582,8 +1467,10 @@ function updatePlayerList() {
         "span"
       );
 
+
     name.className =
       "playerListName";
+
 
     if (
       player.id === myId
@@ -593,8 +1480,9 @@ function updatePlayerList() {
         "playerListMe"
       );
 
+
       name.textContent =
-        `${player.name || "Spieler"} (Du)`;
+        `${player.name} (Du)`;
 
     } else {
 
@@ -605,6 +1493,7 @@ function updatePlayerList() {
 
 
     item.appendChild(dot);
+
     item.appendChild(name);
 
     playerList.appendChild(
@@ -615,115 +1504,99 @@ function updatePlayerList() {
 
 
 // ============================================================
-// NAME SENDEN
+// NOTIFICATION
 // ============================================================
 
-function sendName() {
+function showNotification(
+  text
+) {
 
-  const name =
-    nameInput.value
-      .trim()
-      .slice(0, 20);
-
-
-  if (name) {
-
-    localStorage.setItem(
-      "duckymaps-name",
-      name
+  const element =
+    document.createElement(
+      "div"
     );
-  }
 
 
-  if (
-    !socket ||
-    socket.readyState !==
-      WebSocket.OPEN
-  ) {
-
-    return;
-  }
+  element.className =
+    "notification";
 
 
-  socket.send(
-    JSON.stringify({
-      type: "setName",
-      name
-    })
+  element.textContent =
+    text;
+
+
+  notifications.appendChild(
+    element
+  );
+
+
+  setTimeout(
+    () => {
+
+      element.remove();
+
+    },
+    2800
   );
 }
 
 
-nameButton.addEventListener(
-  "click",
-  () => {
-
-    sendName();
-
-    nameInput.blur();
-  }
-);
-
-
-nameInput.addEventListener(
-  "keydown",
-  (event) => {
-
-    if (
-      event.key === "Enter"
-    ) {
-
-      sendName();
-
-      nameInput.blur();
-    }
-  }
-);
-
-
 // ============================================================
-// TASTATUR
+// INPUT
 // ============================================================
 
 window.addEventListener(
   "keydown",
-  (event) => {
+  event => {
 
     if (
       document.activeElement ===
-      nameInput
+      settingsNameInput
     ) {
       return;
     }
 
-    const key =
-      event.key.toLowerCase();
-
-    keys.add(key);
-
 
     if (
-      [
-        "arrowup",
-        "arrowdown",
-        "arrowleft",
-        "arrowright",
-        "w",
-        "a",
-        "s",
-        "d"
-      ].includes(key)
+      event.key === "Escape" &&
+      gameRunning
     ) {
 
-      event.preventDefault();
+      if (
+        pauseMenu.classList.contains(
+          "hidden"
+        )
+      ) {
+
+        paused = true;
+
+        pauseMenu.classList.remove(
+          "hidden"
+        );
+
+      } else {
+
+        paused = false;
+
+        pauseMenu.classList.add(
+          "hidden"
+        );
+      }
+
+      return;
     }
+
+
+    keys.add(
+      event.key.toLowerCase()
+    );
   }
 );
 
 
 window.addEventListener(
   "keyup",
-  (event) => {
+  event => {
 
     keys.delete(
       event.key.toLowerCase()
@@ -732,23 +1605,19 @@ window.addEventListener(
 );
 
 
-window.addEventListener(
-  "blur",
-  () => {
+function calculateInput() {
 
-    keys.clear();
+  if (
+    !gameRunning ||
+    paused
+  ) {
 
     input.x = 0;
     input.y = 0;
+
+    return;
   }
-);
 
-
-// ============================================================
-// EINGABE BERECHNEN
-// ============================================================
-
-function updateInput() {
 
   let x = 0;
   let y = 0;
@@ -758,7 +1627,7 @@ function updateInput() {
     keys.has("a") ||
     keys.has("arrowleft")
   ) {
-    x -= 1;
+    x--;
   }
 
 
@@ -766,7 +1635,7 @@ function updateInput() {
     keys.has("d") ||
     keys.has("arrowright")
   ) {
-    x += 1;
+    x++;
   }
 
 
@@ -774,7 +1643,7 @@ function updateInput() {
     keys.has("w") ||
     keys.has("arrowup")
   ) {
-    y -= 1;
+    y--;
   }
 
 
@@ -782,11 +1651,13 @@ function updateInput() {
     keys.has("s") ||
     keys.has("arrowdown")
   ) {
-    y += 1;
+    y++;
   }
 
 
-  if (joystick.active) {
+  if (
+    joystick.active
+  ) {
 
     x = joystick.x;
     y = joystick.y;
@@ -797,7 +1668,9 @@ function updateInput() {
     Math.hypot(x, y);
 
 
-  if (length > 1) {
+  if (
+    length > 1
+  ) {
 
     x /= length;
     y /= length;
@@ -810,12 +1683,12 @@ function updateInput() {
 
 
 // ============================================================
-// INPUT SENDEN
+// SEND INPUT
 // ============================================================
 
 function sendInput() {
 
-  updateInput();
+  calculateInput();
 
 
   if (
@@ -823,7 +1696,6 @@ function sendInput() {
     socket.readyState !==
       WebSocket.OPEN
   ) {
-
     return;
   }
 
@@ -845,651 +1717,6 @@ setInterval(
 
 
 // ============================================================
-// SPIELER
-// ============================================================
-
-function getMyPlayer() {
-
-  return players.find(
-    player =>
-      player.id === myId
-  );
-}
-
-
-// ============================================================
-// KAMERA
-// ============================================================
-
-function updateCamera() {
-
-  const me =
-    getMyPlayer();
-
-
-  if (!me) {
-    return;
-  }
-
-
-  camera.x +=
-    (me.x - camera.x) *
-    0.12;
-
-  camera.y +=
-    (me.y - camera.y) *
-    0.12;
-}
-
-
-function worldToScreen(
-  x,
-  y
-) {
-
-  return {
-
-    x:
-      x -
-      camera.x +
-      width / 2,
-
-    y:
-      y -
-      camera.y +
-      height / 2
-  };
-}
-
-
-// ============================================================
-// HINTERGRUND
-// ============================================================
-
-function drawBackground() {
-
-  ctx.fillStyle =
-    "#050711";
-
-  ctx.fillRect(
-    0,
-    0,
-    width,
-    height
-  );
-
-
-  const gridSize = 80;
-
-  const offsetX =
-    (
-      (
-        -camera.x +
-        width / 2
-      ) %
-        gridSize +
-      gridSize
-    ) %
-    gridSize;
-
-  const offsetY =
-    (
-      (
-        -camera.y +
-        height / 2
-      ) %
-        gridSize +
-      gridSize
-    ) %
-    gridSize;
-
-
-  ctx.strokeStyle =
-    "rgba(70,150,255,0.065)";
-
-  ctx.lineWidth = 1;
-
-
-  for (
-    let x = offsetX;
-    x < width;
-    x += gridSize
-  ) {
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-      x,
-      0
-    );
-
-    ctx.lineTo(
-      x,
-      height
-    );
-
-    ctx.stroke();
-  }
-
-
-  for (
-    let y = offsetY;
-    y < height;
-    y += gridSize
-  ) {
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-      0,
-      y
-    );
-
-    ctx.lineTo(
-      width,
-      y
-    );
-
-    ctx.stroke();
-  }
-
-
-  const glow =
-    ctx.createRadialGradient(
-      width / 2,
-      height / 2,
-      0,
-
-      width / 2,
-      height / 2,
-
-      Math.max(
-        width,
-        height
-      ) * 0.7
-    );
-
-
-  glow.addColorStop(
-    0,
-    "rgba(0,190,255,0.08)"
-  );
-
-  glow.addColorStop(
-    1,
-    "rgba(0,0,0,0)"
-  );
-
-
-  ctx.fillStyle =
-    glow;
-
-  ctx.fillRect(
-    0,
-    0,
-    width,
-    height
-  );
-}
-
-
-// ============================================================
-// DEKORATION DER MAP
-// ============================================================
-
-function drawMapDecorations() {
-
-  const objects = [
-    {
-      x: 350,
-      y: 300,
-      radius: 110,
-      color:
-        "rgba(0,120,255,0.08)"
-    },
-
-    {
-      x: 1900,
-      y: 400,
-      radius: 160,
-      color:
-        "rgba(130,60,255,0.07)"
-    },
-
-    {
-      x: 1200,
-      y: 1050,
-      radius: 180,
-      color:
-        "rgba(0,255,170,0.055)"
-    }
-  ];
-
-
-  for (
-    const object
-    of objects
-  ) {
-
-    const pos =
-      worldToScreen(
-        object.x,
-        object.y
-      );
-
-
-    ctx.beginPath();
-
-    ctx.arc(
-      pos.x,
-      pos.y,
-      object.radius,
-      0,
-      Math.PI * 2
-    );
-
-    ctx.fillStyle =
-      object.color;
-
-    ctx.fill();
-  }
-
-
-  drawRoad(
-    0,
-    world.height / 2 - 45,
-    world.width,
-    90
-  );
-
-
-  drawRoad(
-    world.width / 2 - 45,
-    0,
-    90,
-    world.height
-  );
-}
-
-
-function drawRoad(
-  x,
-  y,
-  roadWidth,
-  roadHeight
-) {
-
-  const pos =
-    worldToScreen(
-      x,
-      y
-    );
-
-
-  ctx.fillStyle =
-    "rgba(35,45,70,0.40)";
-
-  ctx.fillRect(
-    pos.x,
-    pos.y,
-    roadWidth,
-    roadHeight
-  );
-}
-
-
-// ============================================================
-// WELTGRENZE
-// ============================================================
-
-function drawWorldBorder() {
-
-  const topLeft =
-    worldToScreen(
-      0,
-      0
-    );
-
-
-  ctx.save();
-
-
-  ctx.strokeStyle =
-    "#238cff";
-
-  ctx.lineWidth = 3;
-
-  ctx.shadowBlur = 18;
-
-  ctx.shadowColor =
-    "#238cff";
-
-
-  ctx.strokeRect(
-    topLeft.x,
-    topLeft.y,
-    world.width,
-    world.height
-  );
-
-
-  ctx.restore();
-}
-
-
-// ============================================================
-// SPIELER ZEICHNEN
-// ============================================================
-
-function drawPlayer(
-  player
-) {
-
-  const screen =
-    worldToScreen(
-      player.x,
-      player.y
-    );
-
-
-  const local =
-    player.id === myId;
-
-
-  const radius =
-    local
-      ? 23
-      : 20;
-
-
-  const color =
-    getPlayerColor(
-      player
-    );
-
-
-  ctx.save();
-
-
-  ctx.translate(
-    screen.x,
-    screen.y
-  );
-
-
-  // Schatten
-  ctx.beginPath();
-
-  ctx.ellipse(
-    0,
-    radius + 8,
-    radius * 0.9,
-    radius * 0.34,
-    0,
-    0,
-    Math.PI * 2
-  );
-
-  ctx.fillStyle =
-    "rgba(0,0,0,0.30)";
-
-  ctx.fill();
-
-
-  // Glow
-  ctx.shadowBlur =
-    local
-      ? 32
-      : 20;
-
-  ctx.shadowColor =
-    color;
-
-
-  // Körper
-  const gradient =
-    ctx.createRadialGradient(
-      -7,
-      -8,
-      2,
-      0,
-      0,
-      radius
-    );
-
-
-  gradient.addColorStop(
-    0,
-    "#ffffff"
-  );
-
-  gradient.addColorStop(
-    0.18,
-    color
-  );
-
-  gradient.addColorStop(
-    1,
-    color
-  );
-
-
-  ctx.fillStyle =
-    gradient;
-
-
-  ctx.beginPath();
-
-  ctx.arc(
-    0,
-    0,
-    radius,
-    0,
-    Math.PI * 2
-  );
-
-  ctx.fill();
-
-
-  ctx.shadowBlur = 0;
-
-
-  // Innenring
-  ctx.strokeStyle =
-    local
-      ? "rgba(255,255,255,0.8)"
-      : "rgba(255,255,255,0.28)";
-
-  ctx.lineWidth =
-    local
-      ? 2
-      : 1;
-
-
-  ctx.beginPath();
-
-  ctx.arc(
-    0,
-    0,
-    radius - 3,
-    0,
-    Math.PI * 2
-  );
-
-  ctx.stroke();
-
-
-  // Name
-  ctx.font =
-    local
-      ? "800 14px system-ui"
-      : "700 13px system-ui";
-
-  ctx.textAlign =
-    "center";
-
-  ctx.textBaseline =
-    "bottom";
-
-
-  // Text-Schatten
-  ctx.strokeStyle =
-    "rgba(0,0,0,0.75)";
-
-  ctx.lineWidth = 4;
-
-
-  ctx.strokeText(
-    player.name ||
-      "Spieler",
-    0,
-    -31
-  );
-
-
-  ctx.fillStyle =
-    local
-      ? "#6eefff"
-      : "#ffffff";
-
-
-  ctx.fillText(
-    player.name ||
-      "Spieler",
-    0,
-    -31
-  );
-
-
-  if (local) {
-
-    ctx.font =
-      "700 9px system-ui";
-
-    ctx.fillStyle =
-      "rgba(255,255,255,0.60)";
-
-    ctx.fillText(
-      "DU",
-      0,
-      -48
-    );
-  }
-
-
-  ctx.restore();
-}
-
-
-// ============================================================
-// MINIMAP
-// ============================================================
-
-function drawMinimap() {
-
-  const w =
-    minimap.width;
-
-  const h =
-    minimap.height;
-
-
-  minimapCtx.clearRect(
-    0,
-    0,
-    w,
-    h
-  );
-
-
-  minimapCtx.fillStyle =
-    "#070d1c";
-
-  minimapCtx.fillRect(
-    0,
-    0,
-    w,
-    h
-  );
-
-
-  // Straßen
-  minimapCtx.fillStyle =
-    "rgba(60,75,110,0.55)";
-
-
-  minimapCtx.fillRect(
-    0,
-    h / 2 - 4,
-    w,
-    8
-  );
-
-
-  minimapCtx.fillRect(
-    w / 2 - 4,
-    0,
-    8,
-    h
-  );
-
-
-  // Rand
-  minimapCtx.strokeStyle =
-    "rgba(50,170,255,0.8)";
-
-  minimapCtx.lineWidth =
-    2;
-
-  minimapCtx.strokeRect(
-    1,
-    1,
-    w - 2,
-    h - 2
-  );
-
-
-  // Spieler
-  for (
-    const player
-    of players
-  ) {
-
-    const x =
-      player.x /
-      world.width *
-      w;
-
-    const y =
-      player.y /
-      world.height *
-      h;
-
-
-    minimapCtx.beginPath();
-
-    minimapCtx.arc(
-      x,
-      y,
-      player.id === myId
-        ? 4
-        : 3,
-      0,
-      Math.PI * 2
-    );
-
-
-    minimapCtx.fillStyle =
-      getPlayerColor(
-        player
-      );
-
-    minimapCtx.fill();
-  }
-}
-
-
-// ============================================================
 // JOYSTICK
 // ============================================================
 
@@ -1503,29 +1730,27 @@ function updateJoystick(
       .getBoundingClientRect();
 
 
-  const centerX =
+  const cx =
     rect.left +
     rect.width / 2;
 
 
-  const centerY =
+  const cy =
     rect.top +
     rect.height / 2;
 
 
   let dx =
-    clientX -
-    centerX;
+    clientX - cx;
 
 
   let dy =
-    clientY -
-    centerY;
+    clientY - cy;
 
 
   const max =
     rect.width / 2 -
-    30;
+    26;
 
 
   const length =
@@ -1540,25 +1765,22 @@ function updateJoystick(
   ) {
 
     dx =
-      dx /
-      length *
-      max;
+      dx / length * max;
 
     dy =
-      dy /
-      length *
-      max;
+      dy / length * max;
   }
 
 
   joystick.x =
     dx / max;
 
+
   joystick.y =
     dy / max;
 
 
-  stickElement.style.transform =
+  joystickStick.style.transform =
     `translate(${dx}px, ${dy}px)`;
 }
 
@@ -1568,15 +1790,17 @@ function resetJoystick() {
   joystick.active =
     false;
 
+
   joystick.pointerId =
     null;
+
 
   joystick.x = 0;
   joystick.y = 0;
 
 
-  stickElement.style.transform =
-    "translate(0, 0)";
+  joystickStick.style.transform =
+    "translate(0,0)";
 }
 
 
@@ -1586,6 +1810,7 @@ joystickElement.addEventListener(
 
     joystick.active =
       true;
+
 
     joystick.pointerId =
       event.pointerId;
@@ -1609,9 +1834,7 @@ joystickElement.addEventListener(
   "pointermove",
   event => {
 
-    if (
-      !joystick.active
-    ) {
+    if (!joystick.active) {
       return;
     }
 
@@ -1637,6 +1860,980 @@ joystickElement.addEventListener(
 
 
 // ============================================================
+// GAME HELPERS
+// ============================================================
+
+function getMyPlayer() {
+
+  return players.find(
+    player =>
+      player.id === myId
+  );
+}
+
+
+function updateCamera() {
+
+  const me =
+    getMyPlayer();
+
+
+  if (!me) {
+    return;
+  }
+
+
+  camera.x +=
+    (me.x - camera.x)
+    * 0.13;
+
+
+  camera.y +=
+    (me.y - camera.y)
+    * 0.13;
+}
+
+
+function worldToScreen(
+  x,
+  y
+) {
+
+  return {
+
+    x:
+      x -
+      camera.x +
+      width / 2,
+
+    y:
+      y -
+      camera.y +
+      height / 2
+  };
+}
+
+
+// ============================================================
+// MAP DRAWING
+// ============================================================
+
+function drawMap() {
+
+  const map =
+    maps[selectedMap];
+
+
+  ctx.fillStyle =
+    map.background;
+
+
+  ctx.fillRect(
+    0,
+    0,
+    width,
+    height
+  );
+
+
+  drawWorldFloor(
+    map
+  );
+
+
+  if (
+    selectedMap ===
+    "industry"
+  ) {
+
+    drawIndustryMap(map);
+  }
+
+
+  if (
+    selectedMap ===
+    "harbor"
+  ) {
+
+    drawHarborMap(map);
+  }
+
+
+  if (
+    selectedMap ===
+    "labs"
+  ) {
+
+    drawLabsMap(map);
+  }
+
+
+  drawWorldBorder();
+}
+
+
+// ============================================================
+// FLOOR
+// ============================================================
+
+function drawWorldFloor(
+  map
+) {
+
+  const topLeft =
+    worldToScreen(
+      0,
+      0
+    );
+
+
+  ctx.fillStyle =
+    map.floor;
+
+
+  ctx.fillRect(
+    topLeft.x,
+    topLeft.y,
+    world.width,
+    world.height
+  );
+
+
+  const grid = 80;
+
+
+  ctx.strokeStyle =
+    "rgba(0,0,0,.045)";
+
+
+  ctx.lineWidth = 1;
+
+
+  for (
+    let x = 0;
+    x <= world.width;
+    x += grid
+  ) {
+
+    const p =
+      worldToScreen(
+        x,
+        0
+      );
+
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+      p.x,
+      topLeft.y
+    );
+
+    ctx.lineTo(
+      p.x,
+      topLeft.y +
+      world.height
+    );
+
+    ctx.stroke();
+  }
+
+
+  for (
+    let y = 0;
+    y <= world.height;
+    y += grid
+  ) {
+
+    const p =
+      worldToScreen(
+        0,
+        y
+      );
+
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+      topLeft.x,
+      p.y
+    );
+
+    ctx.lineTo(
+      topLeft.x +
+      world.width,
+      p.y
+    );
+
+    ctx.stroke();
+  }
+}
+
+
+// ============================================================
+// INDUSTRY
+// ============================================================
+
+function drawIndustryMap(
+  map
+) {
+
+  drawRoad(
+    0,
+    610,
+    2400,
+    170,
+    map.road
+  );
+
+
+  drawRoad(
+    1070,
+    0,
+    170,
+    1400,
+    map.road
+  );
+
+
+  drawBuilding(
+    180,
+    150,
+    650,
+    350,
+    "#77756f"
+  );
+
+
+  drawBuilding(
+    1450,
+    170,
+    620,
+    390,
+    "#85827b"
+  );
+
+
+  drawBuilding(
+    250,
+    900,
+    660,
+    300,
+    "#74736f"
+  );
+
+
+  drawBuilding(
+    1440,
+    900,
+    650,
+    310,
+    "#85827d"
+  );
+
+
+  drawCrates(
+    930,
+    240
+  );
+
+
+  drawCrates(
+    1270,
+    980
+  );
+}
+
+
+// ============================================================
+// HARBOR
+// ============================================================
+
+function drawHarborMap(
+  map
+) {
+
+  const water =
+    worldToScreen(
+      1600,
+      0
+    );
+
+
+  ctx.fillStyle =
+    "#39768c";
+
+
+  ctx.fillRect(
+    water.x,
+    water.y,
+    800,
+    1400
+  );
+
+
+  drawRoad(
+    0,
+    560,
+    1600,
+    170,
+    map.road
+  );
+
+
+  drawBuilding(
+    180,
+    180,
+    550,
+    270,
+    "#687275"
+  );
+
+
+  drawBuilding(
+    830,
+    860,
+    560,
+    320,
+    "#646c6f"
+  );
+
+
+  drawContainer(
+    250,
+    820,
+    "#c83d42"
+  );
+
+
+  drawContainer(
+    480,
+    920,
+    "#c88233"
+  );
+
+
+  drawContainer(
+    850,
+    270,
+    "#3d6f9a"
+  );
+
+
+  drawContainer(
+    1090,
+    350,
+    "#8e8435"
+  );
+}
+
+
+// ============================================================
+// LABS
+// ============================================================
+
+function drawLabsMap(
+  map
+) {
+
+  drawRoad(
+    0,
+    625,
+    2400,
+    120,
+    "#92989c"
+  );
+
+
+  drawRoad(
+    1140,
+    0,
+    120,
+    1400,
+    "#92989c"
+  );
+
+
+  drawBuilding(
+    180,
+    160,
+    780,
+    370,
+    "#e5e7e8"
+  );
+
+
+  drawBuilding(
+    1450,
+    150,
+    720,
+    420,
+    "#e5e7e8"
+  );
+
+
+  drawBuilding(
+    250,
+    870,
+    720,
+    330,
+    "#e5e7e8"
+  );
+
+
+  drawBuilding(
+    1450,
+    875,
+    710,
+    320,
+    "#e5e7e8"
+  );
+
+
+  const center =
+    worldToScreen(
+      1200,
+      700
+    );
+
+
+  ctx.fillStyle =
+    "#6f5caa";
+
+
+  ctx.beginPath();
+
+  ctx.arc(
+    center.x,
+    center.y,
+    70,
+    0,
+    Math.PI * 2
+  );
+
+  ctx.fill();
+}
+
+
+// ============================================================
+// MAP OBJECTS
+// ============================================================
+
+function drawRoad(
+  x,
+  y,
+  w,
+  h,
+  color
+) {
+
+  const p =
+    worldToScreen(
+      x,
+      y
+    );
+
+
+  ctx.fillStyle =
+    color;
+
+
+  ctx.fillRect(
+    p.x,
+    p.y,
+    w,
+    h
+  );
+
+
+  ctx.strokeStyle =
+    "rgba(255,255,255,.2)";
+
+
+  ctx.lineWidth = 2;
+
+
+  ctx.setLineDash(
+    [20, 22]
+  );
+
+
+  ctx.beginPath();
+
+
+  if (w > h) {
+
+    ctx.moveTo(
+      p.x,
+      p.y +
+      h / 2
+    );
+
+    ctx.lineTo(
+      p.x + w,
+      p.y + h / 2
+    );
+
+  } else {
+
+    ctx.moveTo(
+      p.x + w / 2,
+      p.y
+    );
+
+    ctx.lineTo(
+      p.x + w / 2,
+      p.y + h
+    );
+  }
+
+
+  ctx.stroke();
+
+
+  ctx.setLineDash([]);
+}
+
+
+function drawBuilding(
+  x,
+  y,
+  w,
+  h,
+  color
+) {
+
+  const p =
+    worldToScreen(
+      x,
+      y
+    );
+
+
+  ctx.fillStyle =
+    "rgba(0,0,0,.18)";
+
+
+  ctx.fillRect(
+    p.x + 13,
+    p.y + 16,
+    w,
+    h
+  );
+
+
+  ctx.fillStyle =
+    color;
+
+
+  ctx.fillRect(
+    p.x,
+    p.y,
+    w,
+    h
+  );
+
+
+  ctx.strokeStyle =
+    "rgba(0,0,0,.25)";
+
+
+  ctx.lineWidth = 8;
+
+
+  ctx.strokeRect(
+    p.x,
+    p.y,
+    w,
+    h
+  );
+
+
+  ctx.fillStyle =
+    "rgba(255,255,255,.10)";
+
+
+  ctx.fillRect(
+    p.x + 30,
+    p.y + 30,
+    w - 60,
+    18
+  );
+}
+
+
+function drawCrates(
+  x,
+  y
+) {
+
+  for (
+    let row = 0;
+    row < 2;
+    row++
+  ) {
+
+    for (
+      let col = 0;
+      col < 3;
+      col++
+    ) {
+
+      const p =
+        worldToScreen(
+          x + col * 52,
+          y + row * 52
+        );
+
+
+      ctx.fillStyle =
+        "#8b683f";
+
+
+      ctx.fillRect(
+        p.x,
+        p.y,
+        42,
+        42
+      );
+
+
+      ctx.strokeStyle =
+        "#6b4c2e";
+
+
+      ctx.lineWidth = 3;
+
+
+      ctx.strokeRect(
+        p.x,
+        p.y,
+        42,
+        42
+      );
+    }
+  }
+}
+
+
+function drawContainer(
+  x,
+  y,
+  color
+) {
+
+  const p =
+    worldToScreen(
+      x,
+      y
+    );
+
+
+  ctx.fillStyle =
+    "rgba(0,0,0,.2)";
+
+
+  ctx.fillRect(
+    p.x + 9,
+    p.y + 10,
+    180,
+    75
+  );
+
+
+  ctx.fillStyle =
+    color;
+
+
+  ctx.fillRect(
+    p.x,
+    p.y,
+    180,
+    75
+  );
+
+
+  ctx.strokeStyle =
+    "rgba(0,0,0,.25)";
+
+
+  for (
+    let i = 15;
+    i < 180;
+    i += 22
+  ) {
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+      p.x + i,
+      p.y
+    );
+
+    ctx.lineTo(
+      p.x + i,
+      p.y + 75
+    );
+
+    ctx.stroke();
+  }
+}
+
+
+// ============================================================
+// BORDER
+// ============================================================
+
+function drawWorldBorder() {
+
+  const p =
+    worldToScreen(
+      0,
+      0
+    );
+
+
+  ctx.strokeStyle =
+    "rgba(0,0,0,.35)";
+
+
+  ctx.lineWidth = 5;
+
+
+  ctx.strokeRect(
+    p.x,
+    p.y,
+    world.width,
+    world.height
+  );
+}
+
+
+// ============================================================
+// PLAYER
+// ============================================================
+
+function drawPlayer(
+  player
+) {
+
+  const p =
+    worldToScreen(
+      player.x,
+      player.y
+    );
+
+
+  const mine =
+    player.id === myId;
+
+
+  ctx.save();
+
+
+  ctx.translate(
+    p.x,
+    p.y
+  );
+
+
+  ctx.fillStyle =
+    "rgba(0,0,0,.22)";
+
+
+  ctx.beginPath();
+
+  ctx.ellipse(
+    5,
+    18,
+    21,
+    9,
+    0,
+    0,
+    Math.PI * 2
+  );
+
+  ctx.fill();
+
+
+  ctx.fillStyle =
+    mine
+      ? "#e6333c"
+      : "#45484d";
+
+
+  ctx.beginPath();
+
+  ctx.arc(
+    0,
+    0,
+    mine
+      ? 20
+      : 18,
+    0,
+    Math.PI * 2
+  );
+
+  ctx.fill();
+
+
+  ctx.strokeStyle =
+    mine
+      ? "#ffffff"
+      : "rgba(255,255,255,.55)";
+
+
+  ctx.lineWidth =
+    mine
+      ? 3
+      : 2;
+
+
+  ctx.stroke();
+
+
+  ctx.font =
+    mine
+      ? "800 13px system-ui"
+      : "700 12px system-ui";
+
+
+  ctx.textAlign =
+    "center";
+
+
+  ctx.textBaseline =
+    "bottom";
+
+
+  ctx.strokeStyle =
+    "rgba(0,0,0,.7)";
+
+
+  ctx.lineWidth = 4;
+
+
+  ctx.strokeText(
+    player.name ||
+      "Spieler",
+
+    0,
+
+    -28
+  );
+
+
+  ctx.fillStyle =
+    "#fff";
+
+
+  ctx.fillText(
+    player.name ||
+      "Spieler",
+
+    0,
+
+    -28
+  );
+
+
+  ctx.restore();
+}
+
+
+// ============================================================
+// MINIMAP
+// ============================================================
+
+function drawMinimap() {
+
+  const w =
+    minimapCanvas.width;
+
+
+  const h =
+    minimapCanvas.height;
+
+
+  minimapCtx.clearRect(
+    0,
+    0,
+    w,
+    h
+  );
+
+
+  minimapCtx.fillStyle =
+    "#25272a";
+
+
+  minimapCtx.fillRect(
+    0,
+    0,
+    w,
+    h
+  );
+
+
+  for (
+    const player
+    of players
+  ) {
+
+    const x =
+      player.x /
+      world.width *
+      w;
+
+
+    const y =
+      player.y /
+      world.height *
+      h;
+
+
+    minimapCtx.beginPath();
+
+
+    minimapCtx.arc(
+      x,
+      y,
+      player.id === myId
+        ? 5
+        : 3,
+      0,
+      Math.PI * 2
+    );
+
+
+    minimapCtx.fillStyle =
+      player.id === myId
+        ? "#e6333c"
+        : "#ffffff";
+
+
+    minimapCtx.fill();
+  }
+
+
+  minimapCtx.strokeStyle =
+    "rgba(255,255,255,.25)";
+
+
+  minimapCtx.lineWidth =
+    2;
+
+
+  minimapCtx.strokeRect(
+    1,
+    1,
+    w - 2,
+    h - 2
+  );
+}
+
+
+// ============================================================
 // RENDER
 // ============================================================
 
@@ -1644,11 +2841,8 @@ function render() {
 
   updateCamera();
 
-  drawBackground();
 
-  drawMapDecorations();
-
-  drawWorldBorder();
+  drawMap();
 
 
   for (
@@ -1663,15 +2857,10 @@ function render() {
 
 
   drawMinimap();
-}
 
-
-function animationLoop() {
-
-  render();
 
   requestAnimationFrame(
-    animationLoop
+    render
   );
 }
 
@@ -1680,8 +2869,6 @@ function animationLoop() {
 // START
 // ============================================================
 
-setConnectionStatus(false);
-
 connect();
 
-animationLoop();
+render();
