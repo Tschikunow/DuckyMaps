@@ -16,20 +16,27 @@
 </head>
 
 <body>
+
   <canvas id="game"></canvas>
 
+  <!-- OBERE LEISTE -->
   <div id="topBar">
-    <div class="status">
+
+    <div class="glassBox statusBox">
       <span id="connectionDot"></span>
       <span id="connectionText">Verbinde...</span>
     </div>
 
-    <div class="players">
-      Spieler: <span id="playerCount">0</span>
+    <div class="glassBox playerCounter">
+      👥 <span id="playerCount">0</span>
     </div>
+
   </div>
 
+
+  <!-- NAME -->
   <div id="namePanel">
+
     <input
       id="nameInput"
       maxlength="20"
@@ -37,15 +44,58 @@
       autocomplete="off"
     >
 
-    <button id="nameButton">Speichern</button>
+    <button id="nameButton">
+      Speichern
+    </button>
+
   </div>
 
+
+  <!-- SPIELERLISTE -->
+  <div id="playerListPanel">
+
+    <div id="playerListTitle">
+      ONLINE
+    </div>
+
+    <div id="playerList"></div>
+
+  </div>
+
+
+  <!-- MINIMAP -->
+  <div id="minimapPanel">
+
+    <canvas
+      id="minimap"
+      width="180"
+      height="105"
+    ></canvas>
+
+  </div>
+
+
+  <!-- MELDUNGEN -->
+  <div id="notifications"></div>
+
+
+  <!-- HANDY JOYSTICK -->
   <div id="touchControls">
+
     <div id="joystick">
       <div id="stick"></div>
     </div>
+
   </div>
 
+
+  <!-- HILFE -->
+  <div id="controlsHint">
+    WASD / Pfeiltasten
+  </div>
+
+
   <script src="/game.js"></script>
+
 </body>
 </html>
