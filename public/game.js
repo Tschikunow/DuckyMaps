@@ -1,13 +1,14 @@
 "use strict";
 
-
 // ============================================================
-// DUCKYMAPS V4 CLIENT
+// DUCKYMAPS V4.5 CLIENT
 // ============================================================
 
 const $ =
   id =>
-    document.getElementById(id);
+    document.getElementById(
+      id
+    );
 
 
 // ============================================================
@@ -18,14 +19,18 @@ const canvas =
   $("gameCanvas");
 
 const ctx =
-  canvas.getContext("2d");
+  canvas.getContext(
+    "2d"
+  );
 
 
 const minimapCanvas =
   $("minimapCanvas");
 
 const minimapCtx =
-  minimapCanvas.getContext("2d");
+  minimapCanvas.getContext(
+    "2d"
+  );
 
 
 let screenWidth = 0;
@@ -158,10 +163,6 @@ const notifications =
   $("notifications");
 
 
-// ============================================================
-// SETTINGS ELEMENTS
-// ============================================================
-
 const nameInput =
   $("nameInput");
 
@@ -193,10 +194,6 @@ const soundToggle =
   $("soundToggle");
 
 
-// ============================================================
-// MOBILE
-// ============================================================
-
 const moveZone =
   $("moveZone");
 
@@ -207,26 +204,49 @@ const joystickStick =
   $("joystickStick");
 
 
+// Desktop-Hinweis aktualisieren.
+const desktopHint =
+  document.querySelector(
+    ".desktopHint"
+  );
+
+
+if (
+  desktopHint
+) {
+  desktopHint.textContent =
+    "WASD · LEERTASTE SPRINGEN · E INTERAGIEREN";
+}
+
+
 // ============================================================
 // SETTINGS
 // ============================================================
 
 const defaultSettings = {
-  name: "Spieler",
+  name:
+    "Spieler",
 
-  theme: "dark",
+  theme:
+    "dark",
 
-  minimap: true,
+  minimap:
+    true,
 
-  playerList: true,
+  playerList:
+    true,
 
-  zoom: 100,
+  zoom:
+    100,
 
-  music: true,
+  music:
+    true,
 
-  musicVolume: 30,
+  musicVolume:
+    30,
 
-  sounds: true
+  sounds:
+    true
 };
 
 
@@ -256,15 +276,19 @@ let settings =
 let selectedMap =
   localStorage.getItem(
     "duckymaps-map"
-  ) || "industry";
+  ) ||
+  "industry";
 
 
 const mapNames = {
-  industry: "Industrie",
+  industry:
+    "Industrie",
 
-  harbor: "Hafen",
+  harbor:
+    "Hafen",
 
-  labs: "Labs"
+  labs:
+    "Labs"
 };
 
 
@@ -274,41 +298,44 @@ const mapNames = {
 
 let socket = null;
 
-let reconnectTimer = null;
+let reconnectTimer =
+  null;
 
 let myId = null;
 
 let onlinePlayers = 0;
 
-
 let currentMap = null;
 
+let serverPlayers = [];
+
 let currentDoorStates = {};
+
+let worldState = {
+  lightsOn: true,
+
+  powerOn: true,
+
+  interactables: {}
+};
 
 
 let playing = false;
 
 let paused = false;
 
-let settingsFromPause = false;
+let settingsFromPause =
+  false;
 
+let coins = 0;
 
-let serverPlayers = [];
 
 const renderPlayers =
   new Map();
 
 
-let coins = 0;
-
-
-// ============================================================
-// CAMERA
-// ============================================================
-
 const camera = {
   x: 0,
-
   y: 0
 };
 
@@ -327,7 +354,6 @@ const keys =
 
 const input = {
   x: 0,
-
   y: 0
 };
 
@@ -338,11 +364,9 @@ const joystick = {
   pointerId: null,
 
   centerX: 0,
-
   centerY: 0,
 
   x: 0,
-
   y: 0
 };
 
@@ -351,24 +375,11 @@ const joystick = {
 // AUDIO
 // ============================================================
 
-let audioContext = null;
+let audioContext =
+  null;
 
-let musicGain = null;
-
-let musicOscillators = [];
-
-
-// ============================================================
-// DEVICE
-// ============================================================
-
-function isTouchDevice() {
-  return (
-    window.matchMedia(
-      "(pointer: coarse)"
-    ).matches
-  );
-}
+let musicGain =
+  null;
 
 
 // ============================================================
@@ -378,7 +389,9 @@ function isTouchDevice() {
 function resize() {
   dpr =
     Math.min(
-      window.devicePixelRatio || 1,
+      window.devicePixelRatio ||
+      1,
+
       2
     );
 
@@ -393,13 +406,15 @@ function resize() {
 
   canvas.width =
     Math.floor(
-      screenWidth * dpr
+      screenWidth *
+      dpr
     );
 
 
   canvas.height =
     Math.floor(
-      screenHeight * dpr
+      screenHeight *
+      dpr
     );
 
 
@@ -432,7 +447,7 @@ resize();
 
 
 // ============================================================
-// SETTINGS UI
+// SETTINGS
 // ============================================================
 
 function refreshSettingsUI() {
@@ -509,9 +524,11 @@ function saveSettings() {
   settings.name =
     nameInput.value
       .trim()
-      .slice(0, 20)
-      ||
-      "Spieler";
+      .slice(
+        0,
+        20
+      ) ||
+    "Spieler";
 
 
   settings.theme =
@@ -650,7 +667,9 @@ function ensureAudio() {
     window.webkitAudioContext;
 
 
-  if (!AudioContext) {
+  if (
+    !AudioContext
+  ) {
     return;
   }
 
@@ -669,7 +688,11 @@ function ensureAudio() {
 
 
   const frequencies =
-    [73, 110, 146];
+    [
+      73,
+      110,
+      146
+    ];
 
 
   for (
@@ -707,11 +730,6 @@ function ensureAudio() {
 
 
     oscillator.start();
-
-
-    musicOscillators.push(
-      oscillator
-    );
   }
 
 
@@ -728,25 +746,22 @@ function applyMusic() {
   }
 
 
-  const enabled =
-    musicToggle.checked;
-
-
   const volume =
     Number(
       musicVolume.value
-    ) / 100;
+    ) /
+    100;
 
 
   musicGain.gain
     .setTargetAtTime(
-      enabled
-        ? volume * .22
+      musicToggle.checked
+        ? volume * 0.22
         : 0,
 
       audioContext.currentTime,
 
-      .12
+      0.12
     );
 }
 
@@ -762,7 +777,9 @@ function uiSound() {
   ensureAudio();
 
 
-  if (!audioContext) {
+  if (
+    !audioContext
+  ) {
     return;
   }
 
@@ -775,25 +792,22 @@ function uiSound() {
     audioContext.createGain();
 
 
-  oscillator.type =
-    "sine";
-
-
   oscillator.frequency.value =
-    440;
+    430;
 
 
   gain.gain.setValueAtTime(
-    .035,
+    0.025,
+
     audioContext.currentTime
   );
 
 
   gain.gain.exponentialRampToValueAtTime(
-    .001,
+    0.001,
 
     audioContext.currentTime +
-      .07
+    0.06
   );
 
 
@@ -812,7 +826,7 @@ function uiSound() {
 
   oscillator.stop(
     audioContext.currentTime +
-      .08
+    0.07
   );
 }
 
@@ -834,20 +848,24 @@ setTimeout(
           "hidden"
         );
       },
+
       650
     );
   },
+
   1200
 );
 
 
 // ============================================================
-// MAP SELECTION
+// MAP SELECT
 // ============================================================
 
 function updateSelectedMap() {
   if (
-    !mapNames[selectedMap]
+    !mapNames[
+      selectedMap
+    ]
   ) {
     selectedMap =
       "industry";
@@ -855,7 +873,9 @@ function updateSelectedMap() {
 
 
   playMapName.textContent =
-    mapNames[selectedMap];
+    mapNames[
+      selectedMap
+    ];
 
 
   document
@@ -868,7 +888,7 @@ function updateSelectedMap() {
           "selected",
 
           card.dataset.map ===
-            selectedMap
+          selectedMap
         );
       }
     );
@@ -925,15 +945,17 @@ playButton.addEventListener(
 mapsButton.addEventListener(
   "click",
   () => {
-    uiSound();
-
     mainMenu.classList.add(
       "hidden"
     );
 
+
     mapsMenu.classList.remove(
       "hidden"
     );
+
+
+    uiSound();
   }
 );
 
@@ -941,15 +963,17 @@ mapsButton.addEventListener(
 mapsBackButton.addEventListener(
   "click",
   () => {
-    uiSound();
-
     mapsMenu.classList.add(
       "hidden"
     );
 
+
     mainMenu.classList.remove(
       "hidden"
     );
+
+
+    uiSound();
   }
 );
 
@@ -985,17 +1009,19 @@ function openSettings(
 
 settingsButton.addEventListener(
   "click",
-  () => {
-    openSettings(false);
-  }
+  () =>
+    openSettings(
+      false
+    )
 );
 
 
 pauseSettingsButton.addEventListener(
   "click",
-  () => {
-    openSettings(true);
-  }
+  () =>
+    openSettings(
+      true
+    )
 );
 
 
@@ -1035,7 +1061,7 @@ function startGame() {
   if (
     !socket ||
     socket.readyState !==
-      WebSocket.OPEN
+    WebSocket.OPEN
   ) {
     showNotification(
       "Server wird noch verbunden."
@@ -1050,9 +1076,13 @@ function startGame() {
   paused = false;
 
 
-  currentMap = null;
+  currentMap =
+    null;
 
-  serverPlayers = [];
+
+  serverPlayers =
+    [];
+
 
   renderPlayers.clear();
 
@@ -1077,7 +1107,8 @@ function startGame() {
 
   socket.send(
     JSON.stringify({
-      type: "joinMap",
+      type:
+        "joinMap",
 
       mapId:
         selectedMap
@@ -1091,7 +1122,9 @@ function startGame() {
 // ============================================================
 
 function openPause() {
-  if (!playing) {
+  if (
+    !playing
+  ) {
     return;
   }
 
@@ -1151,7 +1184,7 @@ exitButton.addEventListener(
     if (
       socket &&
       socket.readyState ===
-        WebSocket.OPEN
+      WebSocket.OPEN
     ) {
       socket.send(
         JSON.stringify({
@@ -1199,7 +1232,7 @@ function connect() {
 
   const protocol =
     location.protocol ===
-      "https:"
+    "https:"
       ? "wss:"
       : "ws:";
 
@@ -1226,10 +1259,6 @@ function connect() {
 
 
       connectionDot.style.background =
-        "#4de586";
-
-
-      connectionDot.style.color =
         "#4de586";
 
 
@@ -1269,14 +1298,14 @@ function connect() {
 }
 
 
-// ============================================================
-// NETWORK MESSAGE
-// ============================================================
-
-function handleMessage(raw) {
+function handleMessage(
+  raw
+) {
   try {
     const message =
-      JSON.parse(raw);
+      JSON.parse(
+        raw
+      );
 
 
     if (
@@ -1299,7 +1328,8 @@ function handleMessage(raw) {
       onlinePlayers =
         Number(
           message.online
-        ) || 0;
+        ) ||
+        0;
 
 
       onlineCount.textContent =
@@ -1318,11 +1348,13 @@ function handleMessage(raw) {
 
 
       camera.x =
-        currentMap.width / 2;
+        currentMap.width /
+        2;
 
 
       camera.y =
-        currentMap.height / 2;
+        currentMap.height /
+        2;
 
 
       hudMapName.textContent =
@@ -1348,7 +1380,8 @@ function handleMessage(raw) {
             "hidden"
           );
         },
-        900
+
+        850
       );
 
       return;
@@ -1362,7 +1395,7 @@ function handleMessage(raw) {
       if (
         currentMap &&
         message.mapId !==
-          currentMap.id
+        currentMap.id
       ) {
         return;
       }
@@ -1377,7 +1410,13 @@ function handleMessage(raw) {
 
 
       currentDoorStates =
-        message.doors || {};
+        message.doors ||
+        {};
+
+
+      worldState =
+        message.worldState ||
+        worldState;
 
 
       updateRenderTargets();
@@ -1416,10 +1455,22 @@ function handleMessage(raw) {
 
         true
       );
+
+      return;
+    }
+
+
+    if (
+      message.type ===
+      "interactionMessage"
+    ) {
+      showNotification(
+        message.text
+      );
     }
 
   } catch {
-    // ungültige Daten ignorieren
+    // Ungültige Nachricht.
   }
 }
 
@@ -1432,7 +1483,7 @@ function sendName() {
   if (
     !socket ||
     socket.readyState !==
-      WebSocket.OPEN
+    WebSocket.OPEN
   ) {
     return;
   }
@@ -1454,22 +1505,31 @@ function sendName() {
 // COINS
 // ============================================================
 
-function setCoins(value) {
+function setCoins(
+  value
+) {
   coins =
-    Number(value) || 0;
+    Number(
+      value
+    ) ||
+    0;
 
 
   coinCount.textContent =
-    String(coins);
+    String(
+      coins
+    );
 
 
   profileCoins.textContent =
-    String(coins);
+    String(
+      coins
+    );
 }
 
 
 // ============================================================
-// NOTIFICATION
+// NOTIFICATIONS
 // ============================================================
 
 function showNotification(
@@ -1501,17 +1561,18 @@ function showNotification(
     () => {
       element.remove();
     },
-    2700
+
+    2500
   );
 }
 
 
 // ============================================================
-// SMOOTH NETWORK PLAYERS
+// SMOOTH NETWORKING
 // ============================================================
 
 function updateRenderTargets() {
-  const ids =
+  const activeIds =
     new Set();
 
 
@@ -1519,7 +1580,7 @@ function updateRenderTargets() {
     const player
     of serverPlayers
   ) {
-    ids.add(
+    activeIds.add(
       player.id
     );
 
@@ -1530,7 +1591,9 @@ function updateRenderTargets() {
       );
 
 
-    if (!renderPlayer) {
+    if (
+      !renderPlayer
+    ) {
       renderPlayer = {
         ...player,
 
@@ -1541,7 +1604,12 @@ function updateRenderTargets() {
           player.y,
 
         targetJump:
-          player.jumpHeight || 0
+          player.jumpHeight ||
+          0,
+
+        jumpHeight:
+          player.jumpHeight ||
+          0
       };
 
 
@@ -1552,16 +1620,43 @@ function updateRenderTargets() {
     }
 
 
+    // Kleine Extrapolation:
+    // reduziert das sichtbare Netzwerkzittern.
+    const prediction =
+      0.045;
+
+
     renderPlayer.targetX =
-      player.x;
+      player.x +
+      (
+        player.vx ||
+        0
+      ) *
+      prediction;
 
 
     renderPlayer.targetY =
-      player.y;
+      player.y +
+      (
+        player.vy ||
+        0
+      ) *
+      prediction;
 
 
     renderPlayer.targetJump =
-      player.jumpHeight || 0;
+      player.jumpHeight ||
+      0;
+
+
+    renderPlayer.vx =
+      player.vx ||
+      0;
+
+
+    renderPlayer.vy =
+      player.vy ||
+      0;
 
 
     renderPlayer.name =
@@ -1569,11 +1664,19 @@ function updateRenderTargets() {
 
 
     renderPlayer.bunnyhop =
-      player.bunnyhop || 0;
+      player.bunnyhop ||
+      0;
+
+
+    renderPlayer.hidden =
+      Boolean(
+        player.hidden
+      );
 
 
     renderPlayer.coins =
-      player.coins || 0;
+      player.coins ||
+      0;
   }
 
 
@@ -1582,7 +1685,9 @@ function updateRenderTargets() {
     of renderPlayers.keys()
   ) {
     if (
-      !ids.has(id)
+      !activeIds.has(
+        id
+      )
     ) {
       renderPlayers.delete(
         id
@@ -1592,18 +1697,22 @@ function updateRenderTargets() {
 }
 
 
-function smoothPlayers(dt) {
+function smoothPlayers(
+  dt
+) {
   const positionFactor =
     1 -
     Math.exp(
-      -14 * dt
+      -16 *
+      dt
     );
 
 
   const jumpFactor =
     1 -
     Math.exp(
-      -18 * dt
+      -20 *
+      dt
     );
 
 
@@ -1627,15 +1736,10 @@ function smoothPlayers(dt) {
       positionFactor;
 
 
-    player.jumpHeight =
-      (
-        player.jumpHeight || 0
-      ) +
+    player.jumpHeight +=
       (
         player.targetJump -
-        (
-          player.jumpHeight || 0
-        )
+        player.jumpHeight
       ) *
       jumpFactor;
   }
@@ -1655,36 +1759,9 @@ function updatePlayerList() {
     "";
 
 
-  const sorted =
-    [...serverPlayers]
-      .sort(
-        (a, b) => {
-          if (
-            a.id === myId
-          ) {
-            return -1;
-          }
-
-
-          if (
-            b.id === myId
-          ) {
-            return 1;
-          }
-
-
-          return (
-            a.name || ""
-          ).localeCompare(
-            b.name || ""
-          );
-        }
-      );
-
-
   for (
     const player
-    of sorted
+    of serverPlayers
   ) {
     const line =
       document.createElement(
@@ -1738,14 +1815,15 @@ function updatePlayerList() {
 
 
 // ============================================================
-// SPEED HUD
+// SPEED
 // ============================================================
 
 function updateSpeed() {
   const me =
     serverPlayers.find(
       player =>
-        player.id === myId
+        player.id ===
+        myId
     );
 
 
@@ -1754,23 +1832,26 @@ function updateSpeed() {
   }
 
 
-  const percentage =
+  const percent =
     Math.round(
       100 +
       (
-        me.bunnyhop || 0
-      ) * 100
+        me.bunnyhop ||
+        0
+      ) *
+      100
     );
 
 
   speedValue.textContent =
-    `${percentage}%`;
+    `${percent}%`;
 
 
   speedHud.classList.toggle(
     "hidden",
 
-    percentage <= 102
+    percent <
+    108
   );
 }
 
@@ -1782,16 +1863,16 @@ function updateSpeed() {
 window.addEventListener(
   "keydown",
   event => {
-    const key =
-      event.key.toLowerCase();
-
-
     if (
       document.activeElement ===
       nameInput
     ) {
       return;
     }
+
+
+    const key =
+      event.key.toLowerCase();
 
 
     if (
@@ -1805,7 +1886,9 @@ window.addEventListener(
         "arrowleft",
         "arrowright",
         " "
-      ].includes(key)
+      ].includes(
+        key
+      )
     ) {
       event.preventDefault();
     }
@@ -1813,7 +1896,7 @@ window.addEventListener(
 
     if (
       event.key ===
-        "Escape" &&
+      "Escape" &&
       playing
     ) {
       if (
@@ -1832,13 +1915,27 @@ window.addEventListener(
 
     if (
       key === " " &&
-      !keys.has(" ")
+      !keys.has(
+        " "
+      )
     ) {
       requestJump();
     }
 
 
-    keys.add(key);
+    if (
+      key === "e" &&
+      !keys.has(
+        "e"
+      )
+    ) {
+      requestInteraction();
+    }
+
+
+    keys.add(
+      key
+    );
   }
 );
 
@@ -1854,7 +1951,7 @@ window.addEventListener(
 
 
 // ============================================================
-// INPUT
+// MOVEMENT
 // ============================================================
 
 function calculateInput() {
@@ -1863,7 +1960,6 @@ function calculateInput() {
     paused
   ) {
     input.x = 0;
-
     input.y = 0;
 
     return;
@@ -1871,7 +1967,6 @@ function calculateInput() {
 
 
   let x = 0;
-
   let y = 0;
 
 
@@ -1934,16 +2029,15 @@ function calculateInput() {
 
 
   if (
-    length > 1
+    length >
+    1
   ) {
     x /= length;
-
     y /= length;
   }
 
 
   input.x = x;
-
   input.y = y;
 }
 
@@ -1955,7 +2049,7 @@ function sendInput() {
   if (
     !socket ||
     socket.readyState !==
-      WebSocket.OPEN
+    WebSocket.OPEN
   ) {
     return;
   }
@@ -1978,27 +2072,23 @@ function sendInput() {
 
 setInterval(
   sendInput,
-  1000 / 30
+
+  1000 /
+  30
 );
 
 
 // ============================================================
-// JUMP / BUNNYHOP
+// JUMP / BHOP
 // ============================================================
 
 function requestJump() {
   if (
     !playing ||
-    paused
-  ) {
-    return;
-  }
-
-
-  if (
+    paused ||
     !socket ||
     socket.readyState !==
-      WebSocket.OPEN
+    WebSocket.OPEN
   ) {
     return;
   }
@@ -2023,15 +2113,37 @@ jumpButton.addEventListener(
 );
 
 
+// ============================================================
+// INTERACTION
+// ============================================================
+
+function requestInteraction() {
+  if (
+    !playing ||
+    paused ||
+    !socket ||
+    socket.readyState !==
+    WebSocket.OPEN
+  ) {
+    return;
+  }
+
+
+  socket.send(
+    JSON.stringify({
+      type:
+        "interact"
+    })
+  );
+}
+
+
 actionButton.addEventListener(
   "pointerdown",
   event => {
     event.preventDefault();
 
-
-    showNotification(
-      "Aktion verfügbar, sobald du an einem interaktiven Objekt bist."
-    );
+    requestInteraction();
   }
 );
 
@@ -2049,35 +2161,38 @@ function positionJoystickBase(
       .getBoundingClientRect();
 
 
-  const size = 105;
+  const size =
+    105;
 
 
   const x =
     Math.max(
-      zone.left + 15,
+      zone.left +
+      15,
 
       Math.min(
         clientX -
-          size / 2,
+        size / 2,
 
         zone.right -
-          size -
-          15
+        size -
+        15
       )
     );
 
 
   const y =
     Math.max(
-      zone.top + 15,
+      zone.top +
+      15,
 
       Math.min(
         clientY -
-          size / 2,
+        size / 2,
 
         zone.bottom -
-          size -
-          15
+        size -
+        15
       )
     );
 
@@ -2095,11 +2210,13 @@ function positionJoystickBase(
 
 
   joystick.centerX =
-    x + size / 2;
+    x +
+    size / 2;
 
 
   joystick.centerY =
-    y + size / 2;
+    y +
+    size / 2;
 }
 
 
@@ -2118,7 +2235,7 @@ function updateJoystick(
 
 
   const max =
-    35;
+    36;
 
 
   const distance =
@@ -2129,7 +2246,8 @@ function updateJoystick(
 
 
   if (
-    distance > max
+    distance >
+    max
   ) {
     dx =
       dx /
@@ -2145,11 +2263,13 @@ function updateJoystick(
 
 
   joystick.x =
-    dx / max;
+    dx /
+    max;
 
 
   joystick.y =
-    dy / max;
+    dy /
+    max;
 
 
   joystickStick.style.transform =
@@ -2220,7 +2340,7 @@ moveZone.addEventListener(
     if (
       !joystick.active ||
       event.pointerId !==
-        joystick.pointerId
+      joystick.pointerId
     ) {
       return;
     }
@@ -2257,7 +2377,9 @@ function getMyRenderPlayer() {
 }
 
 
-function updateCamera(dt) {
+function updateCamera(
+  dt
+) {
   const me =
     getMyRenderPlayer();
 
@@ -2270,7 +2392,8 @@ function updateCamera(dt) {
   const factor =
     1 -
     Math.exp(
-      -8.5 * dt
+      -10 *
+      dt
     );
 
 
@@ -2295,6 +2418,13 @@ function updateCamera(dt) {
 // ZOOM
 // ============================================================
 
+function isTouchDevice() {
+  return window.matchMedia(
+    "(pointer: coarse)"
+  ).matches;
+}
+
+
 function getZoom() {
   let zoom =
     settings.zoom /
@@ -2303,9 +2433,11 @@ function getZoom() {
 
   if (
     isTouchDevice() &&
-    screenWidth < 700
+    screenWidth <
+    700
   ) {
-    zoom *= .82;
+    zoom *=
+      0.82;
   }
 
 
@@ -2328,7 +2460,8 @@ function worldToScreen(
         camera.x
       ) *
       zoom +
-      screenWidth / 2,
+      screenWidth /
+      2,
 
     y:
       (
@@ -2336,40 +2469,9 @@ function worldToScreen(
         camera.y
       ) *
       zoom +
-      screenHeight / 2
+      screenHeight /
+      2
   };
-}
-
-
-// ============================================================
-// RECT DRAW HELPER
-// ============================================================
-
-function drawWorldRect(
-  rect,
-  color
-) {
-  const position =
-    worldToScreen(
-      rect.x,
-      rect.y
-    );
-
-
-  const zoom =
-    getZoom();
-
-
-  ctx.fillStyle =
-    color;
-
-
-  ctx.fillRect(
-    position.x,
-    position.y,
-    rect.w * zoom,
-    rect.h * zoom
-  );
 }
 
 
@@ -2378,9 +2480,12 @@ function drawWorldRect(
 // ============================================================
 
 function drawFloor() {
-  if (!currentMap) {
+  if (
+    !currentMap
+  ) {
     ctx.fillStyle =
       "#111217";
+
 
     ctx.fillRect(
       0,
@@ -2410,7 +2515,7 @@ function drawFloor() {
 
 
   const tile =
-    80;
+    64;
 
 
   const startX =
@@ -2426,13 +2531,6 @@ function drawFloor() {
     tile;
 
 
-  const endX =
-    camera.x +
-    screenWidth /
-    zoom /
-    2;
-
-
   const startY =
     Math.floor(
       (
@@ -2444,6 +2542,13 @@ function drawFloor() {
       tile
     ) *
     tile;
+
+
+  const endX =
+    camera.x +
+    screenWidth /
+    zoom /
+    2;
 
 
   const endY =
@@ -2462,10 +2567,10 @@ function drawFloor() {
 
   for (
     let x = startX;
-    x < endX;
+    x <= endX;
     x += tile
   ) {
-    const a =
+    const p =
       worldToScreen(
         x,
         0
@@ -2475,12 +2580,12 @@ function drawFloor() {
     ctx.beginPath();
 
     ctx.moveTo(
-      a.x,
+      p.x,
       0
     );
 
     ctx.lineTo(
-      a.x,
+      p.x,
       screenHeight
     );
 
@@ -2490,10 +2595,10 @@ function drawFloor() {
 
   for (
     let y = startY;
-    y < endY;
+    y <= endY;
     y += tile
   ) {
-    const a =
+    const p =
       worldToScreen(
         0,
         y
@@ -2504,12 +2609,12 @@ function drawFloor() {
 
     ctx.moveTo(
       0,
-      a.y
+      p.y
     );
 
     ctx.lineTo(
       screenWidth,
-      a.y
+      p.y
     );
 
     ctx.stroke();
@@ -2519,55 +2624,102 @@ function drawFloor() {
   if (
     currentMap.water
   ) {
-    drawWorldRect(
-      currentMap.water,
-      "#2f7590"
-    );
-
-
-    const water =
+    const p =
       worldToScreen(
         currentMap.water.x,
         currentMap.water.y
       );
 
 
-    const gradient =
-      ctx.createLinearGradient(
-        water.x,
-        0,
-        water.x +
-          currentMap.water.w *
-          zoom,
-        0
-      );
-
-
-    gradient.addColorStop(
-      0,
-      "rgba(255,255,255,.05)"
-    );
-
-
-    gradient.addColorStop(
-      1,
-      "rgba(0,30,50,.15)"
-    );
-
-
     ctx.fillStyle =
-      gradient;
+      "#347993";
 
 
     ctx.fillRect(
-      water.x,
-      water.y,
+      p.x,
+      p.y,
+
       currentMap.water.w *
-        zoom,
+      zoom,
+
       currentMap.water.h *
-        zoom
+      zoom
     );
+
+
+    ctx.strokeStyle =
+      "rgba(255,255,255,.10)";
+
+
+    for (
+      let y = 25;
+      y < currentMap.water.h;
+      y += 50
+    ) {
+      ctx.beginPath();
+
+
+      ctx.moveTo(
+        p.x +
+        20,
+
+        p.y +
+        y *
+        zoom
+      );
+
+
+      ctx.lineTo(
+        p.x +
+        currentMap.water.w *
+        zoom -
+        20,
+
+        p.y +
+        y *
+        zoom
+      );
+
+
+      ctx.stroke();
+    }
   }
+}
+
+
+// ============================================================
+// RECT
+// ============================================================
+
+function drawRect(
+  item,
+  color
+) {
+  const p =
+    worldToScreen(
+      item.x,
+      item.y
+    );
+
+
+  const zoom =
+    getZoom();
+
+
+  ctx.fillStyle =
+    color;
+
+
+  ctx.fillRect(
+    p.x,
+    p.y,
+
+    item.w *
+    zoom,
+
+    item.h *
+    zoom
+  );
 }
 
 
@@ -2576,7 +2728,9 @@ function drawFloor() {
 // ============================================================
 
 function drawWalls() {
-  if (!currentMap) {
+  if (
+    !currentMap
+  ) {
     return;
   }
 
@@ -2597,21 +2751,23 @@ function drawWalls() {
 
 
     ctx.fillStyle =
-      "rgba(0,0,0,.16)";
+      "rgba(0,0,0,.20)";
 
 
     ctx.fillRect(
       p.x +
-        7 * zoom,
+      8 *
+      zoom,
 
       p.y +
-        9 * zoom,
+      8 *
+      zoom,
 
       wall.w *
-        zoom,
+      zoom,
 
       wall.h *
-        zoom
+      zoom
     );
 
 
@@ -2624,10 +2780,10 @@ function drawWalls() {
       p.y,
 
       wall.w *
-        zoom,
+      zoom,
 
       wall.h *
-        zoom
+      zoom
     );
 
 
@@ -2640,11 +2796,14 @@ function drawWalls() {
       p.y,
 
       wall.w *
-        zoom,
+      zoom,
 
       Math.min(
-        wall.h * zoom,
-        8 * zoom
+        8 *
+        zoom,
+
+        wall.h *
+        zoom
       )
     );
   }
@@ -2652,11 +2811,13 @@ function drawWalls() {
 
 
 // ============================================================
-// DOORS
+// REAL SWINGING DOORS
 // ============================================================
 
 function drawDoors() {
-  if (!currentMap) {
+  if (
+    !currentMap
+  ) {
     return;
   }
 
@@ -2680,7 +2841,8 @@ function drawDoors() {
     const amount =
       Number(
         state.amount
-      ) || 0;
+      ) ||
+      0;
 
 
     const p =
@@ -2690,72 +2852,205 @@ function drawDoors() {
       );
 
 
+    const doorWidth =
+      door.w *
+      zoom;
+
+
+    const doorThickness =
+      14 *
+      zoom;
+
+
+    const hingeLeft =
+      door.hinge !==
+      "right";
+
+
+    const hingeX =
+      hingeLeft
+        ? p.x
+        : p.x +
+          doorWidth;
+
+
+    const hingeY =
+      p.y +
+      doorThickness /
+      2;
+
+
+    const direction =
+      hingeLeft
+        ? -1
+        : 1;
+
+
+    const angle =
+      direction *
+      amount *
+      Math.PI /
+      2;
+
+
     ctx.save();
 
 
+    ctx.translate(
+      hingeX,
+      hingeY
+    );
+
+
+    ctx.rotate(
+      angle
+    );
+
+
+    // Schatten
     ctx.fillStyle =
-      currentMap.colors.door;
+      "rgba(0,0,0,.25)";
 
 
-    if (
-      door.direction ===
-      "horizontal"
-    ) {
-      const visible =
-        door.w *
-        (
-          1 -
-          amount
-        );
+    ctx.fillRect(
+      hingeLeft
+        ? 5
+        : -doorWidth -
+          5,
+
+      5,
+
+      doorWidth,
+      doorThickness
+    );
 
 
-      ctx.fillRect(
-        p.x +
-          (
-            door.w -
-            visible
-          ) /
-          2 *
-          zoom,
-
-        p.y,
-
-        visible *
-          zoom,
-
-        door.h *
-          zoom
+    // Holz
+    const gradient =
+      ctx.createLinearGradient(
+        0,
+        0,
+        doorWidth,
+        0
       );
-    } else {
-      const visible =
-        door.h *
-        (
-          1 -
-          amount
-        );
 
 
-      ctx.fillRect(
-        p.x,
+    gradient.addColorStop(
+      0,
+      "#74451f"
+    );
 
-        p.y +
-          (
-            door.h -
-            visible
-          ) /
-          2 *
-          zoom,
 
-        door.w *
-          zoom,
+    gradient.addColorStop(
+      0.5,
+      "#a66c32"
+    );
 
-        visible *
+
+    gradient.addColorStop(
+      1,
+      "#633817"
+    );
+
+
+    ctx.fillStyle =
+      gradient;
+
+
+    ctx.fillRect(
+      hingeLeft
+        ? 0
+        : -doorWidth,
+
+      -doorThickness /
+      2,
+
+      doorWidth,
+      doorThickness
+    );
+
+
+    ctx.strokeStyle =
+      "#4b2911";
+
+
+    ctx.lineWidth =
+      2 *
+      zoom;
+
+
+    ctx.strokeRect(
+      hingeLeft
+        ? 0
+        : -doorWidth,
+
+      -doorThickness /
+      2,
+
+      doorWidth,
+      doorThickness
+    );
+
+
+    // Türklinke
+    ctx.fillStyle =
+      "#d4b36e";
+
+
+    const knobX =
+      hingeLeft
+        ? doorWidth -
+          15 *
           zoom
-      );
-    }
+        : -doorWidth +
+          15 *
+          zoom;
+
+
+    ctx.beginPath();
+
+
+    ctx.arc(
+      knobX,
+      0,
+
+      3.5 *
+      zoom,
+
+      0,
+      Math.PI *
+      2
+    );
+
+
+    ctx.fill();
 
 
     ctx.restore();
+
+
+    // Scharnier
+    ctx.fillStyle =
+      "#35322e";
+
+
+    ctx.beginPath();
+
+
+    ctx.arc(
+      hingeX,
+      hingeY,
+
+      4 *
+      zoom,
+
+      0,
+      Math.PI *
+      2
+    );
+
+
+    ctx.fill();
   }
 }
 
@@ -2769,64 +3064,89 @@ function furnitureColor(
 ) {
   const colors = {
     machine:
-      "#555b5e",
+      "#50575a",
 
     crate:
-      "#91683e",
-
-    shelf:
-      "#55585b",
-
-    workbench:
-      "#795b3b",
-
-    desk:
-      "#8b735c",
-
-    chair:
-      "#44474b",
-
-    "container-red":
-      "#bf4148",
-
-    "container-blue":
-      "#3d719c",
-
-    "container-yellow":
-      "#bd8c39",
+      "#90683f",
 
     pallet:
-      "#8a6948",
+      "#806040",
+
+    shelf:
+      "#555b5e",
+
+    workbench:
+      "#725538",
+
+    desk:
+      "#866f59",
+
+    chair:
+      "#3f4448",
+
+    locker:
+      "#68737a",
+
+    powerbox:
+      "#596269",
+
+    vent:
+      "#737b80",
+
+    toolcart:
+      "#b4483d",
+
+    barrel:
+      "#48555a",
+
+    radio:
+      "#34393d",
+
+    terminal:
+      "#3d4851",
+
+    "container-red":
+      "#b83e46",
+
+    "container-blue":
+      "#3e719b",
+
+    "container-yellow":
+      "#be8b38",
 
     forklift:
-      "#d2a337",
+      "#c99b32",
 
     bollard:
-      "#34383a",
+      "#34383b",
 
     labtable:
       "#eef1f2",
 
     computer:
-      "#4a555d",
+      "#49545d",
 
     serverrack:
-      "#303941",
+      "#303840",
 
     scanner:
-      "#7e8d96"
+      "#829099"
   };
 
 
   return (
-    colors[type] ||
+    colors[
+      type
+    ] ||
     "#666"
   );
 }
 
 
 function drawFurniture() {
-  if (!currentMap) {
+  if (
+    !currentMap
+  ) {
     return;
   }
 
@@ -2847,15 +3167,23 @@ function drawFurniture() {
 
 
     ctx.fillStyle =
-      "rgba(0,0,0,.15)";
+      "rgba(0,0,0,.16)";
 
 
     ctx.fillRect(
-      p.x + 6 * zoom,
-      p.y + 7 * zoom,
+      p.x +
+      6 *
+      zoom,
 
-      item.w * zoom,
-      item.h * zoom
+      p.y +
+      7 *
+      zoom,
+
+      item.w *
+      zoom,
+
+      item.h *
+      zoom
     );
 
 
@@ -2869,8 +3197,11 @@ function drawFurniture() {
       p.x,
       p.y,
 
-      item.w * zoom,
-      item.h * zoom
+      item.w *
+      zoom,
+
+      item.h *
+      zoom
     );
 
 
@@ -2879,100 +3210,182 @@ function drawFurniture() {
 
 
     ctx.lineWidth =
-      2 * zoom;
+      1.5 *
+      zoom;
 
 
     ctx.strokeRect(
       p.x,
       p.y,
 
-      item.w * zoom,
-      item.h * zoom
+      item.w *
+      zoom,
+
+      item.h *
+      zoom
     );
 
 
-    if (
-      item.type ===
-        "serverrack"
-    ) {
-      ctx.fillStyle =
-        "#56d39a";
-
-
-      for (
-        let y = 18;
-        y < item.h - 10;
-        y += 26
-      ) {
-        ctx.fillRect(
-          p.x +
-            12 * zoom,
-
-          p.y +
-            y * zoom,
-
-          8 * zoom,
-          3 * zoom
-        );
-      }
-    }
-
-
-    if (
-      item.type ===
-        "computer"
-    ) {
-      ctx.fillStyle =
-        "#6cd2ff";
-
-
-      ctx.fillRect(
-        p.x +
-          20 * zoom,
-
-        p.y +
-          12 * zoom,
-
-        (
-          item.w -
-          40
-        ) * zoom,
-
-        22 * zoom
-      );
-    }
-
-
+    // Container-Linien
     if (
       item.type.startsWith(
         "container"
       )
     ) {
       ctx.strokeStyle =
-        "rgba(0,0,0,.22)";
+        "rgba(0,0,0,.24)";
 
 
       for (
-        let x = 20;
-        x < item.w;
-        x += 28
+        let lineX = 20;
+        lineX < item.w;
+        lineX += 28
       ) {
         ctx.beginPath();
 
+
         ctx.moveTo(
           p.x +
-            x * zoom,
+          lineX *
+          zoom,
+
           p.y
         );
 
+
         ctx.lineTo(
           p.x +
-            x * zoom,
+          lineX *
+          zoom,
 
           p.y +
-            item.h *
-            zoom
+          item.h *
+          zoom
         );
+
+
+        ctx.stroke();
+      }
+    }
+
+
+    // Server LEDs
+    if (
+      item.type ===
+      "serverrack"
+    ) {
+      ctx.fillStyle =
+        worldState.powerOn
+          ? "#58e6a0"
+          : "#462f2f";
+
+
+      for (
+        let y = 15;
+        y <
+        item.h;
+        y += 24
+      ) {
+        ctx.fillRect(
+          p.x +
+          10 *
+          zoom,
+
+          p.y +
+          y *
+          zoom,
+
+          8 *
+          zoom,
+
+          3 *
+          zoom
+        );
+      }
+    }
+
+
+    // Computerbildschirm
+    if (
+      item.type ===
+      "computer" ||
+      item.type ===
+      "terminal"
+    ) {
+      ctx.fillStyle =
+        worldState.powerOn
+          ? "#5fd2ff"
+          : "#192023";
+
+
+      ctx.fillRect(
+        p.x +
+        15 *
+        zoom,
+
+        p.y +
+        12 *
+        zoom,
+
+        Math.max(
+          20,
+          item.w -
+          30
+        ) *
+        zoom,
+
+        Math.min(
+          26,
+          item.h -
+          20
+        ) *
+        zoom
+      );
+    }
+
+
+    // Vent
+    if (
+      item.type ===
+      "vent"
+    ) {
+      ctx.strokeStyle =
+        "#383d40";
+
+
+      for (
+        let lineY = 8;
+        lineY <
+        item.h;
+        lineY += 10
+      ) {
+        ctx.beginPath();
+
+
+        ctx.moveTo(
+          p.x +
+          8 *
+          zoom,
+
+          p.y +
+          lineY *
+          zoom
+        );
+
+
+        ctx.lineTo(
+          p.x +
+          (
+            item.w -
+            8
+          ) *
+          zoom,
+
+          p.y +
+          lineY *
+          zoom
+        );
+
 
         ctx.stroke();
       }
@@ -2982,11 +3395,147 @@ function drawFurniture() {
 
 
 // ============================================================
+// INTERACTION MARKERS
+// ============================================================
+
+function drawInteractables() {
+  if (
+    !currentMap
+  ) {
+    return;
+  }
+
+
+  const me =
+    getMyRenderPlayer();
+
+
+  if (!me) {
+    return;
+  }
+
+
+  for (
+    const item
+    of currentMap.interactables
+  ) {
+    const distance =
+      Math.hypot(
+        me.x -
+        item.x,
+
+        me.y -
+        item.y
+      );
+
+
+    if (
+      distance >
+      135
+    ) {
+      continue;
+    }
+
+
+    const p =
+      worldToScreen(
+        item.x,
+        item.y
+      );
+
+
+    const alpha =
+      Math.max(
+        0.2,
+
+        1 -
+        distance /
+        150
+      );
+
+
+    ctx.save();
+
+
+    ctx.globalAlpha =
+      alpha;
+
+
+    ctx.font =
+      "700 11px system-ui";
+
+
+    ctx.textAlign =
+      "center";
+
+
+    ctx.textBaseline =
+      "middle";
+
+
+    const text =
+      isTouchDevice()
+        ? `AKTION · ${item.label}`
+        : `E · ${item.label}`;
+
+
+    const width =
+      ctx.measureText(
+        text
+      ).width +
+      20;
+
+
+    ctx.fillStyle =
+      "rgba(10,11,14,.80)";
+
+
+    ctx.beginPath();
+
+
+    ctx.roundRect(
+      p.x -
+      width /
+      2,
+
+      p.y -
+      45,
+
+      width,
+      27,
+
+      8
+    );
+
+
+    ctx.fill();
+
+
+    ctx.fillStyle =
+      "#ffffff";
+
+
+    ctx.fillText(
+      text,
+      p.x,
+      p.y -
+      31
+    );
+
+
+    ctx.restore();
+  }
+}
+
+
+// ============================================================
 // CHECKPOINTS
 // ============================================================
 
 function drawCheckpoints() {
-  if (!currentMap) {
+  if (
+    !currentMap
+  ) {
     return;
   }
 
@@ -3007,7 +3556,7 @@ function drawCheckpoints() {
 
 
     ctx.strokeStyle =
-      "rgba(255,255,255,.13)";
+      "rgba(255,255,255,.10)";
 
 
     ctx.lineWidth =
@@ -3022,10 +3571,11 @@ function drawCheckpoints() {
       p.y,
 
       checkpoint.radius *
-        zoom,
+      zoom,
 
       0,
-      Math.PI * 2
+      Math.PI *
+      2
     );
 
 
@@ -3035,52 +3585,25 @@ function drawCheckpoints() {
 
 
 // ============================================================
-// WORLD BORDER
+// PLAYER
 // ============================================================
 
-function drawWorldBorder() {
-  if (!currentMap) {
+function drawPlayer(
+  player
+) {
+  const me =
+    player.id ===
+    myId;
+
+
+  if (
+    player.hidden &&
+    !me
+  ) {
     return;
   }
 
 
-  const p =
-    worldToScreen(
-      0,
-      0
-    );
-
-
-  const zoom =
-    getZoom();
-
-
-  ctx.strokeStyle =
-    "rgba(0,0,0,.32)";
-
-
-  ctx.lineWidth =
-    5;
-
-
-  ctx.strokeRect(
-    p.x,
-    p.y,
-
-    currentMap.width *
-      zoom,
-
-    currentMap.height *
-      zoom
-  );
-}
-
-
-// ============================================================
-// PLAYER
-// ============================================================
-
-function drawPlayer(player) {
   const p =
     worldToScreen(
       player.x,
@@ -3094,20 +3617,32 @@ function drawPlayer(player) {
 
   const jump =
     (
-      player.jumpHeight || 0
-    ) * zoom;
+      player.jumpHeight ||
+      0
+    ) *
+    zoom;
 
 
-  const me =
-    player.id === myId;
+  const bodyY =
+    p.y -
+    jump;
 
 
   ctx.save();
 
 
+  if (
+    player.hidden &&
+    me
+  ) {
+    ctx.globalAlpha =
+      0.35;
+  }
+
+
   // Schatten
   ctx.fillStyle =
-    "rgba(0,0,0,.22)";
+    "rgba(0,0,0,.23)";
 
 
   ctx.beginPath();
@@ -3116,22 +3651,19 @@ function drawPlayer(player) {
   ctx.ellipse(
     p.x,
     p.y +
-      15 * zoom,
+    15 *
+    zoom,
 
-    18 * zoom *
-      (
-        1 -
-        Math.min(
-          jump / 120,
-          .3
-        )
-      ),
+    18 *
+    zoom,
 
-    7 * zoom,
+    7 *
+    zoom,
 
     0,
     0,
-    Math.PI * 2
+    Math.PI *
+    2
   );
 
 
@@ -3139,14 +3671,10 @@ function drawPlayer(player) {
 
 
   // Körper
-  const bodyY =
-    p.y - jump;
-
-
   ctx.fillStyle =
     me
-      ? "#e53843"
-      : "#41454a";
+      ? "#e33b46"
+      : "#42484c";
 
 
   ctx.beginPath();
@@ -3156,10 +3684,12 @@ function drawPlayer(player) {
     p.x,
     bodyY,
 
-    18 * zoom,
+    18 *
+    zoom,
 
     0,
-    Math.PI * 2
+    Math.PI *
+    2
   );
 
 
@@ -3181,9 +3711,9 @@ function drawPlayer(player) {
   ctx.stroke();
 
 
-  // kleines Highlight
+  // Highlight
   ctx.fillStyle =
-    "rgba(255,255,255,.85)";
+    "rgba(255,255,255,.88)";
 
 
   ctx.beginPath();
@@ -3191,15 +3721,19 @@ function drawPlayer(player) {
 
   ctx.arc(
     p.x -
-      6 * zoom,
+    6 *
+    zoom,
 
     bodyY -
-      6 * zoom,
+    6 *
+    zoom,
 
-    4 * zoom,
+    4 *
+    zoom,
 
     0,
-    Math.PI * 2
+    Math.PI *
+    2
   );
 
 
@@ -3208,12 +3742,11 @@ function drawPlayer(player) {
 
   // Name
   ctx.font =
-    `${me ? 750 : 650} ${
-      Math.max(
-        10,
-        12 * zoom
-      )
-    }px system-ui`;
+    `700 ${Math.max(
+      10,
+      12 *
+      zoom
+    )}px system-ui`;
 
 
   ctx.textAlign =
@@ -3225,7 +3758,7 @@ function drawPlayer(player) {
 
 
   ctx.strokeStyle =
-    "rgba(0,0,0,.68)";
+    "rgba(0,0,0,.70)";
 
 
   ctx.lineWidth =
@@ -3234,28 +3767,128 @@ function drawPlayer(player) {
 
   ctx.strokeText(
     player.name ||
-      "Spieler",
+    "Spieler",
 
     p.x,
 
     bodyY -
-      26 * zoom
+    26 *
+    zoom
   );
 
 
   ctx.fillStyle =
-    "white";
+    "#ffffff";
 
 
   ctx.fillText(
     player.name ||
-      "Spieler",
+    "Spieler",
 
     p.x,
 
     bodyY -
-      26 * zoom
+    26 *
+    zoom
   );
+
+
+  ctx.restore();
+}
+
+
+// ============================================================
+// LIGHTING
+// ============================================================
+
+function drawLighting() {
+  if (
+    !playing ||
+    !currentMap ||
+    worldState.lightsOn
+  ) {
+    return;
+  }
+
+
+  ctx.save();
+
+
+  ctx.fillStyle =
+    "rgba(4,7,10,.67)";
+
+
+  ctx.fillRect(
+    0,
+    0,
+    screenWidth,
+    screenHeight
+  );
+
+
+  const me =
+    getMyRenderPlayer();
+
+
+  if (
+    me
+  ) {
+    const p =
+      worldToScreen(
+        me.x,
+        me.y
+      );
+
+
+    ctx.globalCompositeOperation =
+      "destination-out";
+
+
+    const gradient =
+      ctx.createRadialGradient(
+        p.x,
+        p.y,
+
+        20,
+
+        p.x,
+        p.y,
+
+        180
+      );
+
+
+    gradient.addColorStop(
+      0,
+      "rgba(0,0,0,.95)"
+    );
+
+
+    gradient.addColorStop(
+      1,
+      "rgba(0,0,0,0)"
+    );
+
+
+    ctx.fillStyle =
+      gradient;
+
+
+    ctx.beginPath();
+
+
+    ctx.arc(
+      p.x,
+      p.y,
+      180,
+      0,
+      Math.PI *
+      2
+    );
+
+
+    ctx.fill();
+  }
 
 
   ctx.restore();
@@ -3313,45 +3946,49 @@ function drawMinimap() {
     currentMap.height;
 
 
-  for (
-    const wall
-    of currentMap.walls
-  ) {
-    minimapCtx.fillStyle =
-      "#777b80";
-
-
-    minimapCtx.fillRect(
-      wall.x * scaleX,
-
-      wall.y * scaleY,
-
-      wall.w * scaleX,
-
-      wall.h * scaleY
-    );
-  }
-
-
   if (
     currentMap.water
   ) {
     minimapCtx.fillStyle =
-      "#32738e";
+      "#34758f";
 
 
     minimapCtx.fillRect(
       currentMap.water.x *
-        scaleX,
+      scaleX,
 
       currentMap.water.y *
-        scaleY,
+      scaleY,
 
       currentMap.water.w *
-        scaleX,
+      scaleX,
 
       currentMap.water.h *
-        scaleY
+      scaleY
+    );
+  }
+
+
+  minimapCtx.fillStyle =
+    "#777c80";
+
+
+  for (
+    const wall
+    of currentMap.walls
+  ) {
+    minimapCtx.fillRect(
+      wall.x *
+      scaleX,
+
+      wall.y *
+      scaleY,
+
+      wall.w *
+      scaleX,
+
+      wall.h *
+      scaleY
     );
   }
 
@@ -3360,28 +3997,40 @@ function drawMinimap() {
     const player
     of renderPlayers.values()
   ) {
+    if (
+      player.hidden &&
+      player.id !==
+      myId
+    ) {
+      continue;
+    }
+
+
     minimapCtx.beginPath();
 
 
     minimapCtx.arc(
       player.x *
-        scaleX,
+      scaleX,
 
       player.y *
-        scaleY,
+      scaleY,
 
-      player.id === myId
+      player.id ===
+      myId
         ? 5
         : 3,
 
       0,
-      Math.PI * 2
+      Math.PI *
+      2
     );
 
 
     minimapCtx.fillStyle =
-      player.id === myId
-        ? "#ed3f49"
+      player.id ===
+      myId
+        ? "#ee3f4a"
         : "#ffffff";
 
 
@@ -3400,17 +4049,67 @@ function drawMinimap() {
   minimapCtx.strokeRect(
     1,
     1,
-    width - 2,
-    height - 2
+
+    width -
+    2,
+
+    height -
+    2
   );
 }
 
 
 // ============================================================
-// RENDER LOOP
+// WORLD BORDER
 // ============================================================
 
-function render(time) {
+function drawWorldBorder() {
+  if (
+    !currentMap
+  ) {
+    return;
+  }
+
+
+  const p =
+    worldToScreen(
+      0,
+      0
+    );
+
+
+  const zoom =
+    getZoom();
+
+
+  ctx.strokeStyle =
+    "rgba(0,0,0,.35)";
+
+
+  ctx.lineWidth =
+    5;
+
+
+  ctx.strokeRect(
+    p.x,
+    p.y,
+
+    currentMap.width *
+    zoom,
+
+    currentMap.height *
+    zoom
+  );
+}
+
+
+// ============================================================
+// RENDER
+// ============================================================
+
+function render(
+  time
+) {
   const dt =
     Math.min(
       (
@@ -3419,7 +4118,7 @@ function render(time) {
       ) /
       1000,
 
-      .05
+      0.05
     );
 
 
@@ -3427,9 +4126,14 @@ function render(time) {
     time;
 
 
-  smoothPlayers(dt);
+  smoothPlayers(
+    dt
+  );
 
-  updateCamera(dt);
+
+  updateCamera(
+    dt
+  );
 
 
   drawFloor();
@@ -3443,17 +4147,22 @@ function render(time) {
   drawFurniture();
 
 
-  const sortedPlayers =
-    [...renderPlayers.values()]
-      .sort(
-        (a, b) =>
-          a.y - b.y
-      );
+  const sorted =
+    [
+      ...renderPlayers.values()
+    ].sort(
+      (
+        a,
+        b
+      ) =>
+        a.y -
+        b.y
+    );
 
 
   for (
     const player
-    of sortedPlayers
+    of sorted
   ) {
     drawPlayer(
       player
@@ -3461,7 +4170,11 @@ function render(time) {
   }
 
 
+  drawInteractables();
+
   drawWorldBorder();
+
+  drawLighting();
 
   drawMinimap();
 
@@ -3477,6 +4190,7 @@ function render(time) {
 // ============================================================
 
 connect();
+
 
 requestAnimationFrame(
   render
