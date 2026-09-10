@@ -11,51 +11,104 @@ body {
   height: 100%;
   margin: 0;
   overflow: hidden;
+
   background: #050711;
   color: white;
+
   font-family:
+    Inter,
     system-ui,
     -apple-system,
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
+
   touch-action: none;
+}
+
+button,
+input {
+  font: inherit;
 }
 
 #game {
   position: fixed;
   inset: 0;
+
   width: 100%;
   height: 100%;
+
   display: block;
+
   background: #050711;
 }
 
+
+/* ============================================================
+   GLAS-EFFEKT
+============================================================ */
+
+.glassBox {
+  background: rgba(6, 12, 32, 0.76);
+
+  border:
+    1px solid
+    rgba(120, 220, 255, 0.22);
+
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+
+  box-shadow:
+    0 8px 30px
+    rgba(0, 0, 0, 0.25);
+}
+
+
+/* ============================================================
+   TOP BAR
+============================================================ */
+
 #topBar {
   position: fixed;
-  z-index: 10;
 
-  top: max(12px, env(safe-area-inset-top));
-  left: max(12px, env(safe-area-inset-left));
-  right: max(12px, env(safe-area-inset-right));
+  z-index: 20;
+
+  top:
+    max(
+      12px,
+      env(safe-area-inset-top)
+    );
+
+  left:
+    max(
+      12px,
+      env(safe-area-inset-left)
+    );
+
+  right:
+    max(
+      12px,
+      env(safe-area-inset-right)
+    );
 
   display: flex;
-  align-items: center;
+
   justify-content: space-between;
+
+  align-items: center;
 
   pointer-events: none;
 }
 
-.status,
-.players {
-  padding: 9px 13px;
+.statusBox,
+.playerCounter {
+  padding: 10px 14px;
 
-  border-radius: 13px;
-  border: 1px solid rgba(130, 220, 255, 0.25);
+  border-radius: 14px;
 
-  background: rgba(5, 10, 30, 0.72);
+  font-size: 14px;
 
-  backdrop-filter: blur(12px);
+  font-weight: 700;
 }
 
 #connectionDot {
@@ -71,87 +124,381 @@ body {
   background: #ffbf3c;
   color: #ffbf3c;
 
-  box-shadow: 0 0 12px currentColor;
+  box-shadow:
+    0 0 12px currentColor;
 }
+
+
+/* ============================================================
+   NAME
+============================================================ */
 
 #namePanel {
   position: fixed;
-  z-index: 20;
 
-  top: 60px;
+  z-index: 30;
+
+  top: 64px;
+
   left: 50%;
 
   transform: translateX(-50%);
 
   display: flex;
+
   gap: 7px;
 
   padding: 7px;
 
-  background: rgba(5, 10, 30, 0.72);
+  background:
+    rgba(6, 12, 32, 0.78);
 
-  border: 1px solid rgba(130, 220, 255, 0.2);
-  border-radius: 13px;
+  border:
+    1px solid
+    rgba(120, 220, 255, 0.20);
 
-  backdrop-filter: blur(12px);
+  border-radius: 14px;
+
+  backdrop-filter: blur(14px);
+
+  box-shadow:
+    0 8px 30px
+    rgba(0, 0, 0, 0.25);
 }
 
 #nameInput {
-  width: 140px;
+  width: 150px;
 
-  padding: 9px 11px;
+  padding: 10px 12px;
 
-  border: 0;
-  outline: 0;
+  border: none;
 
-  border-radius: 9px;
+  outline: none;
+
+  border-radius: 10px;
 
   color: white;
-  background: rgba(255, 255, 255, 0.1);
+
+  background:
+    rgba(255, 255, 255, 0.09);
+}
+
+#nameInput:focus {
+  background:
+    rgba(255, 255, 255, 0.14);
+
+  box-shadow:
+    inset 0 0 0 1px
+    rgba(60, 210, 255, 0.45);
 }
 
 #nameInput::placeholder {
-  color: rgba(255, 255, 255, 0.55);
+  color:
+    rgba(255, 255, 255, 0.50);
 }
 
 #nameButton {
-  border: 0;
-  padding: 9px 12px;
+  border: none;
 
-  border-radius: 9px;
+  padding: 10px 14px;
+
+  border-radius: 10px;
+
+  font-weight: 800;
 
   color: white;
-  background: #176cff;
+
+  background:
+    linear-gradient(
+      135deg,
+      #1478ff,
+      #00c8ff
+    );
 
   cursor: pointer;
+
+  box-shadow:
+    0 0 20px
+    rgba(0, 170, 255, 0.24);
+}
+
+#nameButton:hover {
+  filter: brightness(1.12);
 }
 
 #nameButton:active {
-  transform: scale(0.97);
+  transform: scale(0.96);
 }
+
+
+/* ============================================================
+   SPIELERLISTE
+============================================================ */
+
+#playerListPanel {
+  position: fixed;
+
+  z-index: 20;
+
+  top: 68px;
+
+  right:
+    max(
+      12px,
+      env(safe-area-inset-right)
+    );
+
+  width: 185px;
+
+  max-height: 260px;
+
+  overflow: hidden;
+
+  padding: 12px;
+
+  border-radius: 16px;
+
+  background:
+    rgba(6, 12, 32, 0.76);
+
+  border:
+    1px solid
+    rgba(120, 220, 255, 0.18);
+
+  backdrop-filter: blur(14px);
+
+  box-shadow:
+    0 10px 35px
+    rgba(0, 0, 0, 0.28);
+}
+
+#playerListTitle {
+  margin-bottom: 9px;
+
+  color: #65eaff;
+
+  font-size: 11px;
+
+  letter-spacing: 1.6px;
+
+  font-weight: 900;
+}
+
+.playerListItem {
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  min-width: 0;
+
+  padding: 6px 4px;
+
+  font-size: 13px;
+}
+
+.playerListDot {
+  flex-shrink: 0;
+
+  width: 8px;
+  height: 8px;
+
+  border-radius: 50%;
+
+  box-shadow:
+    0 0 10px currentColor;
+}
+
+.playerListName {
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+
+  white-space: nowrap;
+}
+
+.playerListMe {
+  color: #65eaff;
+
+  font-weight: 800;
+}
+
+
+/* ============================================================
+   MINIMAP
+============================================================ */
+
+#minimapPanel {
+  position: fixed;
+
+  z-index: 20;
+
+  right:
+    max(
+      12px,
+      env(safe-area-inset-right)
+    );
+
+  bottom:
+    max(
+      15px,
+      env(safe-area-inset-bottom)
+    );
+
+  padding: 7px;
+
+  border-radius: 14px;
+
+  background:
+    rgba(6, 12, 32, 0.76);
+
+  border:
+    1px solid
+    rgba(120, 220, 255, 0.20);
+
+  backdrop-filter: blur(14px);
+
+  box-shadow:
+    0 10px 35px
+    rgba(0, 0, 0, 0.28);
+
+  pointer-events: none;
+}
+
+#minimap {
+  display: block;
+
+  width: 180px;
+  height: 105px;
+
+  border-radius: 9px;
+
+  background: #080d1c;
+}
+
+
+/* ============================================================
+   BENACHRICHTIGUNGEN
+============================================================ */
+
+#notifications {
+  position: fixed;
+
+  z-index: 40;
+
+  top: 125px;
+
+  left: 50%;
+
+  transform: translateX(-50%);
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 8px;
+
+  pointer-events: none;
+}
+
+.notification {
+  padding: 9px 14px;
+
+  border-radius: 20px;
+
+  font-size: 13px;
+
+  font-weight: 800;
+
+  text-align: center;
+
+  background:
+    rgba(5, 12, 30, 0.87);
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.12);
+
+  backdrop-filter: blur(12px);
+
+  box-shadow:
+    0 8px 28px
+    rgba(0, 0, 0, 0.30);
+
+  animation:
+    notificationIn 0.25s ease;
+}
+
+.notification.join {
+  color: #67ffad;
+}
+
+.notification.leave {
+  color: #ff819b;
+}
+
+@keyframes notificationIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* ============================================================
+   JOYSTICK
+============================================================ */
 
 #touchControls {
   position: fixed;
+
   inset: 0;
 
+  z-index: 25;
+
   pointer-events: none;
-  z-index: 10;
 }
 
 #joystick {
   position: absolute;
 
-  bottom: max(20px, env(safe-area-inset-bottom));
-  left: max(20px, env(safe-area-inset-left));
+  bottom:
+    max(
+      22px,
+      env(safe-area-inset-bottom)
+    );
+
+  left:
+    max(
+      22px,
+      env(safe-area-inset-left)
+    );
 
   width: 140px;
   height: 140px;
 
-  border: 2px solid rgba(120, 210, 255, 0.28);
-
   border-radius: 50%;
 
-  background: rgba(70, 130, 255, 0.09);
+  border:
+    2px solid
+    rgba(100, 215, 255, 0.28);
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(30, 170, 255, 0.09),
+      rgba(30, 80, 180, 0.04)
+    );
+
+  box-shadow:
+    inset 0 0 30px
+    rgba(20, 180, 255, 0.08);
 
   pointer-events: auto;
 }
@@ -159,25 +506,70 @@ body {
 #stick {
   position: absolute;
 
-  width: 60px;
-  height: 60px;
-
   left: 50%;
   top: 50%;
+
+  width: 60px;
+  height: 60px;
 
   margin-left: -30px;
   margin-top: -30px;
 
   border-radius: 50%;
 
-  background: rgba(70, 210, 255, 0.55);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(50, 220, 255, 0.85),
+      rgba(40, 100, 255, 0.75)
+    );
 
-  border: 2px solid rgba(220, 250, 255, 0.65);
+  border:
+    2px solid
+    rgba(220, 250, 255, 0.70);
 
-  box-shadow: 0 0 25px rgba(0, 220, 255, 0.25);
+  box-shadow:
+    0 0 28px
+    rgba(0, 220, 255, 0.30);
 
   pointer-events: none;
 }
+
+
+/* ============================================================
+   STEUERUNGS-HINWEIS
+============================================================ */
+
+#controlsHint {
+  position: fixed;
+
+  z-index: 20;
+
+  left: 50%;
+
+  bottom: 15px;
+
+  transform: translateX(-50%);
+
+  padding: 7px 11px;
+
+  border-radius: 12px;
+
+  color:
+    rgba(255, 255, 255, 0.55);
+
+  background:
+    rgba(5, 10, 25, 0.50);
+
+  font-size: 11px;
+
+  pointer-events: none;
+}
+
+
+/* ============================================================
+   PC
+============================================================ */
 
 @media (pointer: fine) {
   #touchControls {
@@ -185,9 +577,36 @@ body {
   }
 }
 
-@media (max-width: 600px) {
+
+/* ============================================================
+   HANDY
+============================================================ */
+
+@media (max-width: 650px) {
+
   #namePanel {
     top: 58px;
+  }
+
+  #nameInput {
+    width: 112px;
+  }
+
+  #playerListPanel {
+    top: 110px;
+
+    width: 145px;
+
+    max-height: 165px;
+  }
+
+  #minimapPanel {
+    padding: 5px;
+  }
+
+  #minimap {
+    width: 130px;
+    height: 76px;
   }
 
   #joystick {
@@ -203,13 +622,14 @@ body {
     margin-top: -27px;
   }
 
-  .status,
-  .players {
+  .statusBox,
+  .playerCounter {
     padding: 8px 10px;
-    font-size: 13px;
+
+    font-size: 12px;
   }
 
-  #nameInput {
-    width: 120px;
+  #controlsHint {
+    display: none;
   }
 }
