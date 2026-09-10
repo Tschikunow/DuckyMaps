@@ -1,0 +1,215 @@
+* {
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: #050711;
+  color: white;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  touch-action: none;
+}
+
+#game {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: #050711;
+}
+
+#topBar {
+  position: fixed;
+  z-index: 10;
+
+  top: max(12px, env(safe-area-inset-top));
+  left: max(12px, env(safe-area-inset-left));
+  right: max(12px, env(safe-area-inset-right));
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  pointer-events: none;
+}
+
+.status,
+.players {
+  padding: 9px 13px;
+
+  border-radius: 13px;
+  border: 1px solid rgba(130, 220, 255, 0.25);
+
+  background: rgba(5, 10, 30, 0.72);
+
+  backdrop-filter: blur(12px);
+}
+
+#connectionDot {
+  display: inline-block;
+
+  width: 9px;
+  height: 9px;
+
+  margin-right: 7px;
+
+  border-radius: 50%;
+
+  background: #ffbf3c;
+  color: #ffbf3c;
+
+  box-shadow: 0 0 12px currentColor;
+}
+
+#namePanel {
+  position: fixed;
+  z-index: 20;
+
+  top: 60px;
+  left: 50%;
+
+  transform: translateX(-50%);
+
+  display: flex;
+  gap: 7px;
+
+  padding: 7px;
+
+  background: rgba(5, 10, 30, 0.72);
+
+  border: 1px solid rgba(130, 220, 255, 0.2);
+  border-radius: 13px;
+
+  backdrop-filter: blur(12px);
+}
+
+#nameInput {
+  width: 140px;
+
+  padding: 9px 11px;
+
+  border: 0;
+  outline: 0;
+
+  border-radius: 9px;
+
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+#nameInput::placeholder {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+#nameButton {
+  border: 0;
+  padding: 9px 12px;
+
+  border-radius: 9px;
+
+  color: white;
+  background: #176cff;
+
+  cursor: pointer;
+}
+
+#nameButton:active {
+  transform: scale(0.97);
+}
+
+#touchControls {
+  position: fixed;
+  inset: 0;
+
+  pointer-events: none;
+  z-index: 10;
+}
+
+#joystick {
+  position: absolute;
+
+  bottom: max(20px, env(safe-area-inset-bottom));
+  left: max(20px, env(safe-area-inset-left));
+
+  width: 140px;
+  height: 140px;
+
+  border: 2px solid rgba(120, 210, 255, 0.28);
+
+  border-radius: 50%;
+
+  background: rgba(70, 130, 255, 0.09);
+
+  pointer-events: auto;
+}
+
+#stick {
+  position: absolute;
+
+  width: 60px;
+  height: 60px;
+
+  left: 50%;
+  top: 50%;
+
+  margin-left: -30px;
+  margin-top: -30px;
+
+  border-radius: 50%;
+
+  background: rgba(70, 210, 255, 0.55);
+
+  border: 2px solid rgba(220, 250, 255, 0.65);
+
+  box-shadow: 0 0 25px rgba(0, 220, 255, 0.25);
+
+  pointer-events: none;
+}
+
+@media (pointer: fine) {
+  #touchControls {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  #namePanel {
+    top: 58px;
+  }
+
+  #joystick {
+    width: 125px;
+    height: 125px;
+  }
+
+  #stick {
+    width: 54px;
+    height: 54px;
+
+    margin-left: -27px;
+    margin-top: -27px;
+  }
+
+  .status,
+  .players {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  #nameInput {
+    width: 120px;
+  }
+}
