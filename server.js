@@ -1,9 +1,16 @@
 "use strict";
 
-const http = require("node:http");
-const fs = require("node:fs");
-const path = require("node:path");
-const crypto = require("node:crypto");
+const http =
+  require("node:http");
+
+const fs =
+  require("node:fs");
+
+const path =
+  require("node:path");
+
+const crypto =
+  require("node:crypto");
 
 const {
   WebSocketServer,
@@ -15,29 +22,13 @@ const {
 } = require("./maps");
 
 
+// ============================================================
+// CONFIG
+// ============================================================
+
 const PORT =
-  Number(process.env.PORT) || 3000;
-
-
-const PLAYER = {
-  radius: 18,
-
-  baseSpeed: 260,
-
-  acceleration: 1500,
-
-  airAcceleration: 600,
-
-  bunnyhopStep: 0.08,
-
-  maxBunnyhop: 0.40,
-
-  jumpDuration: 430,
-
-  bunnyhopWindow: 320,
-
-  doorDistance: 115
-};
+  Number(process.env.PORT) ||
+  3000;
 
 
 const TICK_RATE = 30;
@@ -46,34 +37,94 @@ const TICK_MS =
   1000 / TICK_RATE;
 
 
+const PLAYER = {
+  radius: 18,
+
+  // Normales Laufen absichtlich langsamer.
+  baseSpeed: 185,
+
+  acceleration: 1200,
+
+  airAcceleration: 720,
+
+  // Bunnyhop kann bis ungefähr 2x Speed gehen.
+  bunnyhopGain: 0.18,
+
+  bunnyhopMax: 1.0,
+
+  bunnyhopDecay: 0.025,
+
+  bunnyhopWindow: 520,
+
+  jumpDuration: 430,
+
+  jumpBuffer: 180,
+
+  doorDistance: 145,
+
+  interactDistance: 120
+};
+
+
 const publicDir =
-  path.join(__dirname, "public");
+  path.join(
+    __dirname,
+    "public"
+  );
 
 
 const players =
   new Map();
 
 
-const doorStates = {};
+const mapStates = {};
 
 
 // ============================================================
-// DOOR STATES
+// MAP STATES
 // ============================================================
 
 for (
   const [mapId, map]
   of Object.entries(MAPS)
 ) {
-  doorStates[mapId] = {};
+  mapStates[mapId] = {
+    doors: {},
+
+    lightsOn: true,
+
+    powerOn: true,
+
+    interactables: {}
+  };
+
 
   for (
     const door
     of map.doors
   ) {
-    doorStates[mapId][door.id] = {
+    mapStates[
+      mapId
+    ].doors[
+      door.id
+    ] = {
       open: false,
+
       amount: 0
+    };
+  }
+
+
+  for (
+    const item
+    of map.interactables
+  ) {
+    mapStates[
+      mapId
+    ].interactables[
+      item.id
+    ] = {
+      active: false
     };
   }
 }
@@ -90,7 +141,10 @@ function clamp(
 ) {
   return Math.max(
     min,
-    Math.min(max, value)
+    Math.min(
+      max,
+      value
+    )
   );
 }
 
@@ -98,45 +152,61 @@ function clamp(
 function moveToward(
   current,
   target,
-  maxDelta
+  amount
 ) {
   if (
-    Math.abs(target - current)
-    <= maxDelta
+    Math.abs(
+      target -
+      current
+    ) <= amount
   ) {
     return target;
   }
 
-  return current +
-    Math.sign(target - current)
-    * maxDelta;
+
+  return (
+    current +
+    Math.sign(
+      target -
+      current
+    ) *
+    amount
+  );
 }
 
 
-function sanitizeName(value) {
+function sanitizeName(
+  value
+) {
   if (
-    typeof value !== "string"
+    typeof value !==
+    "string"
   ) {
     return "Spieler";
   }
 
-  const clean =
-    value
-      .replace(/[<>]/g, "")
-      .trim()
-      .slice(0, 20);
 
-  return clean || "Spieler";
+  return (
+    value
+      .replace(
+        /[<>]/g,
+        ""
+      )
+      .trim()
+      .slice(0, 20)
+      ||
+      "Spieler"
+  );
 }
 
 
-function randomSpawn(map) {
-  const list =
-    map.spawnPoints;
-
-  return list[
+function randomSpawn(
+  map
+) {
+  return map.spawnPoints[
     Math.floor(
-      Math.random() * list.length
+      Math.random() *
+      map.spawnPoints.length
     )
   ];
 }
@@ -148,11 +218,14 @@ function randomSpawn(map) {
 
 function createPlayer() {
   return {
-    id: crypto.randomUUID(),
+    id:
+      crypto.randomUUID(),
 
-    name: "Spieler",
+    name:
+      "Spieler",
 
-    mapId: null,
+    mapId:
+      null,
 
     x: 0,
     y: 0,
@@ -166,19 +239,25 @@ function createPlayer() {
     airborne: false,
 
     jumpStartedAt: 0,
+
     jumpEndsAt: 0,
 
     landedAt: 0,
 
-    hasJumped: false,
+    jumpQueuedUntil: 0,
 
     bunnyhop: 0,
 
-    queuedJump: false,
+    hidden: false,
+
+    hiddenAt:
+      null,
 
     coins: 0,
 
     activeTime: 0,
+
+    lastInteraction: 0,
 
     visitedCheckpoints:
       new Set()
@@ -203,6 +282,7 @@ function circleHitsRect(
       rect.x + rect.w
     );
 
+
   const nearestY =
     clamp(
       y,
@@ -210,11 +290,13 @@ function circleHitsRect(
       rect.y + rect.h
     );
 
+
   const dx =
     x - nearestX;
 
   const dy =
     y - nearestY;
+
 
   return (
     dx * dx +
@@ -229,7 +311,10 @@ function isBlocked(
   y
 ) {
   const map =
-    MAPS[player.mapId];
+    MAPS[
+      player.mapId
+    ];
+
 
   if (!map) {
     return false;
@@ -237,11 +322,16 @@ function isBlocked(
 
 
   if (
-    x < PLAYER.radius ||
-    y < PLAYER.radius ||
+    x <
+      PLAYER.radius ||
+
+    y <
+      PLAYER.radius ||
+
     x >
       map.width -
       PLAYER.radius ||
+
     y >
       map.height -
       PLAYER.radius
@@ -281,16 +371,16 @@ function isBlocked(
 
 
   for (
-    const object
+    const item
     of map.furniture
   ) {
     if (
-      object.solid &&
+      item.solid &&
       circleHitsRect(
         x,
         y,
         PLAYER.radius,
-        object
+        item
       )
     ) {
       return true;
@@ -298,18 +388,25 @@ function isBlocked(
   }
 
 
+  const state =
+    mapStates[
+      player.mapId
+    ];
+
+
   for (
     const door
     of map.doors
   ) {
-    const state =
-      doorStates[
-        player.mapId
-      ][door.id];
+    const doorState =
+      state.doors[
+        door.id
+      ];
 
+
+    // Ab etwa 55 % Öffnung kann man hindurch.
     if (
-      state &&
-      state.amount < 0.65 &&
+      doorState.amount < 0.55 &&
       circleHitsRect(
         x,
         y,
@@ -327,100 +424,47 @@ function isBlocked(
 
 
 // ============================================================
-// MAP JOIN
+// NETWORK HELPERS
 // ============================================================
 
-function joinMap(
+function send(
   socket,
-  player,
-  mapId
+  message
 ) {
-  const map =
-    MAPS[mapId];
-
-  if (!map) {
+  if (
+    socket.readyState !==
+    WebSocket.OPEN
+  ) {
     return;
   }
 
 
-  const oldMap =
-    player.mapId;
-
-
-  player.mapId =
-    mapId;
-
-
-  const spawn =
-    randomSpawn(map);
-
-
-  player.x =
-    spawn.x;
-
-  player.y =
-    spawn.y;
-
-
-  player.vx = 0;
-  player.vy = 0;
-
-  player.bunnyhop = 0;
-
-  player.airborne = false;
-
-  player.queuedJump = false;
-
-
   socket.send(
-    JSON.stringify({
-      type: "map",
-      map
-    })
+    JSON.stringify(
+      message
+    )
   );
-
-
-  socket.send(
-    JSON.stringify({
-      type: "rewardState",
-      coins: player.coins
-    })
-  );
-
-
-  if (oldMap) {
-    broadcastMap(oldMap);
-  }
-
-
-  broadcastMap(mapId);
 }
 
 
-// ============================================================
-// NETWORK
-// ============================================================
-
 function sendGlobalStatus() {
-  const message =
-    JSON.stringify({
-      type: "status",
+  const message = {
+    type:
+      "status",
 
-      online:
-        players.size
-    });
+    online:
+      players.size
+  };
 
 
   for (
     const socket
     of players.keys()
   ) {
-    if (
-      socket.readyState ===
-      WebSocket.OPEN
-    ) {
-      socket.send(message);
-    }
+    send(
+      socket,
+      message
+    );
   }
 }
 
@@ -432,7 +476,7 @@ function createMapState(
     Date.now();
 
 
-  const mapPlayers =
+  const resultPlayers =
     [];
 
 
@@ -441,7 +485,8 @@ function createMapState(
     of players.values()
   ) {
     if (
-      player.mapId !== mapId
+      player.mapId !==
+      mapId
     ) {
       continue;
     }
@@ -460,33 +505,47 @@ function createMapState(
             player.jumpStartedAt
           ) /
           PLAYER.jumpDuration,
+
           0,
           1
         );
+
 
       jumpHeight =
         Math.sin(
           progress *
           Math.PI
-        ) * 24;
+        ) *
+        30;
     }
 
 
-    mapPlayers.push({
-      id: player.id,
+    resultPlayers.push({
+      id:
+        player.id,
 
-      name: player.name,
+      name:
+        player.name,
 
-      x: player.x,
-      y: player.y,
+      x:
+        player.x,
 
-      vx: player.vx,
-      vy: player.vy,
+      y:
+        player.y,
+
+      vx:
+        player.vx,
+
+      vy:
+        player.vy,
 
       jumpHeight,
 
       bunnyhop:
         player.bunnyhop,
+
+      hidden:
+        player.hidden,
 
       coins:
         player.coins
@@ -494,16 +553,34 @@ function createMapState(
   }
 
 
+  const mapState =
+    mapStates[
+      mapId
+    ];
+
+
   return {
-    type: "state",
+    type:
+      "state",
 
     mapId,
 
     players:
-      mapPlayers,
+      resultPlayers,
 
     doors:
-      doorStates[mapId]
+      mapState.doors,
+
+    worldState: {
+      lightsOn:
+        mapState.lightsOn,
+
+      powerOn:
+        mapState.powerOn,
+
+      interactables:
+        mapState.interactables
+    }
   };
 }
 
@@ -525,21 +602,32 @@ function broadcastMap(
 
 
   for (
-    const [socket, player]
+    const [
+      socket,
+      player
+    ]
     of players.entries()
   ) {
     if (
-      player.mapId === mapId &&
+      player.mapId ===
+        mapId &&
+
       socket.readyState ===
         WebSocket.OPEN
     ) {
-      socket.send(data);
+      socket.send(
+        data
+      );
     }
   }
 }
 
 
-function sendReward(
+// ============================================================
+// REWARD
+// ============================================================
+
+function reward(
   socket,
   player,
   amount,
@@ -549,42 +637,137 @@ function sendReward(
     amount;
 
 
-  if (
-    socket.readyState ===
-    WebSocket.OPEN
-  ) {
-    socket.send(
-      JSON.stringify({
-        type: "reward",
+  send(
+    socket,
+    {
+      type:
+        "reward",
 
-        amount,
+      amount,
 
-        reason,
+      reason,
 
-        coins:
-          player.coins
-      })
-    );
-  }
+      coins:
+        player.coins
+    }
+  );
 }
 
 
 // ============================================================
-// DOORS
+// JOIN MAP
 // ============================================================
 
-function updateDoors(dt) {
-  for (
-    const [mapId, map]
-    of Object.entries(MAPS)
+function joinMap(
+  socket,
+  player,
+  mapId
+) {
+  const map =
+    MAPS[
+      mapId
+    ];
+
+
+  if (!map) {
+    return;
+  }
+
+
+  const oldMap =
+    player.mapId;
+
+
+  player.mapId =
+    mapId;
+
+
+  const spawn =
+    randomSpawn(
+      map
+    );
+
+
+  player.x =
+    spawn.x;
+
+  player.y =
+    spawn.y;
+
+  player.vx = 0;
+  player.vy = 0;
+
+  player.inputX = 0;
+  player.inputY = 0;
+
+  player.airborne =
+    false;
+
+  player.bunnyhop = 0;
+
+  player.hidden =
+    false;
+
+
+  send(
+    socket,
+    {
+      type:
+        "map",
+
+      map
+    }
+  );
+
+
+  send(
+    socket,
+    {
+      type:
+        "rewardState",
+
+      coins:
+        player.coins
+    }
+  );
+
+
+  if (
+    oldMap &&
+    oldMap !== mapId
   ) {
-    const mapPlayers =
-      [...players.values()]
-        .filter(
-          player =>
-            player.mapId ===
-            mapId
-        );
+    broadcastMap(
+      oldMap
+    );
+  }
+
+
+  broadcastMap(
+    mapId
+  );
+}
+
+
+// ============================================================
+// AUTOMATIC DOORS
+// ============================================================
+
+function updateDoors(
+  dt
+) {
+  for (
+    const [
+      mapId,
+      map
+    ]
+    of Object.entries(
+      MAPS
+    )
+  ) {
+    const state =
+      mapStates[
+        mapId
+      ];
 
 
     for (
@@ -594,6 +777,7 @@ function updateDoors(dt) {
       const centerX =
         door.x +
         door.w / 2;
+
 
       const centerY =
         door.y +
@@ -606,19 +790,28 @@ function updateDoors(dt) {
 
       for (
         const player
-        of mapPlayers
+        of players.values()
       ) {
+        if (
+          player.mapId !==
+          mapId
+        ) {
+          continue;
+        }
+
+
         const distance =
           Math.hypot(
             player.x -
               centerX,
+
             player.y -
               centerY
           );
 
 
         if (
-          distance <=
+          distance <
           PLAYER.doorDistance
         ) {
           shouldOpen =
@@ -629,31 +822,25 @@ function updateDoors(dt) {
       }
 
 
-      const state =
-        doorStates[
-          mapId
-        ][door.id];
+      const doorState =
+        state.doors[
+          door.id
+        ];
 
 
-      state.open =
+      doorState.open =
         shouldOpen;
 
 
-      const target =
-        shouldOpen
-          ? 1
-          : 0;
-
-
-      const speed =
-        3.8 * dt;
-
-
-      state.amount =
+      doorState.amount =
         moveToward(
-          state.amount,
-          target,
-          speed
+          doorState.amount,
+
+          shouldOpen
+            ? 1
+            : 0,
+
+          2.8 * dt
         );
     }
   }
@@ -661,53 +848,66 @@ function updateDoors(dt) {
 
 
 // ============================================================
-// JUMP + BUNNYHOP
+// BUNNYHOP
 // ============================================================
 
-function tryJump(
+function attemptJump(
   player,
   now
 ) {
   if (
-    !player.queuedJump ||
-    player.airborne
+    player.airborne ||
+    player.jumpQueuedUntil <
+      now
   ) {
     return;
   }
 
 
-  player.queuedJump =
-    false;
+  player.jumpQueuedUntil =
+    0;
+
+
+  const moving =
+    Math.hypot(
+      player.inputX,
+      player.inputY
+    ) > 0.15;
+
+
+  const quickHop =
+    (
+      player.landedAt ===
+      0
+    ) ||
+    (
+      now -
+      player.landedAt <=
+      PLAYER.bunnyhopWindow
+    );
 
 
   if (
-    player.hasJumped &&
-    now -
-      player.landedAt <=
-        PLAYER.bunnyhopWindow
+    moving &&
+    quickHop
   ) {
     player.bunnyhop =
       Math.min(
-        PLAYER.maxBunnyhop,
+        PLAYER.bunnyhopMax,
 
         player.bunnyhop +
-        PLAYER.bunnyhopStep
+        PLAYER.bunnyhopGain
       );
-  } else if (
-    player.hasJumped
-  ) {
-    player.bunnyhop = 0;
   }
 
-
-  player.hasJumped =
-    true;
 
   player.airborne =
     true;
 
+
   player.jumpStartedAt =
     now;
+
 
   player.jumpEndsAt =
     now +
@@ -740,25 +940,21 @@ function checkCheckpoints(
     }
 
 
-    const distance =
+    if (
       Math.hypot(
         player.x -
           checkpoint.x,
 
         player.y -
           checkpoint.y
-      );
-
-
-    if (
-      distance <=
+      ) <=
       checkpoint.radius
     ) {
       player.visitedCheckpoints
         .add(key);
 
 
-      sendReward(
+      reward(
         socket,
         player,
         5,
@@ -766,6 +962,273 @@ function checkCheckpoints(
       );
     }
   }
+}
+
+
+// ============================================================
+// INTERACTION
+// ============================================================
+
+function findNearestInteraction(
+  player
+) {
+  const map =
+    MAPS[
+      player.mapId
+    ];
+
+
+  if (!map) {
+    return null;
+  }
+
+
+  let nearest =
+    null;
+
+
+  let nearestDistance =
+    Infinity;
+
+
+  for (
+    const item
+    of map.interactables
+  ) {
+    const distance =
+      Math.hypot(
+        player.x -
+          item.x,
+
+        player.y -
+          item.y
+      );
+
+
+    if (
+      distance <=
+        PLAYER.interactDistance &&
+
+      distance <
+        nearestDistance
+    ) {
+      nearest =
+        item;
+
+
+      nearestDistance =
+        distance;
+    }
+  }
+
+
+  return nearest;
+}
+
+
+function interact(
+  socket,
+  player
+) {
+  if (
+    !player.mapId
+  ) {
+    return;
+  }
+
+
+  const now =
+    Date.now();
+
+
+  if (
+    now -
+    player.lastInteraction <
+    350
+  ) {
+    return;
+  }
+
+
+  player.lastInteraction =
+    now;
+
+
+  const item =
+    findNearestInteraction(
+      player
+    );
+
+
+  if (!item) {
+    send(
+      socket,
+      {
+        type:
+          "interactionMessage",
+
+        text:
+          "Hier gibt es nichts zu benutzen."
+      }
+    );
+
+    return;
+  }
+
+
+  const state =
+    mapStates[
+      player.mapId
+    ];
+
+
+  const itemState =
+    state.interactables[
+      item.id
+    ];
+
+
+  if (
+    item.type ===
+    "power"
+  ) {
+    state.powerOn =
+      !state.powerOn;
+
+
+    state.lightsOn =
+      state.powerOn;
+
+
+    itemState.active =
+      !state.powerOn;
+
+
+    send(
+      socket,
+      {
+        type:
+          "interactionMessage",
+
+        text:
+          state.powerOn
+            ? "Strom eingeschaltet."
+            : "Strom ausgeschaltet."
+      }
+    );
+  }
+
+
+  if (
+    item.type ===
+    "vent"
+  ) {
+    itemState.active =
+      !itemState.active;
+
+
+    send(
+      socket,
+      {
+        type:
+          "interactionMessage",
+
+        text:
+          itemState.active
+            ? "Lüftung geöffnet."
+            : "Lüftung geschlossen."
+      }
+    );
+  }
+
+
+  if (
+    item.type ===
+    "radio"
+  ) {
+    itemState.active =
+      !itemState.active;
+
+
+    send(
+      socket,
+      {
+        type:
+          "interactionMessage",
+
+        text:
+          itemState.active
+            ? "Hafenfunk eingeschaltet."
+            : "Hafenfunk ausgeschaltet."
+      }
+    );
+  }
+
+
+  if (
+    item.type ===
+    "terminal"
+  ) {
+    itemState.active =
+      !itemState.active;
+
+
+    send(
+      socket,
+      {
+        type:
+          "interactionMessage",
+
+        text:
+          itemState.active
+            ? "Terminal aktiviert."
+            : "Terminal gesperrt."
+      }
+    );
+  }
+
+
+  if (
+    item.type ===
+    "hide"
+  ) {
+    player.hidden =
+      !player.hidden;
+
+
+    player.vx = 0;
+    player.vy = 0;
+
+
+    if (
+      player.hidden
+    ) {
+      player.hiddenAt =
+        item.id;
+    } else {
+      player.hiddenAt =
+        null;
+    }
+
+
+    send(
+      socket,
+      {
+        type:
+          "interactionMessage",
+
+        text:
+          player.hidden
+            ? "Du versteckst dich."
+            : "Du kommst aus dem Versteck."
+      }
+    );
+  }
+
+
+  broadcastMap(
+    player.mapId
+  );
 }
 
 
@@ -782,43 +1245,68 @@ function updateWorld() {
     Date.now();
 
 
-  updateDoors(dt);
+  updateDoors(
+    dt
+  );
 
 
   for (
-    const [socket, player]
+    const [
+      socket,
+      player
+    ]
     of players.entries()
   ) {
-    if (!player.mapId) {
+    if (
+      !player.mapId
+    ) {
       continue;
     }
 
 
     const map =
-      MAPS[player.mapId];
+      MAPS[
+        player.mapId
+      ];
 
 
+    // Landung
     if (
       player.airborne &&
       now >=
-        player.jumpEndsAt
+      player.jumpEndsAt
     ) {
       player.airborne =
         false;
+
 
       player.landedAt =
         now;
     }
 
 
-    tryJump(
+    // Jump Buffer
+    attemptJump(
       player,
       now
     );
 
 
+    // Während man versteckt ist:
+    // keine Bewegung.
+    if (
+      player.hidden
+    ) {
+      player.vx = 0;
+      player.vy = 0;
+
+      continue;
+    }
+
+
     let inputX =
       player.inputX;
+
 
     let inputY =
       player.inputY;
@@ -837,24 +1325,32 @@ function updateWorld() {
       inputX /=
         inputLength;
 
+
       inputY /=
         inputLength;
     }
 
 
-    const speed =
+    // 0 Bunnyhop = 1x.
+    // 1 Bunnyhop = 2x.
+    const speedMultiplier =
+      1 +
+      player.bunnyhop;
+
+
+    const targetSpeed =
       PLAYER.baseSpeed *
-      (
-        1 +
-        player.bunnyhop
-      );
+      speedMultiplier;
 
 
     const targetVX =
-      inputX * speed;
+      inputX *
+      targetSpeed;
+
 
     const targetVY =
-      inputY * speed;
+      inputY *
+      targetSpeed;
 
 
     const acceleration =
@@ -879,20 +1375,22 @@ function updateWorld() {
       );
 
 
+    // Bodenbremsung.
     if (
-      inputLength < 0.05
+      inputLength <
+      0.05
     ) {
-      const brake =
+      const braking =
         player.airborne
-          ? 250
-          : 1800;
+          ? 220
+          : 1500;
 
 
       player.vx =
         moveToward(
           player.vx,
           0,
-          brake * dt
+          braking * dt
         );
 
 
@@ -900,14 +1398,16 @@ function updateWorld() {
         moveToward(
           player.vy,
           0,
-          brake * dt
+          braking * dt
         );
     }
 
 
+    // X Kollisionsbewegung
     const nextX =
       player.x +
-      player.vx * dt;
+      player.vx *
+      dt;
 
 
     if (
@@ -922,6 +1422,7 @@ function updateWorld() {
     } else {
       player.vx = 0;
 
+
       player.bunnyhop =
         Math.max(
           0,
@@ -931,9 +1432,11 @@ function updateWorld() {
     }
 
 
+    // Y Kollisionsbewegung
     const nextY =
       player.y +
-      player.vy * dt;
+      player.vy *
+      dt;
 
 
     if (
@@ -948,6 +1451,7 @@ function updateWorld() {
     } else {
       player.vy = 0;
 
+
       player.bunnyhop =
         Math.max(
           0,
@@ -957,23 +1461,29 @@ function updateWorld() {
     }
 
 
+    // Wer nach der Landung nicht schnell
+    // wieder springt, verliert Boost.
     if (
       !player.airborne &&
+      player.landedAt > 0 &&
       now -
-        player.landedAt >
-        900
+      player.landedAt >
+      PLAYER.bunnyhopWindow
     ) {
       player.bunnyhop =
         Math.max(
           0,
+
           player.bunnyhop -
-          0.018
-        );
+          PLAYER.bunnyhopDecay
+      );
     }
 
 
+    // Aktiv-Spielzeit.
     if (
-      inputLength > 0.15
+      inputLength >
+      0.15
     ) {
       player.activeTime +=
         TICK_MS;
@@ -987,7 +1497,7 @@ function updateWorld() {
           30000;
 
 
-        sendReward(
+        reward(
           socket,
           player,
           1,
@@ -1007,7 +1517,9 @@ function updateWorld() {
 
   for (
     const mapId
-    of Object.keys(MAPS)
+    of Object.keys(
+      MAPS
+    )
   ) {
     broadcastMap(
       mapId
@@ -1017,30 +1529,35 @@ function updateWorld() {
 
 
 // ============================================================
-// STATIC WEBSITE
+// STATIC FILE SERVER
 // ============================================================
 
 const server =
   http.createServer(
-    (req, res) => {
+    (
+      req,
+      res
+    ) => {
       try {
         let requestPath =
           decodeURIComponent(
             (
-              req.url || "/"
+              req.url ||
+              "/"
             ).split("?")[0]
           );
 
 
         if (
-          requestPath === "/"
+          requestPath ===
+          "/"
         ) {
           requestPath =
             "/index.html";
         }
 
 
-        const relativePath =
+        const cleanPath =
           requestPath.replace(
             /^\/+/,
             ""
@@ -1048,18 +1565,30 @@ const server =
 
 
         const filePath =
-          path.join(
+          path.resolve(
             publicDir,
-            relativePath
+            cleanPath
+          );
+
+
+        const relative =
+          path.relative(
+            publicDir,
+            filePath
           );
 
 
         if (
-          !filePath.startsWith(
-            publicDir
+          relative.startsWith(
+            ".."
+          ) ||
+          path.isAbsolute(
+            relative
           )
         ) {
-          res.writeHead(403);
+          res.writeHead(
+            403
+          );
 
           res.end(
             "Forbidden"
@@ -1072,28 +1601,14 @@ const server =
         if (
           !fs.existsSync(
             filePath
-          )
-        ) {
-          res.writeHead(404);
-
-          res.end(
-            "Not found"
-          );
-
-          return;
-        }
-
-
-        const stat =
-          fs.statSync(
+          ) ||
+          !fs.statSync(
             filePath
-          );
-
-
-        if (
-          !stat.isFile()
+          ).isFile()
         ) {
-          res.writeHead(404);
+          res.writeHead(
+            404
+          );
 
           res.end(
             "Not found"
@@ -1105,7 +1620,9 @@ const server =
 
         const extension =
           path
-            .extname(filePath)
+            .extname(
+              filePath
+            )
             .toLowerCase();
 
 
@@ -1158,7 +1675,9 @@ const server =
           .createReadStream(
             filePath
           )
-          .pipe(res);
+          .pipe(
+            res
+          );
 
       } catch (
         error
@@ -1224,14 +1743,15 @@ webSocketServer.on(
     );
 
 
-    socket.send(
-      JSON.stringify({
+    send(
+      socket,
+      {
         type:
           "welcome",
 
         playerId:
           player.id
-      })
+      }
     );
 
 
@@ -1251,7 +1771,7 @@ webSocketServer.on(
           if (
             !message ||
             typeof message.type !==
-              "string"
+            "string"
           ) {
             return;
           }
@@ -1265,15 +1785,6 @@ webSocketServer.on(
               sanitizeName(
                 message.name
               );
-
-
-            if (
-              player.mapId
-            ) {
-              broadcastMap(
-                player.mapId
-              );
-            }
 
             return;
           }
@@ -1309,6 +1820,11 @@ webSocketServer.on(
             player.mapId =
               null;
 
+
+            player.hidden =
+              false;
+
+
             player.vx = 0;
             player.vy = 0;
 
@@ -1334,6 +1850,7 @@ webSocketServer.on(
                 message.x
               );
 
+
             let y =
               Number(
                 message.y
@@ -1341,14 +1858,18 @@ webSocketServer.on(
 
 
             if (
-              !Number.isFinite(x)
+              !Number.isFinite(
+                x
+              )
             ) {
               x = 0;
             }
 
 
             if (
-              !Number.isFinite(y)
+              !Number.isFinite(
+                y
+              )
             ) {
               y = 0;
             }
@@ -1377,12 +1898,26 @@ webSocketServer.on(
             message.type ===
             "jump"
           ) {
-            player.queuedJump =
-              true;
+            player.jumpQueuedUntil =
+              Date.now() +
+              PLAYER.jumpBuffer;
+
+            return;
+          }
+
+
+          if (
+            message.type ===
+            "interact"
+          ) {
+            interact(
+              socket,
+              player
+            );
           }
 
         } catch {
-          // Ungültige Nachricht ignorieren.
+          // Ungültige Nachrichten ignorieren.
         }
       }
     );
@@ -1410,14 +1945,6 @@ webSocketServer.on(
 
 
         sendGlobalStatus();
-      }
-    );
-
-
-    socket.on(
-      "error",
-      () => {
-        // close übernimmt das Aufräumen.
       }
     );
   }
@@ -1478,6 +2005,7 @@ webSocketServer.on(
       heartbeatInterval
     );
 
+
     clearInterval(
       gameInterval
     );
@@ -1490,7 +2018,7 @@ server.listen(
   "0.0.0.0",
   () => {
     console.log(
-      `DuckyMaps V4 läuft auf Port ${PORT}`
+      `DuckyMaps V4.5 läuft auf Port ${PORT}`
     );
   }
 );
