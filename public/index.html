@@ -8,91 +8,672 @@
     content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
   >
 
-  <meta name="theme-color" content="#050711">
+  <meta name="theme-color" content="#0b0c10">
 
-  <title>DuckyMaps</title>
+  <title>Ducky Maps</title>
 
   <link rel="stylesheet" href="/style.css">
 </head>
 
 <body>
 
-  <canvas id="game"></canvas>
+  <canvas id="gameCanvas"></canvas>
 
-  <!-- OBERE LEISTE -->
-  <div id="topBar">
 
-    <div class="glassBox statusBox">
-      <span id="connectionDot"></span>
-      <span id="connectionText">Verbinde...</span>
+  <!-- ===================================================== -->
+  <!-- INTRO -->
+  <!-- ===================================================== -->
+
+  <section id="introScreen" class="screen active">
+
+    <div class="introLogo">
+
+      <div class="duckyLogo largeLogo">
+        D
+      </div>
+
+      <div class="introTitle">
+        DUCKY MAPS
+      </div>
+
     </div>
 
-    <div class="glassBox playerCounter">
-      👥 <span id="playerCount">0</span>
+    <div class="introSubtitle">
+      MULTIPLAYER WORLD
     </div>
 
-  </div>
+  </section>
 
 
-  <!-- NAME -->
-  <div id="namePanel">
+  <!-- ===================================================== -->
+  <!-- HAUPTMENÜ -->
+  <!-- ===================================================== -->
 
-    <input
-      id="nameInput"
-      maxlength="20"
-      placeholder="Dein Name"
-      autocomplete="off"
+  <section id="mainMenu" class="screen menuScreen">
+
+    <div class="menuBackdrop"></div>
+
+    <header class="mainHeader">
+
+      <div class="brand">
+
+        <div class="duckyLogo">
+          D
+        </div>
+
+        <div class="brandText">
+          DUCKY MAPS
+        </div>
+
+      </div>
+
+      <div id="menuServerStatus" class="serverStatus">
+        <span class="statusDot"></span>
+        ONLINE
+      </div>
+
+    </header>
+
+
+    <main class="mainMenuContent">
+
+      <div class="menuHero">
+
+        <div class="heroEyebrow">
+          ONLINE MULTIPLAYER
+        </div>
+
+        <h1>
+          Deine Welt.<br>
+          Deine Map.
+        </h1>
+
+        <p>
+          Betritt Ducky Maps, entdecke verschiedene Welten
+          und spiele gemeinsam mit anderen Spielern.
+        </p>
+
+      </div>
+
+
+      <div class="menuActions">
+
+        <button
+          id="playButton"
+          class="menuButton primaryButton"
+        >
+          <span class="buttonIcon">▶</span>
+
+          <span>
+            <strong>SPIELEN</strong>
+            <small>Ausgewählte Map starten</small>
+          </span>
+        </button>
+
+
+        <button
+          id="mapsButton"
+          class="menuButton"
+        >
+          <span class="buttonIcon">◆</span>
+
+          <span>
+            <strong>MAP AUSWÄHLEN</strong>
+            <small id="selectedMapLabel">Industrie</small>
+          </span>
+        </button>
+
+
+        <button
+          id="settingsButton"
+          class="menuButton"
+        >
+          <span class="buttonIcon">⚙</span>
+
+          <span>
+            <strong>EINSTELLUNGEN</strong>
+            <small>Audio & Spiel</small>
+          </span>
+        </button>
+
+      </div>
+
+    </main>
+
+
+    <footer class="menuFooter">
+
+      <div>
+        DUCKY MAPS
+      </div>
+
+      <div id="menuPlayerCount">
+        0 SPIELER ONLINE
+      </div>
+
+    </footer>
+
+  </section>
+
+
+  <!-- ===================================================== -->
+  <!-- MAP AUSWAHL -->
+  <!-- ===================================================== -->
+
+  <section id="mapsMenu" class="screen menuScreen hidden">
+
+    <div class="menuBackdrop"></div>
+
+    <header class="subHeader">
+
+      <button
+        class="backButton"
+        data-close-screen="maps"
+      >
+        ←
+      </button>
+
+      <div>
+
+        <div class="sectionEyebrow">
+          DUCKY MAPS
+        </div>
+
+        <h2>MAP AUSWÄHLEN</h2>
+
+      </div>
+
+    </header>
+
+
+    <main class="mapGrid">
+
+      <button
+        class="mapCard selected"
+        data-map="industry"
+      >
+
+        <div class="mapPreview industryPreview">
+
+          <div class="previewBuilding"></div>
+          <div class="previewRoad"></div>
+
+        </div>
+
+        <div class="mapInfo">
+
+          <div>
+            <h3>INDUSTRIE</h3>
+
+            <p>
+              Lagerhallen, Betonflächen und Industriegebäude.
+            </p>
+          </div>
+
+          <span class="mapBadge">
+            STANDARD
+          </span>
+
+        </div>
+
+      </button>
+
+
+      <button
+        class="mapCard"
+        data-map="harbor"
+      >
+
+        <div class="mapPreview harborPreview">
+
+          <div class="previewWater"></div>
+          <div class="previewContainers"></div>
+
+        </div>
+
+        <div class="mapInfo">
+
+          <div>
+            <h3>HAFEN</h3>
+
+            <p>
+              Container, Wasser und große offene Flächen.
+            </p>
+          </div>
+
+          <span class="mapBadge blueBadge">
+            NEU
+          </span>
+
+        </div>
+
+      </button>
+
+
+      <button
+        class="mapCard"
+        data-map="labs"
+      >
+
+        <div class="mapPreview labsPreview">
+
+          <div class="previewLab"></div>
+          <div class="previewLabLines"></div>
+
+        </div>
+
+        <div class="mapInfo">
+
+          <div>
+            <h3>LABS</h3>
+
+            <p>
+              Moderne Räume, Technik und Forschung.
+            </p>
+          </div>
+
+          <span class="mapBadge purpleBadge">
+            EXPERIMENTELL
+          </span>
+
+        </div>
+
+      </button>
+
+    </main>
+
+  </section>
+
+
+  <!-- ===================================================== -->
+  <!-- EINSTELLUNGEN -->
+  <!-- ===================================================== -->
+
+  <section id="settingsMenu" class="screen menuScreen hidden">
+
+    <div class="menuBackdrop"></div>
+
+    <header class="subHeader">
+
+      <button
+        id="settingsBackButton"
+        class="backButton"
+      >
+        ←
+      </button>
+
+      <div>
+
+        <div class="sectionEyebrow">
+          DUCKY MAPS
+        </div>
+
+        <h2>EINSTELLUNGEN</h2>
+
+      </div>
+
+    </header>
+
+
+    <main class="settingsContent">
+
+      <div class="settingsSection">
+
+        <div class="settingsSectionHeader">
+
+          <div>
+            <h3>SPIELER</h3>
+            <p>Dein öffentlicher Name im Spiel.</p>
+          </div>
+
+        </div>
+
+
+        <div class="settingRow">
+
+          <div class="settingText">
+            <strong>Spielername</strong>
+            <span>Maximal 20 Zeichen</span>
+          </div>
+
+          <input
+            id="settingsNameInput"
+            class="modernInput"
+            maxlength="20"
+            autocomplete="off"
+            placeholder="Spieler"
+          >
+
+        </div>
+
+      </div>
+
+
+      <div class="settingsSection">
+
+        <div class="settingsSectionHeader">
+
+          <div>
+            <h3>AUDIO</h3>
+            <p>Musik und Soundeffekte einstellen.</p>
+          </div>
+
+        </div>
+
+
+        <div class="settingRow">
+
+          <div class="settingText">
+            <strong>Musik</strong>
+            <span>Hintergrundmusik aktivieren</span>
+          </div>
+
+          <label class="switch">
+
+            <input
+              id="musicEnabled"
+              type="checkbox"
+              checked
+            >
+
+            <span class="switchSlider"></span>
+
+          </label>
+
+        </div>
+
+
+        <div class="settingRow">
+
+          <div class="settingText">
+            <strong>Musikstil</strong>
+            <span>Wähle die Atmosphäre</span>
+          </div>
+
+          <select
+            id="musicStyle"
+            class="modernSelect"
+          >
+
+            <option value="ambient">
+              Ambient
+            </option>
+
+            <option value="pulse">
+              Pulse
+            </option>
+
+            <option value="minimal">
+              Minimal
+            </option>
+
+          </select>
+
+        </div>
+
+
+        <div class="settingRow verticalSetting">
+
+          <div class="settingTop">
+
+            <div class="settingText">
+              <strong>Musiklautstärke</strong>
+              <span>Hintergrundmusik</span>
+            </div>
+
+            <span id="musicVolumeValue">
+              35%
+            </span>
+
+          </div>
+
+          <input
+            id="musicVolume"
+            class="modernRange"
+            type="range"
+            min="0"
+            max="100"
+            value="35"
+          >
+
+        </div>
+
+
+        <div class="settingRow">
+
+          <div class="settingText">
+            <strong>Soundeffekte</strong>
+            <span>Menüs und Spielsounds</span>
+          </div>
+
+          <label class="switch">
+
+            <input
+              id="sfxEnabled"
+              type="checkbox"
+              checked
+            >
+
+            <span class="switchSlider"></span>
+
+          </label>
+
+        </div>
+
+
+        <div class="settingRow verticalSetting">
+
+          <div class="settingTop">
+
+            <div class="settingText">
+              <strong>Soundlautstärke</strong>
+              <span>Effekte und Interface</span>
+            </div>
+
+            <span id="sfxVolumeValue">
+              65%
+            </span>
+
+          </div>
+
+          <input
+            id="sfxVolume"
+            class="modernRange"
+            type="range"
+            min="0"
+            max="100"
+            value="65"
+          >
+
+        </div>
+
+      </div>
+
+
+      <button
+        id="saveSettingsButton"
+        class="saveSettingsButton"
+      >
+        EINSTELLUNGEN SPEICHERN
+      </button>
+
+    </main>
+
+  </section>
+
+
+  <!-- ===================================================== -->
+  <!-- MAP START -->
+  <!-- ===================================================== -->
+
+  <section id="mapIntro" class="screen mapIntroScreen hidden">
+
+    <div class="mapIntroContent">
+
+      <div class="sectionEyebrow">
+        DUCKY MAPS
+      </div>
+
+      <h2 id="mapIntroTitle">
+        INDUSTRIE
+      </h2>
+
+      <div id="mapIntroPlayers">
+        1 SPIELER ONLINE
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- ===================================================== -->
+  <!-- SPIEL HUD -->
+  <!-- ===================================================== -->
+
+  <div id="gameHud" class="hidden">
+
+    <div class="hudTopLeft">
+
+      <div class="hudBrand">
+
+        <div class="duckyLogo hudLogo">
+          D
+        </div>
+
+        <div>
+
+          <strong id="hudMapName">
+            INDUSTRIE
+          </strong>
+
+          <span>
+            DUCKY MAPS
+          </span>
+
+        </div>
+
+      </div>
+
+
+      <div class="hudOnline">
+
+        <span class="statusDot"></span>
+
+        <span id="hudPlayerCount">
+          1 SPIELER
+        </span>
+
+      </div>
+
+    </div>
+
+
+    <button
+      id="pauseButton"
+      class="pauseButton"
+      aria-label="Menü öffnen"
     >
-
-    <button id="nameButton">
-      Speichern
+      ☰
     </button>
 
-  </div>
 
+    <div id="playerListPanel">
 
-  <!-- SPIELERLISTE -->
-  <div id="playerListPanel">
+      <div class="panelTitle">
+        ONLINE
+      </div>
 
-    <div id="playerListTitle">
-      ONLINE
+      <div id="playerList"></div>
+
     </div>
 
-    <div id="playerList"></div>
 
-  </div>
+    <div id="minimapPanel">
 
+      <canvas
+        id="minimapCanvas"
+        width="220"
+        height="130"
+      ></canvas>
 
-  <!-- MINIMAP -->
-  <div id="minimapPanel">
-
-    <canvas
-      id="minimap"
-      width="180"
-      height="105"
-    ></canvas>
-
-  </div>
+    </div>
 
 
-  <!-- MELDUNGEN -->
-  <div id="notifications"></div>
+    <div id="notifications"></div>
 
 
-  <!-- HANDY JOYSTICK -->
-  <div id="touchControls">
+    <div id="touchControls">
 
-    <div id="joystick">
-      <div id="stick"></div>
+      <div id="joystick">
+        <div id="joystickStick"></div>
+      </div>
+
+    </div>
+
+
+    <div class="controlHint">
+      WASD / PFEILTASTEN
     </div>
 
   </div>
 
 
-  <!-- HILFE -->
-  <div id="controlsHint">
-    WASD / Pfeiltasten
-  </div>
+  <!-- ===================================================== -->
+  <!-- PAUSE MENÜ -->
+  <!-- ===================================================== -->
+
+  <section id="pauseMenu" class="overlay hidden">
+
+    <div class="pausePanel">
+
+      <div class="pauseBrand">
+
+        <div class="duckyLogo">
+          D
+        </div>
+
+        <div>
+          DUCKY MAPS
+        </div>
+
+      </div>
+
+
+      <div class="pauseTitle">
+        SPIELMENÜ
+      </div>
+
+
+      <button
+        id="continueButton"
+        class="pauseMenuButton primaryPauseButton"
+      >
+        ▶ SPIEL FORTSETZEN
+      </button>
+
+
+      <button
+        id="pauseSettingsButton"
+        class="pauseMenuButton"
+      >
+        ⚙ EINSTELLUNGEN
+      </button>
+
+
+      <div class="pauseDivider"></div>
+
+
+      <button
+        id="exitButton"
+        class="pauseMenuButton dangerButton"
+      >
+        ZURÜCK ZUM HAUPTMENÜ
+      </button>
+
+    </div>
+
+  </section>
 
 
   <script src="/game.js"></script>
