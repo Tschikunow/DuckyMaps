@@ -4,7 +4,7 @@ const http = require("node:http");
 const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
-const { WebSocketServer } = require("ws");
+const { WebSocketServer, WebSocket } = require("ws");
 
 const PORT = Number(process.env.PORT) || 3000;
 
@@ -23,6 +23,7 @@ const TICK_MS = 1000 / TICK_RATE;
 
 const publicDir = path.join(__dirname, "public");
 
+// Hier werden alle verbundenen Spieler gespeichert.
 const players = new Map();
 
 function randomPosition() {
@@ -68,7 +69,7 @@ function broadcast(message) {
   const data = JSON.stringify(message);
 
   for (const socket of players.keys()) {
-    if (socket.readyState === socket.OPEN) {
+    if (socket.readyState === WebSocket.OPEN) {
       socket.send(data);
     }
   }
@@ -77,7 +78,9 @@ function broadcast(message) {
 function createSnapshot() {
   return {
     type: "state",
+
     world: WORLD,
+
     players: [...players.values()].map((player) => ({
       id: player.id,
       name: player.name,
@@ -85,6 +88,18 @@ function createSnapshot() {
       y: player.y
     }))
   };
+}
+
+function removePlayer(socket) {
+  if (!players.has(socket)) {
+    return;
+  }
+
+  players.delete(socket);
+
+  console.log(`Spieler getrennt. Online: ${players.size}`);
+
+  broadcast(createSnapshot());
 }
 
 function updateWorld() {
@@ -119,6 +134,11 @@ function updateWorld() {
 
   broadcast(createSnapshot());
 }
+
+
+// --------------------------------------------------
+// WEBSEITE AUS DEM PUBLIC-ORDNER AUSLIEFERN
+// --------------------------------------------------
 
 const server = http.createServer((req, res) => {
   try {
@@ -165,13 +185,17 @@ const server = http.createServer((req, res) => {
       ".jpg": "image/jpeg",
       ".jpeg": "image/jpeg",
       ".svg": "image/svg+xml",
-      ".ico": "image/x-icon"
+      ".ico": "image/x-icon",
+      ".webp": "image/webp",
+      ".mp3": "audio/mpeg",
+      ".wav": "audio/wav"
     };
 
     res.writeHead(200, {
       "Content-Type":
         mimeTypes[extension] ||
         "application/octet-stream",
+
       "Cache-Control": "no-cache"
     });
 
@@ -187,15 +211,29 @@ const server = http.createServer((req, res) => {
   }
 });
 
+
+// --------------------------------------------------
+// WEBSOCKET / MULTIPLAYER
+// --------------------------------------------------
+
 const webSocketServer = new WebSocketServer({
   server,
   maxPayload: 4096
 });
 
 webSocketServer.on("connection", (socket) => {
+  // Der Server merkt sich, ob diese Verbindung noch lebt.
+  socket.isAlive = true;
+
+  socket.on("pong", () => {
+    socket.isAlive = true;
+  });
+
   const player = createPlayer();
 
   players.set(socket, player);
+
+  console.log(`Spieler verbunden. Online: ${players.size}`);
 
   socket.send(
     JSON.stringify({
@@ -219,8 +257,13 @@ webSocketServer.on("connection", (socket) => {
         let x = Number(message.x);
         let y = Number(message.y);
 
-        if (!Number.isFinite(x)) x = 0;
-        if (!Number.isFinite(y)) y = 0;
+        if (!Number.isFinite(x)) {
+          x = 0;
+        }
+
+        if (!Number.isFinite(y)) {
+          y = 0;
+        }
 
         player.input.x = clamp(x, -1, 1);
         player.input.y = clamp(y, -1, 1);
@@ -228,6 +271,7 @@ webSocketServer.on("connection", (socket) => {
 
       if (message.type === "setName") {
         player.name = sanitizeName(message.name);
+
         broadcast(createSnapshot());
       }
     } catch {
@@ -236,16 +280,58 @@ webSocketServer.on("connection", (socket) => {
   });
 
   socket.on("close", () => {
-    players.delete(socket);
-    broadcast(createSnapshot());
+    removePlayer(socket);
   });
 
   socket.on("error", () => {
-    players.delete(socket);
+    removePlayer(socket);
   });
 });
 
-setInterval(updateWorld, TICK_MS);
+
+// --------------------------------------------------
+// GEISTERSPIELER-FIX
+// --------------------------------------------------
+
+// Alle 15 Sekunden wird geprüft,
+// ob die Browser-Verbindungen noch wirklich existieren.
+const heartbeatInterval = setInterval(() => {
+  for (const socket of webSocketServer.clients) {
+    if (socket.isAlive === false) {
+      console.log("Tote Verbindung entfernt.");
+
+      removePlayer(socket);
+
+      socket.terminate();
+
+      continue;
+    }
+
+    socket.isAlive = false;
+
+    try {
+      socket.ping();
+    } catch {
+      removePlayer(socket);
+      socket.terminate();
+    }
+  }
+}, 15000);
+
+
+// --------------------------------------------------
+// SPIEL-SERVER STARTEN
+// --------------------------------------------------
+
+const gameInterval = setInterval(
+  updateWorld,
+  TICK_MS
+);
+
+webSocketServer.on("close", () => {
+  clearInterval(heartbeatInterval);
+  clearInterval(gameInterval);
+});
 
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`DuckyMaps läuft auf Port ${PORT}`);
