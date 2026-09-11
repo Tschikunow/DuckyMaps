@@ -1,8 +1,8 @@
 {
-  "name": "duckymaps",
-  "version": "0.1.0",
+  "name": "duckymaps-2d",
+  "version": "7.0.0",
   "private": true,
-  "description": "DuckyMaps Multiplayer Game",
+  "description": "DuckyMaps 2D Multiplayer",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -11,6 +11,8 @@
     "node": ">=20"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "pg": "^8.16.3",
     "ws": "^8.18.3"
   }
 }
