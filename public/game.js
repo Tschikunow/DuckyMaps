@@ -1,4807 +1,6439 @@
 "use strict";
 
-// ============================================================
-// DUCKYMAPS V4.9 CLIENT
-// SURVIVAL / HP / POTIONS / FISH / HIDEOUTS
-// ============================================================
+const $ = (selector) =>
+  document.querySelector(selector);
 
-const $ =
-  id =>
-    document.getElementById(
-      id
-    );
+const $$ = (selector) =>
+  [...document.querySelectorAll(selector)];
 
+const canvas = $("#gameCanvas");
+const ctx = canvas.getContext("2d", {
+  alpha: false
+});
 
-const canvas =
-  $("gameCanvas");
-
-const ctx =
-  canvas.getContext(
-    "2d"
-  );
-
-
-const minimapCanvas =
-  $("minimapCanvas");
-
+const minimap = $("#minimap");
 const minimapCtx =
-  minimapCanvas.getContext(
-    "2d"
-  );
+  minimap.getContext("2d");
 
+const mainMenu = $("#mainMenu");
+const panelOverlay = $("#panelOverlay");
+const gameScreen = $("#gameScreen");
+const pauseMenu = $("#pauseMenu");
+const pianoOverlay = $("#pianoOverlay");
+const voteOverlay = $("#voteOverlay");
+const joinOverlay = $("#joinOverlay");
 
-let screenWidth = 0;
-let screenHeight = 0;
-let dpr = 1;
+const networkStatus = $("#networkStatus");
+const accountBadge = $("#accountBadge");
 
+const mapGrid = $("#mapGrid");
+const lockerGrid = $("#lockerGrid");
+const shopGrid = $("#shopGrid");
+const battlePassGrid = $("#battlePassGrid");
+const bestiaryGrid = $("#bestiaryGrid");
 
-const introScreen = $("introScreen");
-const mainMenu = $("mainMenu");
-const mapsMenu = $("mapsMenu");
-const settingsMenu = $("settingsMenu");
-const mapIntro = $("mapIntro");
-const gameHud = $("gameHud");
-const pauseMenu = $("pauseMenu");
+const selectedMapTitle =
+  $("#selectedMapTitle");
 
-const playButton = $("playButton");
-const mapsButton = $("mapsButton");
-const settingsButton = $("settingsButton");
-const mapsBackButton = $("mapsBackButton");
-const settingsBackButton = $("settingsBackButton");
-const saveSettingsButton = $("saveSettingsButton");
+const selectedMapDescription =
+  $("#selectedMapDescription");
 
-const pauseButton = $("pauseButton");
-const continueButton = $("continueButton");
-const pauseSettingsButton = $("pauseSettingsButton");
-const exitButton = $("exitButton");
+const selectedModeLabel =
+  $("#selectedModeLabel");
 
-const jumpButton = $("jumpButton");
-const actionButton = $("actionButton");
+const selectedBotsLabel =
+  $("#selectedBotsLabel");
 
-const onlineCount = $("onlineCount");
-const hudPlayers = $("hudPlayers");
-const connectionText = $("connectionText");
-const connectionDot = $("connectionDot");
+const modeSelect = $("#modeSelect");
+const minigameSelect = $("#minigameSelect");
+const botCount = $("#botCount");
+const botCountValue = $("#botCountValue");
+const monsterSelect = $("#monsterSelect");
 
-const hudMapName = $("hudMapName");
-const playMapName = $("playMapName");
-const introMapName = $("introMapName");
-const introMapSubtitle = $("introMapSubtitle");
+const bhopToggle = $("#bhopToggle");
+const eventsToggle = $("#eventsToggle");
+const privateToggle = $("#privateToggle");
+const splitToggle = $("#splitToggle");
 
-const profileName = $("profileName");
-const profileCoins = $("profileCoins");
-const coinCount = $("coinCount");
+const displayName = $("#displayName");
+const musicSelect = $("#musicSelect");
+const musicVolume = $("#musicVolume");
+const musicEnabled = $("#musicEnabled");
+const minimapEnabled = $("#minimapEnabled");
+const chatEnabled = $("#chatEnabled");
+const voiceEnabled = $("#voiceEnabled");
+const themeSelect = $("#themeSelect");
 
-const playerListPanel = $("playerListPanel");
-const playerList = $("playerList");
-const minimapPanel = $("minimapPanel");
+const gameModeText = $("#gameModeText");
+const gameMapText = $("#gameMapText");
+const serverCodeText = $("#serverCodeText");
 
-const speedHud = $("speedHud");
-const speedValue = $("speedValue");
+const hpText = $("#hpText");
+const hpFill = $("#hpFill");
+const fishHud = $("#fishHud");
+const statusHud = $("#statusHud");
+const petHud = $("#petHud");
+const bossHud = $("#bossHud");
+const bossBar = $("#bossBar");
 
-const notifications = $("notifications");
+const downedOverlay = $("#downedOverlay");
 
-const nameInput = $("nameInput");
-const themeSelect = $("themeSelect");
-const minimapToggle = $("minimapToggle");
-const playerListToggle = $("playerListToggle");
-const zoomSlider = $("zoomSlider");
-const zoomValue = $("zoomValue");
-const musicToggle = $("musicToggle");
-const musicVolume = $("musicVolume");
-const musicVolumeValue = $("musicVolumeValue");
-const soundToggle = $("soundToggle");
+const notifications = $("#notifications");
 
-const moveZone = $("moveZone");
-const joystickElement = $("joystick");
-const joystickStick = $("joystickStick");
+const interactionPrompt =
+  $("#interactionPrompt");
 
+const chat = $("#chat");
+const chatLog = $("#chatLog");
+const chatForm = $("#chatForm");
+const chatInput = $("#chatInput");
 
-// ============================================================
-// SURVIVAL HUD
-// Wird dynamisch erstellt.
-// index.html muss nicht geändert werden.
-// ============================================================
+const buildToolbar = $("#buildToolbar");
+const buildBlockSelect = $("#buildBlockSelect");
+const saveBuildButton = $("#saveBuildButton");
 
-const survivalHud =
-  document.createElement(
-    "div"
-  );
+const weaponHud = $("#weaponHud");
+const weaponName = $("#weaponName");
 
+const voteChoices = $("#voteChoices");
 
-survivalHud.id =
-  "survivalHud";
+const gameDarkness = $("#gameDarkness");
 
+const joystick = $("#joystick");
+const stick = $("#stick");
+const touchJump = $("#touchJump");
+const touchInteract = $("#touchInteract");
 
-survivalHud.innerHTML = `
-  <div id="statusBadges">
-    <span id="hideBadge">VERSTECKT</span>
-    <span id="speedBadge">⚡ SPEED</span>
-  </div>
+let CATALOG = null;
 
-  <div id="fishHud">
-    <span class="fishIcon">🐟</span>
-    <span id="fishCount">0</span>
-  </div>
+let token =
+  localStorage.getItem(
+    "duckymaps_token"
+  ) || "";
 
-  <div id="hpLabel">
-    <span>HP</span>
-    <strong id="hpText">100 / 100</strong>
-  </div>
-
-  <div id="hpTrack">
-    <div id="hpFill"></div>
-  </div>
-`;
-
-
-document.body.appendChild(
-  survivalHud
-);
-
-
-const hudStyle =
-  document.createElement(
-    "style"
-  );
-
-
-hudStyle.textContent = `
-  #survivalHud {
-    position: fixed;
-    right: max(18px, env(safe-area-inset-right));
-    bottom: max(20px, env(safe-area-inset-bottom));
-    width: min(260px, calc(100vw - 40px));
-    z-index: 120;
-    color: white;
-    font-family: system-ui, sans-serif;
-    pointer-events: none;
-    display: none;
-  }
-
-  #survivalHud.active {
-    display: block;
-  }
-
-  #hpLabel {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 6px;
-    font-size: 12px;
-    font-weight: 900;
-    letter-spacing: .08em;
-    text-shadow: 0 2px 5px rgba(0,0,0,.7);
-  }
-
-  #hpTrack {
-    height: 15px;
-    border-radius: 999px;
-    overflow: hidden;
-    background: rgba(10,12,14,.75);
-    border: 2px solid rgba(255,255,255,.75);
-    box-shadow: 0 4px 14px rgba(0,0,0,.3);
-  }
-
-  #hpFill {
-    width: 100%;
-    height: 100%;
-    background:
-      linear-gradient(
-        90deg,
-        #dc3345,
-        #f0525f
-      );
-    transition:
-      width .2s ease,
-      background .2s ease;
-  }
-
-  #fishHud {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 5px;
-    margin-bottom: 7px;
-    font-weight: 900;
-    font-size: 15px;
-    text-shadow: 0 2px 5px rgba(0,0,0,.7);
-  }
-
-  #statusBadges {
-    display: flex;
-    justify-content: flex-end;
-    gap: 6px;
-    min-height: 25px;
-    margin-bottom: 5px;
-  }
-
-  #hideBadge,
-  #speedBadge {
-    display: none;
-    padding: 5px 8px;
-    border-radius: 8px;
-    font-size: 10px;
-    font-weight: 900;
-    letter-spacing: .06em;
-  }
-
-  #hideBadge.active {
-    display: inline-block;
-    background: rgba(42,48,55,.9);
-    border: 1px solid rgba(255,255,255,.35);
-  }
-
-  #speedBadge.active {
-    display: inline-block;
-    background: rgba(43,151,84,.92);
-    border: 1px solid rgba(145,255,178,.65);
-  }
-
-  @media (max-width: 600px) {
-    #survivalHud {
-      width: 180px;
-      right: max(14px, env(safe-area-inset-right));
-      bottom: max(128px, calc(env(safe-area-inset-bottom) + 110px));
-    }
-
-    #hpTrack {
-      height: 13px;
-    }
-
-    #hpLabel {
-      font-size: 10px;
-    }
-  }
-`;
-
-
-document.head.appendChild(
-  hudStyle
-);
-
-
-const hpText =
-  $("hpText");
-
-const hpFill =
-  $("hpFill");
-
-const fishCount =
-  $("fishCount");
-
-const hideBadge =
-  $("hideBadge");
-
-const speedBadge =
-  $("speedBadge");
-
-
-let myHp = 100;
-let myMaxHp = 100;
-let myFish = 0;
-
-
-// ============================================================
-// SETTINGS
-// ============================================================
-
-const defaultSettings = {
-  name: "Spieler",
-  theme: "dark",
-  minimap: true,
-  playerList: true,
-  zoom: 100,
-  music: true,
-  musicVolume: 30,
-  sounds: true
+let account = null;
+let social = {
+  friends: [],
+  groups: []
 };
 
+let ws = null;
+let wsClientId = null;
 
-function loadSettings() {
-  try {
-    return {
-      ...defaultSettings,
+let splitWs = null;
+let splitPlayerId = null;
 
-      ...JSON.parse(
-        localStorage.getItem(
-          "duckymaps-settings"
-        ) || "{}"
-      )
-    };
-  } catch {
-    return {
-      ...defaultSettings
-    };
-  }
-}
+let currentLobby = null;
+let currentMap = null;
 
-
-let settings =
-  loadSettings();
-
+let inGame = false;
+let paused = false;
 
 let selectedMap =
   localStorage.getItem(
-    "duckymaps-map"
-  ) ||
-  "industry";
+    "duckymaps_map"
+  ) || "concert";
 
+let selectedSkin =
+  localStorage.getItem(
+    "duckymaps_skin"
+  ) || "skin_1";
 
-const mapNames = {
-  industry: "Industrie",
-  harbor: "Hafen",
-  labs: "Labs"
+let selectedWeapon =
+  localStorage.getItem(
+    "duckymaps_weapon"
+  ) || "weapon_1";
+
+let lockerTab = "skins";
+
+let snapshot = {
+  players: [],
+  bots: [],
+  monsters: [],
+  scps: [],
+  zombies: [],
+  vehicles: [],
+  buildBlocks: [],
+  world: {},
+  boss: null
 };
 
-
-// ============================================================
-// GAME STATE
-// ============================================================
-
-let socket = null;
-let reconnectTimer = null;
-let myId = null;
-
-let currentMap = null;
-
-let serverPlayers = [];
-
-let currentDoorStates = {};
-
-let worldState = {
-  lightsOn: true,
-  powerOn: true,
-  alarmOn: false,
-  interactables: {},
-  noise: null
-};
-
-
-let playing = false;
-let paused = false;
-let settingsFromPause = false;
-
-let coins = 0;
-
-
-const renderPlayers =
+const renderEntities =
   new Map();
 
-
-const camera = {
-  x: 0,
-  y: 0
-};
-
-
-let lastFrameTime =
-  performance.now();
-
-
-const keys =
-  new Set();
-
+const renderSpecial =
+  new Map();
 
 const input = {
-  x: 0,
-  y: 0
+  up: false,
+  down: false,
+  left: false,
+  right: false,
+  joyX: 0,
+  joyY: 0
 };
 
-
-const joystick = {
-  active: false,
-  pointerId: null,
-  centerX: 0,
-  centerY: 0,
-  x: 0,
-  y: 0
+const splitInput = {
+  up: false,
+  down: false,
+  left: false,
+  right: false
 };
 
+let lastInput = {
+  x: 99,
+  y: 99
+};
 
-// ============================================================
-// AUTO JUMP
-// ============================================================
+let lastSplitInput = {
+  x: 99,
+  y: 99
+};
 
 let jumpHeld = false;
+let splitJumpHeld = false;
 
-let jumpPointerId = null;
+let joystickPointer = null;
 
-let lastJumpRequest = 0;
+let lastFrame =
+  performance.now();
 
-const AUTO_JUMP_INTERVAL =
-  70;
+let clickWorld = {
+  x: 0,
+  y: 0
+};
 
+let spatialIndex = null;
 
-// ============================================================
-// AUDIO
-// ============================================================
+const effects = [];
 
-let audioContext = null;
-let musicGain = null;
+const cameras = {
+  main: {
+    x: 0,
+    y: 0,
+    zoom: 0.9
+  },
 
+  split: {
+    x: 0,
+    y: 0,
+    zoom: 0.9
+  }
+};
 
-function resize() {
-  dpr =
-    Math.min(
-      window.devicePixelRatio ||
-      1,
-      2
+const SETTINGS = {
+  name:
+    localStorage.getItem(
+      "duckymaps_name"
+    ) || "Ducky",
+
+  bots:
+    Number(
+      localStorage.getItem(
+        "duckymaps_bots"
+      )
+    ) || 7,
+
+  music:
+    localStorage.getItem(
+      "duckymaps_music"
+    ) !== "false",
+
+  volume:
+    Number(
+      localStorage.getItem(
+        "duckymaps_volume"
+      )
+    ) || 32,
+
+  minimap:
+    localStorage.getItem(
+      "duckymaps_minimap"
+    ) !== "false",
+
+  chat:
+    localStorage.getItem(
+      "duckymaps_chat"
+    ) !== "false",
+
+  voice:
+    false,
+
+  theme:
+    localStorage.getItem(
+      "duckymaps_theme"
+    ) || "red"
+};
+
+displayName.value =
+  SETTINGS.name;
+
+botCount.value =
+  SETTINGS.bots;
+
+botCountValue.textContent =
+  SETTINGS.bots;
+
+selectedBotsLabel.textContent =
+  SETTINGS.bots;
+
+musicEnabled.checked =
+  SETTINGS.music;
+
+musicVolume.value =
+  SETTINGS.volume;
+
+minimapEnabled.checked =
+  SETTINGS.minimap;
+
+chatEnabled.checked =
+  SETTINGS.chat;
+
+themeSelect.value =
+  SETTINGS.theme;
+
+applyTheme();
+
+/* ----------------------------------------------------------
+   API
+---------------------------------------------------------- */
+
+async function api(
+  url,
+  options = {}
+) {
+  const headers = {
+    "Content-Type":
+      "application/json",
+    ...(options.headers || {})
+  };
+
+  if (token) {
+    headers.Authorization =
+      `Bearer ${token}`;
+  }
+
+  const response =
+    await fetch(
+      url,
+      {
+        ...options,
+        headers
+      }
     );
 
+  const data =
+    await response.json();
 
-  screenWidth =
-    window.innerWidth;
-
-
-  screenHeight =
-    window.innerHeight;
-
-
-  canvas.width =
-    Math.floor(
-      screenWidth *
-      dpr
+  if (!response.ok) {
+    throw new Error(
+      data.error ||
+      "Anfrage fehlgeschlagen."
     );
+  }
 
+  return data;
+}
 
-  canvas.height =
-    Math.floor(
-      screenHeight *
-      dpr
+async function loadCatalog() {
+  CATALOG =
+    await api("/api/catalog");
+
+  fillCatalogControls();
+  renderMaps();
+  renderLocker();
+  renderShop();
+  renderBattlePass();
+  renderBestiary();
+  updateSelectedMapCard();
+}
+
+async function loadAccount() {
+  if (!token) {
+    updateAccountUi();
+    return;
+  }
+
+  try {
+    const data =
+      await api("/api/me");
+
+    account = data.user;
+
+    selectedSkin =
+      account.profile.selectedSkin ||
+      selectedSkin;
+
+    selectedWeapon =
+      account.profile.selectedWeapon ||
+      selectedWeapon;
+
+    await loadSocial();
+  } catch {
+    token = "";
+    account = null;
+
+    localStorage.removeItem(
+      "duckymaps_token"
     );
+  }
 
+  updateAccountUi();
+}
 
-  canvas.style.width =
-    `${screenWidth}px`;
+async function loadSocial() {
+  if (!account) {
+    social = {
+      friends: [],
+      groups: []
+    };
 
+    renderSocial();
 
-  canvas.style.height =
-    `${screenHeight}px`;
+    return;
+  }
 
+  try {
+    social =
+      await api("/api/social");
+  } catch {
+    social = {
+      friends: [],
+      groups: []
+    };
+  }
 
-  ctx.setTransform(
-    dpr,
-    0,
-    0,
-    dpr,
-    0,
-    0
+  renderSocial();
+}
+
+function friendIds() {
+  return new Set(
+    social.friends
+      .filter(
+        (friend) =>
+          friend.status ===
+          "accepted"
+      )
+      .map(
+        (friend) =>
+          friend.id
+      )
   );
 }
 
+/* ----------------------------------------------------------
+   UI
+---------------------------------------------------------- */
+
+function show(element) {
+  element.classList.remove(
+    "hidden"
+  );
+}
+
+function hide(element) {
+  element.classList.add(
+    "hidden"
+  );
+}
+
+function openPanel(id) {
+  $$(".menu-panel").forEach(
+    (panel) =>
+      panel.classList.add(
+        "hidden"
+      )
+  );
+
+  const panel =
+    document.getElementById(id);
+
+  if (panel) {
+    show(panel);
+    show(panelOverlay);
+  }
+}
+
+$$("[data-panel]").forEach(
+  (button) => {
+    button.addEventListener(
+      "click",
+      () =>
+        openPanel(
+          button.dataset.panel
+        )
+    );
+  }
+);
+
+$("#closePanel").addEventListener(
+  "click",
+  () => {
+    saveSettings();
+    hide(panelOverlay);
+  }
+);
+
+$("#quickPlay").addEventListener(
+  "click",
+  () => {
+    createGame();
+  }
+);
+
+$("#createServer").addEventListener(
+  "click",
+  () => {
+    openPanel("playPanel");
+  }
+);
+
+$("#joinServer").addEventListener(
+  "click",
+  () => {
+    show(joinOverlay);
+  }
+);
+
+$("#joinCancel").addEventListener(
+  "click",
+  () => hide(joinOverlay)
+);
+
+$("#joinServerConfirm").addEventListener(
+  "click",
+  () => {
+    const code =
+      $("#serverCodeInput")
+        .value
+        .trim()
+        .toUpperCase();
+
+    if (!code) return;
+
+    send({
+      type: "joinLobby",
+      code
+    });
+
+    hide(joinOverlay);
+  }
+);
+
+botCount.addEventListener(
+  "input",
+  () => {
+    botCountValue.textContent =
+      botCount.value;
+
+    selectedBotsLabel.textContent =
+      botCount.value;
+  }
+);
+
+modeSelect.addEventListener(
+  "change",
+  updateModeLabel
+);
+
+function updateModeLabel() {
+  const option =
+    modeSelect.selectedOptions[0];
+
+  selectedModeLabel.textContent =
+    option?.textContent ||
+    "Monster Hunt";
+}
+
+function saveSettings() {
+  SETTINGS.name =
+    displayName.value.trim() ||
+    "Ducky";
+
+  SETTINGS.bots =
+    Number(botCount.value);
+
+  SETTINGS.music =
+    musicEnabled.checked;
+
+  SETTINGS.volume =
+    Number(musicVolume.value);
+
+  SETTINGS.minimap =
+    minimapEnabled.checked;
+
+  SETTINGS.chat =
+    chatEnabled.checked;
+
+  SETTINGS.theme =
+    themeSelect.value;
+
+  localStorage.setItem(
+    "duckymaps_name",
+    SETTINGS.name
+  );
+
+  localStorage.setItem(
+    "duckymaps_bots",
+    String(SETTINGS.bots)
+  );
+
+  localStorage.setItem(
+    "duckymaps_music",
+    String(SETTINGS.music)
+  );
+
+  localStorage.setItem(
+    "duckymaps_volume",
+    String(SETTINGS.volume)
+  );
+
+  localStorage.setItem(
+    "duckymaps_minimap",
+    String(SETTINGS.minimap)
+  );
+
+  localStorage.setItem(
+    "duckymaps_chat",
+    String(SETTINGS.chat)
+  );
+
+  localStorage.setItem(
+    "duckymaps_theme",
+    SETTINGS.theme
+  );
+
+  applyTheme();
+  audio.updateVolume();
+
+  $("#minimapWrap")
+    .classList.toggle(
+      "hidden",
+      !SETTINGS.minimap
+    );
+
+  chat.classList.toggle(
+    "hidden",
+    !SETTINGS.chat
+  );
+}
+
+function applyTheme() {
+  document.body.classList.remove(
+    "theme-blue",
+    "theme-violet",
+    "theme-green",
+    "theme-mono"
+  );
+
+  if (
+    SETTINGS.theme !== "red"
+  ) {
+    document.body.classList.add(
+      `theme-${SETTINGS.theme}`
+    );
+  }
+}
+
+function rarityHtml(item) {
+  return `
+    <div class="rarity">
+      <span
+        class="rarity-dot"
+        style="background:${item.rarityColor || "#999"}"
+      ></span>
+
+      ${escapeHtml(item.rarityName || item.rarity || "")}
+    </div>
+  `;
+}
+
+function skinPreview(skin) {
+  return `
+    <div class="item-preview">
+      <div
+        class="skin-shape"
+        style="
+          --color:${skin.primary};
+          --accent-color:${skin.accent};
+        "
+      ></div>
+    </div>
+  `;
+}
+
+function petPreview(pet) {
+  return `
+    <div class="item-preview">
+      <div class="pet-shape">
+        ${pet.icon}
+      </div>
+    </div>
+  `;
+}
+
+function weaponPreview(weapon) {
+  return `
+    <div class="item-preview">
+      <div
+        class="weapon-shape"
+        style="--weapon-color:${weapon.color}"
+      ></div>
+    </div>
+  `;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;");
+}
+
+function fillCatalogControls() {
+  monsterSelect.innerHTML =
+    CATALOG.monsterForms
+      .map(
+        (form) =>
+          `<option value="${form.id}">${escapeHtml(form.name)}</option>`
+      )
+      .join("");
+
+  minigameSelect.innerHTML =
+    CATALOG.minigames
+      .map(
+        (game) =>
+          `<option value="${game.id}">${escapeHtml(game.name)}</option>`
+      )
+      .join("");
+
+  musicSelect.innerHTML =
+    CATALOG.tracks
+      .map(
+        (track) =>
+          `<option value="${track.id}">${escapeHtml(track.name)} — ${escapeHtml(track.genre)}</option>`
+      )
+      .join("");
+
+  buildBlockSelect.innerHTML =
+    CATALOG.blocks
+      .map(
+        (block) =>
+          `<option value="${block.id}">${escapeHtml(block.name)}</option>`
+      )
+      .join("");
+
+  const storedTrack =
+    localStorage.getItem(
+      "duckymaps_track"
+    );
+
+  if (
+    CATALOG.tracks.some(
+      (track) =>
+        track.id === storedTrack
+    )
+  ) {
+    musicSelect.value =
+      storedTrack;
+  }
+}
+
+function renderMaps() {
+  mapGrid.innerHTML = "";
+
+  for (const map of CATALOG.maps) {
+    const button =
+      document.createElement(
+        "button"
+      );
+
+    button.className =
+      "item-card";
+
+    button.innerHTML = `
+      <div
+        class="item-preview"
+        style="
+          background:
+            linear-gradient(
+              145deg,
+              ${map.dark ? "#24262c" : "#c9cdcc"},
+              ${map.dark ? "#111317" : "#8e9899"}
+            )
+        "
+      >
+        <strong>
+          ${escapeHtml(map.name)}
+        </strong>
+      </div>
+
+      <div class="item-info">
+        <strong>
+          ${escapeHtml(map.name)}
+        </strong>
+
+        <div class="rarity">
+          ${escapeHtml(map.subtitle)}
+        </div>
+      </div>
+    `;
+
+    if (
+      map.id === selectedMap
+    ) {
+      button.style.outline =
+        "2px solid var(--accent)";
+    }
+
+    button.addEventListener(
+      "click",
+      () => {
+        selectedMap =
+          map.id;
+
+        localStorage.setItem(
+          "duckymaps_map",
+          selectedMap
+        );
+
+        renderMaps();
+        updateSelectedMapCard();
+      }
+    );
+
+    mapGrid.appendChild(
+      button
+    );
+  }
+}
+
+function updateSelectedMapCard() {
+  if (!CATALOG) return;
+
+  const map =
+    CATALOG.maps.find(
+      (entry) =>
+        entry.id === selectedMap
+    ) || CATALOG.maps[0];
+
+  selectedMapTitle.textContent =
+    map.name;
+
+  selectedMapDescription.textContent =
+    map.subtitle;
+}
+
+function ownedSkins() {
+  return account
+    ? account.profile.ownedSkins
+    : ["skin_1","skin_2","skin_3"];
+}
+
+function ownedWeapons() {
+  return account
+    ? account.profile.ownedWeapons
+    : ["weapon_1"];
+}
+
+function ownedPets() {
+  return account
+    ? account.profile.pets
+    : [];
+}
+
+function renderLocker() {
+  if (!CATALOG) return;
+
+  lockerGrid.innerHTML = "";
+
+  if (lockerTab === "skins") {
+    for (const skin of CATALOG.skins) {
+      const owned =
+        ownedSkins().includes(
+          skin.id
+        );
+
+      const card =
+        document.createElement(
+          "button"
+        );
+
+      card.className =
+        "item-card";
+
+      card.innerHTML =
+        skinPreview(skin) +
+        `
+          <div class="item-info">
+            <strong>
+              ${escapeHtml(skin.name)}
+            </strong>
+
+            ${rarityHtml(skin)}
+
+            <div class="rarity">
+              ${owned ? "Im Spind" : skin.secret ? "Secret" : "Nicht freigeschaltet"}
+            </div>
+          </div>
+        `;
+
+      if (owned) {
+        card.addEventListener(
+          "click",
+          async () => {
+            selectedSkin =
+              skin.id;
+
+            localStorage.setItem(
+              "duckymaps_skin",
+              selectedSkin
+            );
+
+            if (account) {
+              const result =
+                await api(
+                  "/api/profile/equip",
+                  {
+                    method: "POST",
+                    body:
+                      JSON.stringify({
+                        skin:
+                          selectedSkin
+                      })
+                  }
+                );
+
+              account.profile =
+                result.profile;
+            }
+
+            toast(
+              `${skin.name} ausgerüstet.`,
+              "good"
+            );
+          }
+        );
+      }
+
+      lockerGrid.appendChild(
+        card
+      );
+    }
+  }
+
+  if (lockerTab === "pets") {
+    for (const pet of CATALOG.pets) {
+      const owned =
+        ownedPets().includes(
+          pet.id
+        );
+
+      const card =
+        document.createElement(
+          "button"
+        );
+
+      card.className =
+        "item-card";
+
+      card.innerHTML =
+        petPreview(pet) +
+        `
+          <div class="item-info">
+            <strong>
+              ${escapeHtml(pet.name)}
+            </strong>
+
+            ${rarityHtml(pet)}
+
+            <div class="rarity">
+              ${owned ? "Gefunden" : "Secret-Fund auf einer Map"}
+            </div>
+          </div>
+        `;
+
+      if (owned && account) {
+        card.addEventListener(
+          "click",
+          async () => {
+            const result =
+              await api(
+                "/api/profile/equip",
+                {
+                  method: "POST",
+                  body:
+                    JSON.stringify({
+                      pet: pet.id
+                    })
+                }
+              );
+
+            account.profile =
+              result.profile;
+
+            toast(
+              `${pet.name} begleitet dich.`,
+              "good"
+            );
+          }
+        );
+      }
+
+      lockerGrid.appendChild(
+        card
+      );
+    }
+  }
+
+  if (lockerTab === "weapons") {
+    for (const weapon of CATALOG.weapons) {
+      const owned =
+        ownedWeapons().includes(
+          weapon.id
+        );
+
+      const card =
+        document.createElement(
+          "button"
+        );
+
+      card.className =
+        "item-card";
+
+      card.innerHTML =
+        weaponPreview(weapon) +
+        `
+          <div class="item-info">
+            <strong>
+              ${escapeHtml(weapon.name)}
+            </strong>
+
+            ${rarityHtml(weapon)}
+
+            <div class="rarity">
+              ${owned ? "Im Inventar" : `${weapon.price} Coins`}
+            </div>
+          </div>
+        `;
+
+      if (owned) {
+        card.addEventListener(
+          "click",
+          async () => {
+            selectedWeapon =
+              weapon.id;
+
+            localStorage.setItem(
+              "duckymaps_weapon",
+              selectedWeapon
+            );
+
+            if (account) {
+              const result =
+                await api(
+                  "/api/profile/equip",
+                  {
+                    method: "POST",
+                    body:
+                      JSON.stringify({
+                        weapon:
+                          selectedWeapon
+                      })
+                  }
+                );
+
+              account.profile =
+                result.profile;
+            }
+
+            toast(
+              `${weapon.name} ausgerüstet.`,
+              "good"
+            );
+          }
+        );
+      }
+
+      lockerGrid.appendChild(
+        card
+      );
+    }
+  }
+}
+
+$$("[data-locker-tab]").forEach(
+  (button) => {
+    button.addEventListener(
+      "click",
+      () => {
+        lockerTab =
+          button.dataset.lockerTab;
+
+        renderLocker();
+      }
+    );
+  }
+);
+
+function renderShop() {
+  if (!CATALOG) return;
+
+  shopGrid.innerHTML = "";
+
+  const items = [
+    ...CATALOG.skins
+      .filter(
+        (skin) =>
+          !skin.secret &&
+          !skin.challenge
+      )
+      .slice(0, 80),
+
+    ...CATALOG.weapons
+  ];
+
+  for (const item of items) {
+    const isWeapon =
+      item.id.startsWith(
+        "weapon_"
+      );
+
+    const card =
+      document.createElement(
+        "button"
+      );
+
+    card.className =
+      "item-card";
+
+    card.innerHTML =
+      (
+        isWeapon
+          ? weaponPreview(item)
+          : skinPreview(item)
+      ) +
+      `
+        <div class="item-info">
+          <strong>
+            ${escapeHtml(item.name)}
+          </strong>
+
+          ${rarityHtml(item)}
+
+          <div class="rarity">
+            ${
+              isWeapon
+                ? `${item.price} Coins`
+                : "Skin"
+            }
+          </div>
+        </div>
+      `;
+
+    card.addEventListener(
+      "click",
+      async () => {
+        if (!account) {
+          toast(
+            "Für Käufe bitte einloggen.",
+            "warning"
+          );
+
+          return;
+        }
+
+        try {
+          const result =
+            await api(
+              "/api/shop/buy",
+              {
+                method: "POST",
+                body:
+                  JSON.stringify({
+                    itemId:
+                      item.id
+                  })
+              }
+            );
+
+          account.profile =
+            result.profile;
+
+          updateAccountUi();
+          renderLocker();
+
+          toast(
+            `${item.name} gekauft.`,
+            "good"
+          );
+        } catch (error) {
+          toast(
+            error.message,
+            "warning"
+          );
+        }
+      }
+    );
+
+    shopGrid.appendChild(
+      card
+    );
+  }
+}
+
+function renderBattlePass() {
+  battlePassGrid.innerHTML = "";
+
+  for (const tier of CATALOG.battlePass) {
+    const div =
+      document.createElement(
+        "div"
+      );
+
+    div.className =
+      "pass-tier";
+
+    let reward;
+
+    if (tier.reward.type === "coins") {
+      reward =
+        `${tier.reward.amount} Coins`;
+    } else {
+      const collection =
+        tier.reward.type === "skin"
+          ? CATALOG.skins
+          : tier.reward.type === "pet"
+            ? CATALOG.pets
+            : CATALOG.weapons;
+
+      const item =
+        collection.find(
+          (entry) =>
+            entry.id ===
+            tier.reward.id
+        );
+
+      reward =
+        item?.name ||
+        tier.reward.id;
+    }
+
+    div.innerHTML = `
+      <small>
+        STUFE ${tier.tier}
+      </small>
+
+      <strong>
+        ${escapeHtml(reward)}
+      </strong>
+
+      <div class="rarity">
+        ${tier.xp} XP
+      </div>
+    `;
+
+    battlePassGrid.appendChild(
+      div
+    );
+  }
+}
+
+function renderBestiary() {
+  bestiaryGrid.innerHTML = "";
+
+  for (const creature of CATALOG.bestiary) {
+    const card =
+      document.createElement(
+        "div"
+      );
+
+    card.className =
+      "item-card";
+
+    card.innerHTML = `
+      <div class="item-preview">
+        <div class="monster-shape"></div>
+      </div>
+
+      <div class="item-info">
+        <strong>
+          ${escapeHtml(creature.name)}
+        </strong>
+
+        ${rarityHtml(creature)}
+      </div>
+    `;
+
+    bestiaryGrid.appendChild(
+      card
+    );
+  }
+}
+
+function updateAccountUi() {
+  if (account) {
+    accountBadge.textContent =
+      account.displayName;
+
+    hide($("#loggedOutAccount"));
+    show($("#loggedInAccount"));
+
+    $("#accountName").textContent =
+      `${account.displayName} (@${account.username})`;
+
+    $("#accountStats").textContent =
+      `${account.profile.coins} Coins • ${account.profile.xp} XP • ${account.profile.pets.length} Pets`;
+  } else {
+    accountBadge.textContent =
+      "Gast";
+
+    show($("#loggedOutAccount"));
+    hide($("#loggedInAccount"));
+  }
+
+  renderLocker();
+}
+
+$("#loginForm").addEventListener(
+  "submit",
+  async (event) => {
+    event.preventDefault();
+
+    try {
+      const result =
+        await api(
+          "/api/login",
+          {
+            method: "POST",
+            body:
+              JSON.stringify({
+                username:
+                  $("#loginUsername").value,
+                password:
+                  $("#loginPassword").value
+              })
+          }
+        );
+
+      token = result.token;
+      account = result.user;
+
+      localStorage.setItem(
+        "duckymaps_token",
+        token
+      );
+
+      await loadSocial();
+
+      updateAccountUi();
+
+      toast(
+        "Eingeloggt.",
+        "good"
+      );
+    } catch (error) {
+      toast(
+        error.message,
+        "warning"
+      );
+    }
+  }
+);
+
+$("#registerForm").addEventListener(
+  "submit",
+  async (event) => {
+    event.preventDefault();
+
+    try {
+      const result =
+        await api(
+          "/api/register",
+          {
+            method: "POST",
+            body:
+              JSON.stringify({
+                username:
+                  $("#registerUsername").value,
+                displayName:
+                  $("#registerDisplayName").value,
+                password:
+                  $("#registerPassword").value
+              })
+          }
+        );
+
+      token = result.token;
+      account = result.user;
+
+      localStorage.setItem(
+        "duckymaps_token",
+        token
+      );
+
+      await loadSocial();
+
+      updateAccountUi();
+
+      toast(
+        "Account erstellt.",
+        "good"
+      );
+    } catch (error) {
+      toast(
+        error.message,
+        "warning"
+      );
+    }
+  }
+);
+
+$("#logoutButton").addEventListener(
+  "click",
+  () => {
+    token = "";
+    account = null;
+
+    localStorage.removeItem(
+      "duckymaps_token"
+    );
+
+    updateAccountUi();
+    renderSocial();
+  }
+);
+
+$("#friendForm").addEventListener(
+  "submit",
+  async (event) => {
+    event.preventDefault();
+
+    if (!account) {
+      toast(
+        "Bitte zuerst einloggen.",
+        "warning"
+      );
+
+      return;
+    }
+
+    try {
+      await api(
+        "/api/friends/request",
+        {
+          method: "POST",
+          body:
+            JSON.stringify({
+              username:
+                $("#friendUsername").value
+            })
+        }
+      );
+
+      await loadSocial();
+
+      toast(
+        "Freundschaftsanfrage gesendet.",
+        "good"
+      );
+    } catch (error) {
+      toast(
+        error.message,
+        "warning"
+      );
+    }
+  }
+);
+
+$("#groupForm").addEventListener(
+  "submit",
+  async (event) => {
+    event.preventDefault();
+
+    if (!account) {
+      toast(
+        "Bitte zuerst einloggen.",
+        "warning"
+      );
+
+      return;
+    }
+
+    try {
+      await api(
+        "/api/groups/create",
+        {
+          method: "POST",
+          body:
+            JSON.stringify({
+              name:
+                $("#groupName").value
+            })
+        }
+      );
+
+      await loadSocial();
+
+      toast(
+        "Gruppe erstellt.",
+        "good"
+      );
+    } catch (error) {
+      toast(
+        error.message,
+        "warning"
+      );
+    }
+  }
+);
+
+function renderSocial() {
+  const friends =
+    $("#friendsList");
+
+  const groups =
+    $("#groupsList");
+
+  friends.innerHTML = "";
+  groups.innerHTML = "";
+
+  for (const friend of social.friends) {
+    const row =
+      document.createElement(
+        "div"
+      );
+
+    row.className =
+      "item-info";
+
+    row.innerHTML = `
+      <strong>
+        ${escapeHtml(friend.displayName)}
+      </strong>
+
+      <div class="rarity">
+        @${escapeHtml(friend.username)}
+        •
+        ${escapeHtml(friend.status)}
+      </div>
+    `;
+
+    if (
+      friend.status === "pending" &&
+      friend.requestedBy !== account?.id
+    ) {
+      const accept =
+        document.createElement(
+          "button"
+        );
+
+      accept.textContent =
+        "Annehmen";
+
+      accept.addEventListener(
+        "click",
+        async () => {
+          await api(
+            "/api/friends/accept",
+            {
+              method: "POST",
+              body:
+                JSON.stringify({
+                  userId:
+                    friend.id
+                })
+            }
+          );
+
+          await loadSocial();
+        }
+      );
+
+      row.appendChild(
+        accept
+      );
+    }
+
+    friends.appendChild(
+      row
+    );
+  }
+
+  for (const group of social.groups) {
+    const row =
+      document.createElement(
+        "div"
+      );
+
+    row.className =
+      "item-info";
+
+    row.innerHTML = `
+      <strong>
+        ${escapeHtml(group.name)}
+      </strong>
+    `;
+
+    groups.appendChild(
+      row
+    );
+  }
+}
+
+/* ----------------------------------------------------------
+   WebSocket
+---------------------------------------------------------- */
+
+function connect() {
+  const protocol =
+    location.protocol === "https:"
+      ? "wss:"
+      : "ws:";
+
+  ws =
+    new WebSocket(
+      `${protocol}//${location.host}`
+    );
+
+  ws.addEventListener(
+    "open",
+    () => {
+      networkStatus.textContent =
+        "Online";
+
+      send({
+        type: "hello",
+        name:
+          account?.displayName ||
+          SETTINGS.name,
+        skin:
+          account?.profile.selectedSkin ||
+          selectedSkin,
+        token
+      });
+    }
+  );
+
+  ws.addEventListener(
+    "close",
+    () => {
+      networkStatus.textContent =
+        "Verbindung verloren …";
+
+      setTimeout(
+        connect,
+        1500
+      );
+    }
+  );
+
+  ws.addEventListener(
+    "message",
+    (event) => {
+      let data;
+
+      try {
+        data =
+          JSON.parse(
+            event.data
+          );
+      } catch {
+        return;
+      }
+
+      handleMessage(data);
+    }
+  );
+}
+
+function send(payload) {
+  if (
+    ws?.readyState ===
+    WebSocket.OPEN
+  ) {
+    ws.send(
+      JSON.stringify(payload)
+    );
+  }
+}
+
+function handleMessage(data) {
+  switch (data.type) {
+    case "welcome":
+      wsClientId =
+        data.clientId;
+      break;
+
+    case "lobbyJoined":
+      enterGame(
+        data
+      );
+      break;
+
+    case "roundReset":
+      currentMap =
+        data.map;
+
+      currentLobby =
+        data.lobby;
+
+      buildSpatialIndex();
+      resetRenderEntities();
+
+      gameMapText.textContent =
+        currentMap.name;
+
+      toast(
+        `Neue Runde: ${currentMap.name}`,
+        "good"
+      );
+
+      hide(voteOverlay);
+      break;
+
+    case "state":
+      snapshot = data;
+      ingestSnapshot(data);
+      updateWorldUi();
+      break;
+
+    case "lobbyInfo":
+      currentLobby =
+        data.lobby;
+      break;
+
+    case "chat":
+      addChat(data);
+      break;
+
+    case "toast":
+      toast(
+        data.text,
+        data.tone
+      );
+      break;
+
+    case "shot":
+    case "beam":
+      effects.push({
+        type: "beam",
+        fromX:
+          data.fromX,
+        fromY:
+          data.fromY,
+        toX:
+          data.toX,
+        toY:
+          data.toY,
+        color:
+          data.color ||
+          "#ed6371",
+        until:
+          performance.now() +
+          350
+      });
+      break;
+
+    case "monsterSprint":
+      toast(
+        "Die Kreatur sprintet!",
+        "danger"
+      );
+      break;
+
+    case "event":
+      showEvent(data.event);
+      break;
+
+    case "openPiano":
+      show(pianoOverlay);
+      audio.ensure();
+      break;
+
+    case "openShop":
+      hide(gameScreen);
+      show(mainMenu);
+      openPanel("shopPanel");
+      break;
+
+    case "mapVote":
+      renderMapVote(
+        data.candidates
+      );
+      break;
+
+    case "bossAttack":
+      effects.push({
+        type:
+          data.attack,
+        x: data.x,
+        y: data.y,
+        until:
+          performance.now() +
+          1800
+      });
+      break;
+
+    case "voicePeers":
+      voice.updatePeers(
+        data.peers
+      );
+      break;
+
+    case "voiceSignal":
+      voice.handleSignal(
+        data.from,
+        data.signal
+      );
+      break;
+
+    case "error":
+      toast(
+        data.message,
+        "warning"
+      );
+      break;
+
+    default:
+      break;
+  }
+}
+
+function createGame() {
+  saveSettings();
+  audio.ensure();
+
+  hide(panelOverlay);
+
+  const modifiers =
+    $$(".modifier:checked")
+      .map(
+        (box) =>
+          box.value
+      );
+
+  send({
+    type: "createLobby",
+
+    mapId: selectedMap,
+    mode: modeSelect.value,
+    botCount:
+      Number(botCount.value),
+
+    bhop:
+      bhopToggle.checked,
+
+    monsterForm:
+      monsterSelect.value,
+
+    randomEvents:
+      eventsToggle.checked,
+
+    private:
+      privateToggle.checked,
+
+    modifiers,
+
+    minigameId:
+      minigameSelect.value
+  });
+}
+
+function enterGame(data) {
+  currentLobby =
+    data.lobby;
+
+  currentMap =
+    data.map;
+
+  wsClientId =
+    data.playerId;
+
+  buildSpatialIndex();
+
+  resetRenderEntities();
+
+  inGame = true;
+  paused = false;
+
+  gameMapText.textContent =
+    currentMap.name;
+
+  gameModeText.textContent =
+    currentLobby.mode
+      .replaceAll("_"," ")
+      .toUpperCase();
+
+  serverCodeText.textContent =
+    currentLobby.code;
+
+  hide(mainMenu);
+  hide(panelOverlay);
+  hide(joinOverlay);
+
+  show(gameScreen);
+
+  saveSettings();
+
+  updateModeSpecificUi();
+
+  if (
+    splitToggle.checked &&
+    matchMedia(
+      "(pointer:fine)"
+    ).matches
+  ) {
+    startSplitClient();
+  }
+
+  if (
+    voiceEnabled.checked
+  ) {
+    voice.enable();
+  }
+}
+
+function leaveGame() {
+  send({
+    type: "leaveLobby"
+  });
+
+  stopSplitClient();
+
+  voice.disable();
+
+  inGame = false;
+  currentLobby = null;
+  currentMap = null;
+
+  hide(gameScreen);
+  hide(pauseMenu);
+
+  show(mainMenu);
+}
+
+/* ----------------------------------------------------------
+   Split-screen
+---------------------------------------------------------- */
+
+function startSplitClient() {
+  if (
+    splitWs ||
+    !currentLobby
+  ) {
+    return;
+  }
+
+  const protocol =
+    location.protocol === "https:"
+      ? "wss:"
+      : "ws:";
+
+  splitWs =
+    new WebSocket(
+      `${protocol}//${location.host}`
+    );
+
+  splitWs.addEventListener(
+    "open",
+    () => {
+      splitWs.send(
+        JSON.stringify({
+          type: "hello",
+          name:
+            `${SETTINGS.name} 2`,
+          skin: "skin_2"
+        })
+      );
+
+      splitWs.send(
+        JSON.stringify({
+          type: "joinLobby",
+          code:
+            currentLobby.code
+        })
+      );
+    }
+  );
+
+  splitWs.addEventListener(
+    "message",
+    (event) => {
+      let data;
+
+      try {
+        data =
+          JSON.parse(
+            event.data
+          );
+      } catch {
+        return;
+      }
+
+      if (
+        data.type ===
+        "lobbyJoined"
+      ) {
+        splitPlayerId =
+          data.playerId;
+      }
+    }
+  );
+}
+
+function splitSend(payload) {
+  if (
+    splitWs?.readyState ===
+    WebSocket.OPEN
+  ) {
+    splitWs.send(
+      JSON.stringify(payload)
+    );
+  }
+}
+
+function stopSplitClient() {
+  if (splitWs) {
+    splitWs.close();
+  }
+
+  splitWs = null;
+  splitPlayerId = null;
+}
+
+/* ----------------------------------------------------------
+   Snapshot smoothing
+---------------------------------------------------------- */
+
+function resetRenderEntities() {
+  renderEntities.clear();
+  renderSpecial.clear();
+}
+
+function ingestSnapshot(state) {
+  const entities = [
+    ...state.players,
+    ...state.bots
+  ];
+
+  const seen =
+    new Set();
+
+  for (const entity of entities) {
+    seen.add(
+      entity.id
+    );
+
+    let render =
+      renderEntities.get(
+        entity.id
+      );
+
+    if (!render) {
+      render = {
+        ...entity,
+        renderX: entity.x,
+        renderY: entity.y,
+        targetX: entity.x,
+        targetY: entity.y
+      };
+
+      renderEntities.set(
+        entity.id,
+        render
+      );
+    } else {
+      const oldX =
+        render.renderX;
+
+      const oldY =
+        render.renderY;
+
+      Object.assign(
+        render,
+        entity
+      );
+
+      render.renderX =
+        oldX;
+
+      render.renderY =
+        oldY;
+
+      render.targetX =
+        entity.x;
+
+      render.targetY =
+        entity.y;
+    }
+  }
+
+  for (
+    const id of
+    renderEntities.keys()
+  ) {
+    if (!seen.has(id)) {
+      renderEntities.delete(id);
+    }
+  }
+
+  const specials = [
+    ...state.monsters.map(
+      (entry) => ({
+        ...entry,
+        specialType: "monster"
+      })
+    ),
+
+    ...state.scps.map(
+      (entry) => ({
+        ...entry,
+        specialType: "scp"
+      })
+    ),
+
+    ...state.zombies.map(
+      (entry) => ({
+        ...entry,
+        specialType: "zombie"
+      })
+    )
+  ];
+
+  const specialSeen =
+    new Set();
+
+  for (const entity of specials) {
+    specialSeen.add(
+      entity.id
+    );
+
+    let render =
+      renderSpecial.get(
+        entity.id
+      );
+
+    if (!render) {
+      render = {
+        ...entity,
+        renderX: entity.x,
+        renderY: entity.y,
+        targetX: entity.x,
+        targetY: entity.y
+      };
+
+      renderSpecial.set(
+        entity.id,
+        render
+      );
+    } else {
+      const x =
+        render.renderX;
+
+      const y =
+        render.renderY;
+
+      Object.assign(
+        render,
+        entity
+      );
+
+      render.renderX = x;
+      render.renderY = y;
+      render.targetX =
+        entity.x;
+      render.targetY =
+        entity.y;
+    }
+  }
+
+  for (
+    const id of
+    renderSpecial.keys()
+  ) {
+    if (
+      !specialSeen.has(id)
+    ) {
+      renderSpecial.delete(id);
+    }
+  }
+}
+
+function smooth(dt) {
+  const factor =
+    1 -
+    Math.pow(
+      .002,
+      dt
+    );
+
+  for (
+    const entity of
+    renderEntities.values()
+  ) {
+    entity.renderX +=
+      (
+        entity.targetX -
+        entity.renderX
+      ) *
+      factor;
+
+    entity.renderY +=
+      (
+        entity.targetY -
+        entity.renderY
+      ) *
+      factor;
+  }
+
+  for (
+    const entity of
+    renderSpecial.values()
+  ) {
+    entity.renderX +=
+      (
+        entity.targetX -
+        entity.renderX
+      ) *
+      factor;
+
+    entity.renderY +=
+      (
+        entity.targetY -
+        entity.renderY
+      ) *
+      factor;
+  }
+}
+
+function me() {
+  return renderEntities.get(
+    wsClientId
+  );
+}
+
+function secondMe() {
+  return splitPlayerId
+    ? renderEntities.get(
+        splitPlayerId
+      )
+    : null;
+}
+
+/* ----------------------------------------------------------
+   Spatial Index
+---------------------------------------------------------- */
+
+const CHUNK = 520;
+
+function buildSpatialIndex() {
+  if (!currentMap) {
+    spatialIndex = null;
+    return;
+  }
+
+  const chunks =
+    new Map();
+
+  function add(type, object) {
+    const minX =
+      Math.floor(
+        object.x / CHUNK
+      );
+
+    const minY =
+      Math.floor(
+        object.y / CHUNK
+      );
+
+    const maxX =
+      Math.floor(
+        (object.x +
+          (object.w || 1)) /
+          CHUNK
+      );
+
+    const maxY =
+      Math.floor(
+        (object.y +
+          (object.h || 1)) /
+          CHUNK
+      );
+
+    for (
+      let cy = minY;
+      cy <= maxY;
+      cy += 1
+    ) {
+      for (
+        let cx = minX;
+        cx <= maxX;
+        cx += 1
+      ) {
+        const key =
+          `${cx},${cy}`;
+
+        if (!chunks.has(key)) {
+          chunks.set(
+            key,
+            {
+              walls: [],
+              props: []
+            }
+          );
+        }
+
+        chunks.get(key)[type]
+          .push(object);
+      }
+    }
+  }
+
+  for (
+    const wall of
+    currentMap.walls
+  ) {
+    add("walls", wall);
+  }
+
+  for (
+    const prop of
+    currentMap.props
+  ) {
+    add("props", prop);
+  }
+
+  spatialIndex = chunks;
+}
+
+function nearbyStatic(camera, viewport) {
+  if (!spatialIndex) {
+    return {
+      walls: [],
+      props: []
+    };
+  }
+
+  const worldW =
+    viewport.w /
+    camera.zoom;
+
+  const worldH =
+    viewport.h /
+    camera.zoom;
+
+  const minX =
+    Math.floor(
+      (
+        camera.x -
+        worldW / 2 -
+        100
+      ) / CHUNK
+    );
+
+  const maxX =
+    Math.floor(
+      (
+        camera.x +
+        worldW / 2 +
+        100
+      ) / CHUNK
+    );
+
+  const minY =
+    Math.floor(
+      (
+        camera.y -
+        worldH / 2 -
+        100
+      ) / CHUNK
+    );
+
+  const maxY =
+    Math.floor(
+      (
+        camera.y +
+        worldH / 2 +
+        100
+      ) / CHUNK
+    );
+
+  const walls =
+    new Set();
+
+  const props =
+    new Set();
+
+  for (
+    let y = minY;
+    y <= maxY;
+    y += 1
+  ) {
+    for (
+      let x = minX;
+      x <= maxX;
+      x += 1
+    ) {
+      const chunk =
+        spatialIndex.get(
+          `${x},${y}`
+        );
+
+      if (!chunk) continue;
+
+      chunk.walls.forEach(
+        (entry) =>
+          walls.add(entry)
+      );
+
+      chunk.props.forEach(
+        (entry) =>
+          props.add(entry)
+      );
+    }
+  }
+
+  return {
+    walls: [...walls],
+    props: [...props]
+  };
+}
+
+/* ----------------------------------------------------------
+   Renderer
+---------------------------------------------------------- */
+
+function resize() {
+  const dpr =
+    Math.min(
+      devicePixelRatio || 1,
+      innerWidth < 700
+        ? 1.4
+        : 2
+    );
+
+  canvas.width =
+    Math.floor(
+      innerWidth * dpr
+    );
+
+  canvas.height =
+    Math.floor(
+      innerHeight * dpr
+    );
+
+  canvas.style.width =
+    `${innerWidth}px`;
+
+  canvas.style.height =
+    `${innerHeight}px`;
+
+  ctx.setTransform(
+    dpr,0,0,dpr,0,0
+  );
+}
 
 window.addEventListener(
   "resize",
   resize
 );
 
-
 resize();
 
-
-// ============================================================
-// SETTINGS
-// ============================================================
-
-function refreshSettingsUI() {
-  nameInput.value =
-    settings.name;
-
-  themeSelect.value =
-    settings.theme;
-
-  minimapToggle.checked =
-    settings.minimap;
-
-  playerListToggle.checked =
-    settings.playerList;
-
-  zoomSlider.value =
-    settings.zoom;
-
-  zoomValue.textContent =
-    `${settings.zoom}%`;
-
-  musicToggle.checked =
-    settings.music;
-
-  musicVolume.value =
-    settings.musicVolume;
-
-  musicVolumeValue.textContent =
-    `${settings.musicVolume}%`;
-
-  soundToggle.checked =
-    settings.sounds;
-
-
-  applySettings();
-}
-
-
-function applySettings() {
-  document.body.dataset.theme =
-    settings.theme;
-
-
-  minimapPanel.classList.toggle(
-    "hidden",
-    !settings.minimap
-  );
-
-
-  playerListPanel.classList.toggle(
-    "hidden",
-    !settings.playerList
-  );
-
-
-  profileName.textContent =
-    settings.name;
-
-
-  applyMusic();
-}
-
-
-function saveSettings() {
-  settings.name =
-    nameInput.value
-      .trim()
-      .slice(
-        0,
-        20
-      ) ||
-    "Spieler";
-
-
-  settings.theme =
-    themeSelect.value;
-
-
-  settings.minimap =
-    minimapToggle.checked;
-
-
-  settings.playerList =
-    playerListToggle.checked;
-
-
-  settings.zoom =
-    Number(
-      zoomSlider.value
-    );
-
-
-  settings.music =
-    musicToggle.checked;
-
-
-  settings.musicVolume =
-    Number(
-      musicVolume.value
-    );
-
-
-  settings.sounds =
-    soundToggle.checked;
-
-
-  localStorage.setItem(
-    "duckymaps-settings",
-    JSON.stringify(
-      settings
-    )
-  );
-
-
-  applySettings();
-  sendName();
-  uiSound();
-
-
-  settingsMenu.classList.add(
-    "hidden"
-  );
-
-
-  if (
-    settingsFromPause
-  ) {
-    pauseMenu.classList.remove(
-      "hidden"
-    );
-  } else {
-    mainMenu.classList.remove(
-      "hidden"
-    );
-  }
-}
-
-
-zoomSlider.addEventListener(
-  "input",
-  () => {
-    zoomValue.textContent =
-      `${zoomSlider.value}%`;
-  }
-);
-
-
-musicVolume.addEventListener(
-  "input",
-  () => {
-    musicVolumeValue.textContent =
-      `${musicVolume.value}%`;
-
-
-    settings.musicVolume =
-      Number(
-        musicVolume.value
-      );
-
-
-    applyMusic();
-  }
-);
-
-
-themeSelect.addEventListener(
-  "change",
-  () => {
-    document.body.dataset.theme =
-      themeSelect.value;
-  }
-);
-
-
-saveSettingsButton.addEventListener(
-  "click",
-  saveSettings
-);
-
-
-refreshSettingsUI();
-
-
-// ============================================================
-// AUDIO
-// ============================================================
-
-function ensureAudio() {
-  if (
-    audioContext
-  ) {
-    if (
-      audioContext.state ===
-      "suspended"
-    ) {
-      audioContext.resume();
-    }
-
-    return;
-  }
-
-
-  const AudioContext =
-    window.AudioContext ||
-    window.webkitAudioContext;
-
-
-  if (!AudioContext) {
-    return;
-  }
-
-
-  audioContext =
-    new AudioContext();
-
-
-  musicGain =
-    audioContext.createGain();
-
-
-  musicGain.connect(
-    audioContext.destination
-  );
-
-
-  for (
-    const frequency
-    of [
-      73,
-      110,
-      146
-    ]
-  ) {
-    const oscillator =
-      audioContext.createOscillator();
-
-
-    const gain =
-      audioContext.createGain();
-
-
-    oscillator.type =
-      "sine";
-
-
-    oscillator.frequency.value =
-      frequency;
-
-
-    gain.gain.value =
-      0.012;
-
-
-    oscillator.connect(
-      gain
-    );
-
-
-    gain.connect(
-      musicGain
-    );
-
-
-    oscillator.start();
-  }
-
-
-  applyMusic();
-}
-
-
-function applyMusic() {
-  if (
-    !audioContext ||
-    !musicGain
-  ) {
-    return;
-  }
-
-
-  const volume =
-    Number(
-      musicVolume.value
-    ) /
-    100;
-
-
-  musicGain.gain
-    .setTargetAtTime(
-      musicToggle.checked
-        ? volume *
-          0.22
-        : 0,
-
-      audioContext.currentTime,
-
-      0.12
-    );
-}
-
-
-function shortTone(
-  frequency,
-  duration,
-  volume
-) {
-  if (
-    !settings.sounds
-  ) {
-    return;
-  }
-
-
-  ensureAudio();
-
-
-  if (!audioContext) {
-    return;
-  }
-
-
-  const oscillator =
-    audioContext
-      .createOscillator();
-
-
-  const gain =
-    audioContext
-      .createGain();
-
-
-  oscillator.frequency.value =
-    frequency;
-
-
-  gain.gain.setValueAtTime(
-    volume,
-    audioContext.currentTime
-  );
-
-
-  gain.gain.exponentialRampToValueAtTime(
-    0.001,
-    audioContext.currentTime +
-      duration
-  );
-
-
-  oscillator.connect(
-    gain
-  );
-
-
-  gain.connect(
-    audioContext.destination
-  );
-
-
-  oscillator.start();
-
-
-  oscillator.stop(
-    audioContext.currentTime +
-      duration
-  );
-}
-
-
-function uiSound() {
-  shortTone(
-    430,
-    0.06,
-    0.025
-  );
-}
-
-
-function jumpSound() {
-  shortTone(
-    210,
-    0.09,
-    0.035
-  );
-}
-
-
-function bellSound() {
-  shortTone(
-    760,
-    0.22,
-    0.06
-  );
-}
-
-
-function potionSound() {
-  shortTone(
-    540,
-    0.13,
-    0.04
-  );
-}
-
-
-// ============================================================
-// INTRO
-// ============================================================
-
-setTimeout(
-  () => {
-    introScreen.classList.add(
-      "fade"
-    );
-
-
-    setTimeout(
-      () => {
-        introScreen.classList.add(
-          "hidden"
-        );
-      },
-
-      650
-    );
-  },
-
-  1200
-);
-
-
-// ============================================================
-// MAP SELECTION
-// ============================================================
-
-function updateSelectedMap() {
-  if (
-    !mapNames[
-      selectedMap
-    ]
-  ) {
-    selectedMap =
-      "industry";
-  }
-
-
-  playMapName.textContent =
-    mapNames[
-      selectedMap
-    ];
-
-
-  document
-    .querySelectorAll(
-      ".mapCard"
-    )
-    .forEach(
-      card => {
-        card.classList.toggle(
-          "selected",
-
-          card.dataset.map ===
-            selectedMap
-        );
-      }
-    );
-}
-
-
-document
-  .querySelectorAll(
-    ".mapCard"
-  )
-  .forEach(
-    card => {
-      card.addEventListener(
-        "click",
-        () => {
-          selectedMap =
-            card.dataset.map;
-
-
-          localStorage.setItem(
-            "duckymaps-map",
-            selectedMap
-          );
-
-
-          updateSelectedMap();
-          uiSound();
-        }
-      );
-    }
-  );
-
-
-updateSelectedMap();
-
-
-// ============================================================
-// MENUS
-// ============================================================
-
-playButton.addEventListener(
-  "click",
-  () => {
-    ensureAudio();
-    startGame();
-    uiSound();
-  }
-);
-
-
-mapsButton.addEventListener(
-  "click",
-  () => {
-    mainMenu.classList.add(
-      "hidden"
-    );
-
-
-    mapsMenu.classList.remove(
-      "hidden"
-    );
-
-
-    uiSound();
-  }
-);
-
-
-mapsBackButton.addEventListener(
-  "click",
-  () => {
-    mapsMenu.classList.add(
-      "hidden"
-    );
-
-
-    mainMenu.classList.remove(
-      "hidden"
-    );
-
-
-    uiSound();
-  }
-);
-
-
-function openSettings(
-  fromPause
-) {
-  settingsFromPause =
-    fromPause;
-
-
-  stopAutoJump();
-
-
-  refreshSettingsUI();
-
-
-  mainMenu.classList.add(
-    "hidden"
-  );
-
-
-  pauseMenu.classList.add(
-    "hidden"
-  );
-
-
-  settingsMenu.classList.remove(
-    "hidden"
-  );
-
-
-  uiSound();
-}
-
-
-settingsButton.addEventListener(
-  "click",
-  () => {
-    openSettings(
-      false
-    );
-  }
-);
-
-
-pauseSettingsButton.addEventListener(
-  "click",
-  () => {
-    openSettings(
-      true
-    );
-  }
-);
-
-
-settingsBackButton.addEventListener(
-  "click",
-  () => {
-    settingsMenu.classList.add(
-      "hidden"
-    );
-
-
-    if (
-      settingsFromPause
-    ) {
-      pauseMenu.classList.remove(
-        "hidden"
-      );
-    } else {
-      mainMenu.classList.remove(
-        "hidden"
-      );
-    }
-
-
-    applySettings();
-    uiSound();
-  }
-);
-
-
-// ============================================================
-// START GAME
-// ============================================================
-
-function startGame() {
-  if (
-    !socket ||
-    socket.readyState !==
-    WebSocket.OPEN
-  ) {
-    showNotification(
-      "Server wird noch verbunden."
-    );
-
-    return;
-  }
-
-
-  playing = true;
-  paused = false;
-
-
-  stopAutoJump();
-
-
-  currentMap =
-    null;
-
-
-  serverPlayers =
-    [];
-
-
-  renderPlayers.clear();
-
-
-  mainMenu.classList.add(
-    "hidden"
-  );
-
-
-  mapsMenu.classList.add(
-    "hidden"
-  );
-
-
-  mapIntro.classList.remove(
-    "hidden"
-  );
-
-
-  survivalHud.classList.add(
-    "active"
-  );
-
-
-  sendName();
-
-
-  socket.send(
-    JSON.stringify({
-      type:
-        "joinMap",
-
-      mapId:
-        selectedMap
-    })
-  );
-}
-
-
-// ============================================================
-// PAUSE
-// ============================================================
-
-function openPause() {
-  if (!playing) {
-    return;
-  }
-
-
-  paused = true;
-
-  stopAutoJump();
-
-
-  pauseMenu.classList.remove(
-    "hidden"
-  );
-
-
-  uiSound();
-}
-
-
-function closePause() {
-  paused = false;
-
-
-  pauseMenu.classList.add(
-    "hidden"
-  );
-
-
-  uiSound();
-}
-
-
-pauseButton.addEventListener(
-  "click",
-  openPause
-);
-
-
-continueButton.addEventListener(
-  "click",
-  closePause
-);
-
-
-exitButton.addEventListener(
-  "click",
-  () => {
-    playing = false;
-    paused = false;
-
-
-    stopAutoJump();
-
-
-    keys.clear();
-
-
-    input.x = 0;
-    input.y = 0;
-
-
-    survivalHud.classList.remove(
-      "active"
-    );
-
-
-    if (
-      socket &&
-      socket.readyState ===
-      WebSocket.OPEN
-    ) {
-      socket.send(
-        JSON.stringify({
-          type:
-            "leaveMap"
-        })
-      );
-    }
-
-
-    pauseMenu.classList.add(
-      "hidden"
-    );
-
-
-    gameHud.classList.add(
-      "hidden"
-    );
-
-
-    mapIntro.classList.add(
-      "hidden"
-    );
-
-
-    mainMenu.classList.remove(
-      "hidden"
-    );
-
-
-    uiSound();
-  }
-);
-
-
-// ============================================================
-// WEBSOCKET
-// ============================================================
-
-function connect() {
-  clearTimeout(
-    reconnectTimer
-  );
-
-
-  const protocol =
-    location.protocol ===
-    "https:"
-      ? "wss:"
-      : "ws:";
-
-
-  socket =
-    new WebSocket(
-      `${protocol}//${location.host}`
-    );
-
-
-  connectionText.textContent =
-    "Verbinden...";
-
-
-  connectionDot.style.background =
-    "#ffbd3e";
-
-
-  socket.addEventListener(
-    "open",
-    () => {
-      connectionText.textContent =
-        "ONLINE";
-
-
-      connectionDot.style.background =
-        "#4de586";
-
-
-      sendName();
-
-
-      if (
-        playing
-      ) {
-        socket.send(
-          JSON.stringify({
-            type:
-              "joinMap",
-
-            mapId:
-              selectedMap
-          })
-        );
-      }
-    }
-  );
-
-
-  socket.addEventListener(
-    "message",
-    event => {
-      handleMessage(
-        event.data
-      );
-    }
-  );
-
-
-  socket.addEventListener(
-    "close",
-    () => {
-      stopAutoJump();
-
-
-      connectionText.textContent =
-        "NEU VERBINDEN...";
-
-
-      connectionDot.style.background =
-        "#ffbd3e";
-
-
-      reconnectTimer =
-        setTimeout(
-          connect,
-          1500
-        );
-    }
-  );
-}
-
-
-function handleMessage(
-  raw
-) {
-  try {
-    const message =
-      JSON.parse(
-        raw
-      );
-
-
-    if (
-      message.type ===
-      "welcome"
-    ) {
-      myId =
-        message.playerId;
-
-
-      sendName();
-
-      return;
-    }
-
-
-    if (
-      message.type ===
-      "status"
-    ) {
-      onlineCount.textContent =
-        `${
-          Number(
-            message.online
-          ) || 0
-        } SPIELER ONLINE`;
-
-      return;
-    }
-
-
-    if (
-      message.type ===
-      "map"
-    ) {
-      currentMap =
-        message.map;
-
-
-      camera.x =
-        currentMap.width /
-        2;
-
-
-      camera.y =
-        currentMap.height /
-        2;
-
-
-      hudMapName.textContent =
-        currentMap.title;
-
-
-      introMapName.textContent =
-        currentMap.title;
-
-
-      introMapSubtitle.textContent =
-        currentMap.subtitle;
-
-
-      setTimeout(
-        () => {
-          mapIntro.classList.add(
-            "hidden"
-          );
-
-
-          gameHud.classList.remove(
-            "hidden"
-          );
-        },
-
-        850
-      );
-
-      return;
-    }
-
-
-    if (
-      message.type ===
-      "state"
-    ) {
-      if (
-        currentMap &&
-        message.mapId !==
-        currentMap.id
-      ) {
-        return;
-      }
-
-
-      serverPlayers =
-        Array.isArray(
-          message.players
-        )
-          ? message.players
-          : [];
-
-
-      currentDoorStates =
-        message.doors ||
-        {};
-
-
-      worldState =
-        message.worldState ||
-        worldState;
-
-
-      updateRenderTargets();
-
-      updatePlayerList();
-
-      updatePlayerStatus();
-
-      return;
-    }
-
-
-    if (
-      message.type ===
-      "playerState"
-    ) {
-      setCoins(
-        message.coins
-      );
-
-
-      myHp =
-        Number(
-          message.hp
-        ) || 100;
-
-
-      myMaxHp =
-        Number(
-          message.maxHp
-        ) || 100;
-
-
-      myFish =
-        Number(
-          message.fish
-        ) || 0;
-
-
-      updateSurvivalHud();
-
-      return;
-    }
-
-
-    if (
-      message.type ===
-      "reward"
-    ) {
-      setCoins(
-        message.coins
-      );
-
-
-      showNotification(
-        `+${message.amount} Coin · ${message.reason}`,
-
-        true
-      );
-
-      return;
-    }
-
-
-    if (
-      message.type ===
-      "interactionMessage"
-    ) {
-      if (
-        message.text.includes(
-          "DING"
-        )
-      ) {
-        bellSound();
-      }
-
-
-      showNotification(
-        message.text
-      );
-
-      return;
-    }
-
-
-    if (
-      message.type ===
-      "vendingLoot"
-    ) {
-      if (
-        Number.isFinite(
-          Number(
-            message.hp
-          )
-        )
-      ) {
-        myHp =
-          Number(
-            message.hp
-          );
-      }
-
-
-      if (
-        Number.isFinite(
-          Number(
-            message.maxHp
-          )
-        )
-      ) {
-        myMaxHp =
-          Number(
-            message.maxHp
-          );
-      }
-
-
-      if (
-        Number.isFinite(
-          Number(
-            message.fish
-          )
-        )
-      ) {
-        myFish =
-          Number(
-            message.fish
-          );
-      }
-
-
-      updateSurvivalHud();
-
-      potionSound();
-
-
-      if (
-        message.loot ===
-        "heal"
-      ) {
-        showLootNotification(
-          "🧪",
-          message.text
-        );
-      }
-
-
-      if (
-        message.loot ===
-        "speed"
-      ) {
-        showLootNotification(
-          "🍾",
-          message.text
-        );
-      }
-
-
-      if (
-        message.loot ===
-        "fish"
-      ) {
-        showLootNotification(
-          "🐟",
-          message.text
-        );
-      }
-    }
-
-  } catch {
-    // Ignore invalid message.
-  }
-}
-
-
-// ============================================================
-// HUD
-// ============================================================
-
-function updatePlayerStatus() {
-  const me =
-    serverPlayers.find(
-      player =>
-        player.id ===
-        myId
-    );
-
-
-  if (!me) {
-    return;
-  }
-
-
-  myHp =
-    Number(
-      me.hp
-    ) || 0;
-
-
-  myMaxHp =
-    Number(
-      me.maxHp
-    ) || 100;
-
-
-  myFish =
-    Number(
-      me.fish
-    ) || 0;
-
-
-  hideBadge.classList.toggle(
-    "active",
-    Boolean(
-      me.hidden
-    )
-  );
-
-
-  speedBadge.classList.toggle(
-    "active",
-    Boolean(
-      me.speedBoosted
-    )
-  );
-
-
-  const actualSpeed =
-    Math.hypot(
-      me.vx || 0,
-      me.vy || 0
-    );
-
-
-  const percent =
-    Math.round(
-      actualSpeed /
-      175 *
-      100
-    );
-
-
-  speedValue.textContent =
-    `${percent}%`;
-
-
-  speedHud.classList.toggle(
-    "hidden",
-    percent < 110
-  );
-
-
-  updateSurvivalHud();
-}
-
-
-function updateSurvivalHud() {
-  hpText.textContent =
-    `${myHp} / ${myMaxHp}`;
-
-
-  fishCount.textContent =
-    String(
-      myFish
-    );
-
-
-  const percent =
-    Math.max(
-      0,
-      Math.min(
-        100,
-        myHp /
-        myMaxHp *
-        100
-      )
-    );
-
-
-  hpFill.style.width =
-    `${percent}%`;
-
-
-  if (
-    percent >
-    60
-  ) {
-    hpFill.style.background =
-      "linear-gradient(90deg,#d93646,#ef5360)";
-  } else if (
-    percent >
-    30
-  ) {
-    hpFill.style.background =
-      "linear-gradient(90deg,#e28c30,#efb344)";
-  } else {
-    hpFill.style.background =
-      "linear-gradient(90deg,#a71f2d,#e12d3f)";
-  }
-}
-
-
-function showLootNotification(
-  icon,
-  text
-) {
-  const element =
-    document.createElement(
-      "div"
-    );
-
-
-  element.className =
-    "notification reward";
-
-
-  element.textContent =
-    `${icon} ${text}`;
-
-
-  notifications.appendChild(
-    element
-  );
-
-
-  setTimeout(
-    () => {
-      element.remove();
-    },
-
-    3000
-  );
-}
-
-
-// ============================================================
-// PLAYER DATA
-// ============================================================
-
-function sendName() {
-  if (
-    !socket ||
-    socket.readyState !==
-    WebSocket.OPEN
-  ) {
-    return;
-  }
-
-
-  socket.send(
-    JSON.stringify({
-      type:
-        "setName",
-
-      name:
-        settings.name
-    })
-  );
-}
-
-
-function setCoins(
-  value
-) {
-  coins =
-    Number(
-      value
-    ) || 0;
-
-
-  coinCount.textContent =
-    String(
-      coins
-    );
-
-
-  profileCoins.textContent =
-    String(
-      coins
-    );
-}
-
-
-function showNotification(
-  text,
-  reward = false
-) {
-  const element =
-    document.createElement(
-      "div"
-    );
-
-
-  element.className =
-    reward
-      ? "notification reward"
-      : "notification";
-
-
-  element.textContent =
-    text;
-
-
-  notifications.appendChild(
-    element
-  );
-
-
-  setTimeout(
-    () => {
-      element.remove();
-    },
-
-    2500
-  );
-}
-
-
-// ============================================================
-// NETWORK SMOOTHING
-// ============================================================
-
-function updateRenderTargets() {
-  const activeIds =
-    new Set();
-
-
-  for (
-    const player
-    of serverPlayers
-  ) {
-    activeIds.add(
-      player.id
-    );
-
-
-    let renderPlayer =
-      renderPlayers.get(
-        player.id
-      );
-
-
-    if (
-      !renderPlayer
-    ) {
-      renderPlayer = {
-        ...player,
-
-        x:
-          player.x,
-
-        y:
-          player.y,
-
-        targetX:
-          player.x,
-
-        targetY:
-          player.y,
-
-        targetJump:
-          player.jumpHeight ||
-          0,
-
-        jumpHeight:
-          player.jumpHeight ||
-          0
-      };
-
-
-      renderPlayers.set(
-        player.id,
-        renderPlayer
-      );
-    }
-
-
-    const prediction =
-      0.035;
-
-
-    renderPlayer.targetX =
-      player.x +
-      (
-        player.vx ||
-        0
-      ) *
-      prediction;
-
-
-    renderPlayer.targetY =
-      player.y +
-      (
-        player.vy ||
-        0
-      ) *
-      prediction;
-
-
-    renderPlayer.targetJump =
-      player.jumpHeight ||
-      0;
-
-
-    Object.assign(
-      renderPlayer,
-      {
-        name:
-          player.name,
-
-        vx:
-          player.vx || 0,
-
-        vy:
-          player.vy || 0,
-
-        hidden:
-          Boolean(
-            player.hidden
-          ),
-
-        hp:
-          player.hp,
-
-        maxHp:
-          player.maxHp,
-
-        fish:
-          player.fish,
-
-        speedBoosted:
-          Boolean(
-            player.speedBoosted
-          ),
-
-        bunnyhopChain:
-          player.bunnyhopChain ||
-          0
-      }
-    );
-  }
-
-
-  for (
-    const id
-    of renderPlayers.keys()
-  ) {
-    if (
-      !activeIds.has(
-        id
-      )
-    ) {
-      renderPlayers.delete(
-        id
-      );
-    }
-  }
-}
-
-
-function smoothPlayers(
-  dt
-) {
-  const positionFactor =
-    1 -
-    Math.exp(
-      -17 *
-      dt
-    );
-
-
-  const jumpFactor =
-    1 -
-    Math.exp(
-      -20 *
-      dt
-    );
-
-
-  for (
-    const player
-    of renderPlayers.values()
-  ) {
-    player.x +=
-      (
-        player.targetX -
-        player.x
-      ) *
-      positionFactor;
-
-
-    player.y +=
-      (
-        player.targetY -
-        player.y
-      ) *
-      positionFactor;
-
-
-    player.jumpHeight +=
-      (
-        player.targetJump -
-        player.jumpHeight
-      ) *
-      jumpFactor;
-  }
-}
-
-
-// ============================================================
-// PLAYER LIST
-// ============================================================
-
-function updatePlayerList() {
-  hudPlayers.textContent =
-    `${serverPlayers.length} SPIELER`;
-
-
-  playerList.innerHTML =
-    "";
-
-
-  for (
-    const player
-    of serverPlayers
-  ) {
-    const line =
-      document.createElement(
-        "div"
-      );
-
-
-    line.className =
-      "playerLine";
-
-
-    const dot =
-      document.createElement(
-        "span"
-      );
-
-
-    dot.className =
-      player.id ===
-      myId
-        ? "playerDot me"
-        : "playerDot";
-
-
-    const name =
-      document.createElement(
-        "span"
-      );
-
-
-    name.textContent =
-      player.id ===
-      myId
-        ? `${player.name} (Du)`
-        : player.name;
-
-
-    line.appendChild(
-      dot
-    );
-
-
-    line.appendChild(
-      name
-    );
-
-
-    playerList.appendChild(
-      line
-    );
-  }
-}
-
-
-// ============================================================
-// KEYBOARD
-// ============================================================
-
-window.addEventListener(
-  "keydown",
-  event => {
-    if (
-      document.activeElement ===
-      nameInput
-    ) {
-      return;
-    }
-
-
-    const key =
-      event.key.toLowerCase();
-
-
-    if (
-      [
-        "w",
-        "a",
-        "s",
-        "d",
-        "arrowup",
-        "arrowdown",
-        "arrowleft",
-        "arrowright",
-        " "
-      ].includes(
-        key
-      )
-    ) {
-      event.preventDefault();
-    }
-
-
-    if (
-      event.key ===
-        "Escape" &&
-      playing
-    ) {
-      if (
-        pauseMenu.classList.contains(
-          "hidden"
-        )
-      ) {
-        openPause();
-      } else {
-        closePause();
-      }
-
-      return;
-    }
-
-
-    if (
-      key ===
-      " "
-    ) {
-      if (
-        !jumpHeld
-      ) {
-        startAutoJump();
-      }
-
-
-      keys.add(
-        key
-      );
-
-      return;
-    }
-
-
-    if (
-      key ===
-        "e" &&
-      !keys.has(
-        "e"
-      )
-    ) {
-      requestInteraction();
-    }
-
-
-    keys.add(
-      key
-    );
-  }
-);
-
-
-window.addEventListener(
-  "keyup",
-  event => {
-    const key =
-      event.key.toLowerCase();
-
-
-    keys.delete(
-      key
-    );
-
-
-    if (
-      key ===
-      " "
-    ) {
-      stopAutoJump();
-    }
-  }
-);
-
-
-window.addEventListener(
-  "blur",
-  () => {
-    keys.clear();
-
-    stopAutoJump();
-  }
-);
-
-
-// ============================================================
-// MOVEMENT
-// ============================================================
-
-function calculateInput() {
-  if (
-    !playing ||
-    paused
-  ) {
-    input.x = 0;
-    input.y = 0;
-
-    return;
-  }
-
-
-  let x = 0;
-  let y = 0;
-
-
-  if (
-    keys.has("a") ||
-    keys.has(
-      "arrowleft"
-    )
-  ) {
-    x -= 1;
-  }
-
-
-  if (
-    keys.has("d") ||
-    keys.has(
-      "arrowright"
-    )
-  ) {
-    x += 1;
-  }
-
-
-  if (
-    keys.has("w") ||
-    keys.has(
-      "arrowup"
-    )
-  ) {
-    y -= 1;
-  }
-
-
-  if (
-    keys.has("s") ||
-    keys.has(
-      "arrowdown"
-    )
-  ) {
-    y += 1;
-  }
-
-
-  if (
-    joystick.active
-  ) {
-    x =
-      joystick.x;
-
-    y =
-      joystick.y;
-  }
-
-
-  const length =
-    Math.hypot(
-      x,
-      y
-    );
-
-
-  if (
-    length >
-    1
-  ) {
-    x /= length;
-    y /= length;
-  }
-
-
-  input.x = x;
-  input.y = y;
-}
-
-
-function sendInput() {
-  calculateInput();
-
-
-  if (
-    !socket ||
-    socket.readyState !==
-    WebSocket.OPEN
-  ) {
-    return;
-  }
-
-
-  socket.send(
-    JSON.stringify({
-      type:
-        "input",
-
-      x:
-        input.x,
-
-      y:
-        input.y
-    })
-  );
-}
-
-
-setInterval(
-  sendInput,
-  1000 / 30
-);
-
-
-// ============================================================
-// AUTO BUNNYHOP
-// ============================================================
-
-function sendJumpRequest(
-  sound = false
-) {
-  if (
-    !playing ||
-    paused ||
-    !socket ||
-    socket.readyState !==
-    WebSocket.OPEN
-  ) {
-    return;
-  }
-
-
-  socket.send(
-    JSON.stringify({
-      type:
-        "jump"
-    })
-  );
-
-
-  lastJumpRequest =
-    performance.now();
-
-
-  if (
-    sound
-  ) {
-    jumpSound();
-  }
-}
-
-
-function startAutoJump() {
-  if (
-    !playing ||
-    paused
-  ) {
-    return;
-  }
-
-
-  jumpHeld =
-    true;
-
-
-  sendJumpRequest(
-    true
-  );
-}
-
-
-function stopAutoJump() {
-  jumpHeld =
-    false;
-
-
-  jumpPointerId =
-    null;
-}
-
-
-function updateAutoJump(
-  time
-) {
-  if (
-    !jumpHeld ||
-    !playing ||
-    paused
-  ) {
-    return;
-  }
-
-
-  if (
-    time -
-    lastJumpRequest >=
-    AUTO_JUMP_INTERVAL
-  ) {
-    sendJumpRequest(
-      false
-    );
-  }
-}
-
-
-jumpButton.addEventListener(
-  "pointerdown",
-  event => {
-    event.preventDefault();
-
-
-    jumpPointerId =
-      event.pointerId;
-
-
-    try {
-      jumpButton.setPointerCapture(
-        event.pointerId
-      );
-    } catch {}
-
-
-    startAutoJump();
-  }
-);
-
-
-jumpButton.addEventListener(
-  "pointerup",
-  stopAutoJump
-);
-
-
-jumpButton.addEventListener(
-  "pointercancel",
-  stopAutoJump
-);
-
-
-// ============================================================
-// INTERACTION
-// ============================================================
-
-function requestInteraction() {
-  if (
-    !playing ||
-    paused ||
-    !socket ||
-    socket.readyState !==
-    WebSocket.OPEN
-  ) {
-    return;
-  }
-
-
-  socket.send(
-    JSON.stringify({
-      type:
-        "interact"
-    })
-  );
-
-
-  uiSound();
-}
-
-
-actionButton.addEventListener(
-  "pointerdown",
-  event => {
-    event.preventDefault();
-
-    requestInteraction();
-  }
-);
-
-
-// ============================================================
-// MOBILE JOYSTICK
-// ============================================================
-
-function positionJoystickBase(
-  clientX,
-  clientY
-) {
-  const zone =
-    moveZone
-      .getBoundingClientRect();
-
-
-  const size =
-    105;
-
-
-  const x =
-    Math.max(
-      zone.left + 15,
-
-      Math.min(
-        clientX -
-          size / 2,
-
-        zone.right -
-          size -
-          15
-      )
-    );
-
-
-  const y =
-    Math.max(
-      zone.top + 15,
-
-      Math.min(
-        clientY -
-          size / 2,
-
-        zone.bottom -
-          size -
-          15
-      )
-    );
-
-
-  joystickElement.style.left =
-    `${x}px`;
-
-
-  joystickElement.style.top =
-    `${y}px`;
-
-
-  joystickElement.style.bottom =
-    "auto";
-
-
-  joystick.centerX =
-    x +
-    size / 2;
-
-
-  joystick.centerY =
-    y +
-    size / 2;
-}
-
-
-function updateJoystick(
-  clientX,
-  clientY
-) {
-  let dx =
-    clientX -
-    joystick.centerX;
-
-
-  let dy =
-    clientY -
-    joystick.centerY;
-
-
-  const max =
-    36;
-
-
-  const distance =
-    Math.hypot(
-      dx,
-      dy
-    );
-
-
-  if (
-    distance >
-    max
-  ) {
-    dx =
-      dx /
-      distance *
-      max;
-
-
-    dy =
-      dy /
-      distance *
-      max;
-  }
-
-
-  joystick.x =
-    dx / max;
-
-
-  joystick.y =
-    dy / max;
-
-
-  joystickStick.style.transform =
-    `translate(${dx}px, ${dy}px)`;
-}
-
-
-function resetJoystick() {
-  joystick.active =
-    false;
-
-  joystick.pointerId =
-    null;
-
-  joystick.x = 0;
-  joystick.y = 0;
-
-  joystickStick.style.transform =
-    "translate(0,0)";
-}
-
-
-moveZone.addEventListener(
-  "pointerdown",
-  event => {
-    if (
-      !playing ||
-      paused
-    ) {
-      return;
-    }
-
-
-    joystick.active =
-      true;
-
-
-    joystick.pointerId =
-      event.pointerId;
-
-
-    moveZone.setPointerCapture(
-      event.pointerId
-    );
-
-
-    positionJoystickBase(
-      event.clientX,
-      event.clientY
-    );
-
-
-    updateJoystick(
-      event.clientX,
-      event.clientY
-    );
-  }
-);
-
-
-moveZone.addEventListener(
-  "pointermove",
-  event => {
-    if (
-      !joystick.active ||
-      event.pointerId !==
-      joystick.pointerId
-    ) {
-      return;
-    }
-
-
-    updateJoystick(
-      event.clientX,
-      event.clientY
-    );
-  }
-);
-
-
-moveZone.addEventListener(
-  "pointerup",
-  resetJoystick
-);
-
-
-moveZone.addEventListener(
-  "pointercancel",
-  resetJoystick
-);
-
-
-// ============================================================
-// CAMERA / ZOOM
-// ============================================================
-
-function getMyRenderPlayer() {
-  return renderPlayers.get(
-    myId
-  );
-}
-
-
-function updateCamera(
-  dt
-) {
-  const me =
-    getMyRenderPlayer();
-
-
-  if (!me) {
-    return;
-  }
-
-
-  const factor =
-    1 -
-    Math.exp(
-      -11 *
-      dt
-    );
-
-
-  camera.x +=
-    (
-      me.x -
-      camera.x
-    ) *
-    factor;
-
-
-  camera.y +=
-    (
-      me.y -
-      camera.y
-    ) *
-    factor;
-}
-
-
-function isTouchDevice() {
-  return window.matchMedia(
-    "(pointer: coarse)"
-  ).matches;
-}
-
-
-function getZoom() {
-  let zoom =
-    settings.zoom /
-    100;
-
-
-  if (
-    isTouchDevice() &&
-    screenWidth <
-    700
-  ) {
-    zoom *=
-      0.82;
-  }
-
-
-  return zoom;
-}
-
-
-function worldToScreen(
+function viewportWorldToScreen(
   x,
-  y
+  y,
+  camera,
+  viewport
 ) {
-  const zoom =
-    getZoom();
-
-
   return {
     x:
-      (
-        x -
-        camera.x
-      ) *
-      zoom +
-      screenWidth /
-      2,
+      viewport.x +
+      viewport.w / 2 +
+      (x - camera.x) *
+        camera.zoom,
 
     y:
-      (
-        y -
-        camera.y
-      ) *
-      zoom +
-      screenHeight /
-      2
+      viewport.y +
+      viewport.h / 2 +
+      (y - camera.y) *
+        camera.zoom
   };
 }
 
+function floorColor(zone) {
+  return zone.color ||
+    "#bbb";
+}
 
-// ============================================================
-// FLOOR
-// ============================================================
-
-function drawFloor() {
-  if (
-    !currentMap
-  ) {
-    ctx.fillStyle =
-      "#111217";
-
-
-    ctx.fillRect(
-      0,
-      0,
-      screenWidth,
-      screenHeight
+function drawZone(
+  zone,
+  camera,
+  viewport
+) {
+  const p =
+    viewportWorldToScreen(
+      zone.x,
+      zone.y,
+      camera,
+      viewport
     );
 
-    return;
-  }
+  const w =
+    zone.w * camera.zoom;
 
+  const h =
+    zone.h * camera.zoom;
 
   ctx.fillStyle =
-    currentMap.colors.ground;
-
+    floorColor(zone);
 
   ctx.fillRect(
-    0,
-    0,
-    screenWidth,
-    screenHeight
+    p.x,
+    p.y,
+    w,
+    h
   );
 
+  if (
+    ["tile","stone","garage","backroomsCarpet"].includes(
+      zone.floor
+    )
+  ) {
+    const size =
+      zone.floor ===
+        "backroomsCarpet"
+        ? 72
+        : 50;
 
-  const zoom =
-    getZoom();
+    ctx.strokeStyle =
+      zone.floor ===
+        "backroomsCarpet"
+        ? "rgba(96,85,46,.10)"
+        : "rgba(50,55,56,.14)";
 
+    ctx.lineWidth = 1;
 
-  const tile =
-    64;
+    const startX =
+      Math.floor(
+        zone.x / size
+      ) * size;
 
+    const startY =
+      Math.floor(
+        zone.y / size
+      ) * size;
 
-  const startX =
-    Math.floor(
-      (
-        camera.x -
-        screenWidth /
-          zoom /
-          2
-      ) /
-      tile
-    ) *
-    tile;
+    for (
+      let x = startX;
+      x <
+        zone.x +
+          zone.w;
+      x += size
+    ) {
+      const a =
+        viewportWorldToScreen(
+          x,
+          zone.y,
+          camera,
+          viewport
+        );
 
+      const b =
+        viewportWorldToScreen(
+          x,
+          zone.y +
+            zone.h,
+          camera,
+          viewport
+        );
 
-  const startY =
-    Math.floor(
-      (
-        camera.y -
-        screenHeight /
-          zoom /
-          2
-      ) /
-      tile
-    ) *
-    tile;
+      ctx.beginPath();
+      ctx.moveTo(a.x,a.y);
+      ctx.lineTo(b.x,b.y);
+      ctx.stroke();
+    }
 
+    for (
+      let y = startY;
+      y <
+        zone.y +
+          zone.h;
+      y += size
+    ) {
+      const a =
+        viewportWorldToScreen(
+          zone.x,
+          y,
+          camera,
+          viewport
+        );
 
-  const endX =
-    camera.x +
-    screenWidth /
-      zoom /
-      2;
+      const b =
+        viewportWorldToScreen(
+          zone.x +
+            zone.w,
+          y,
+          camera,
+          viewport
+        );
 
+      ctx.beginPath();
+      ctx.moveTo(a.x,a.y);
+      ctx.lineTo(b.x,b.y);
+      ctx.stroke();
+    }
+  }
 
-  const endY =
-    camera.y +
-    screenHeight /
-      zoom /
-      2;
+  if (
+    zone.floor === "wood"
+  ) {
+    ctx.strokeStyle =
+      "rgba(70,45,29,.16)";
 
+    for (
+      let y = zone.y;
+      y <
+        zone.y +
+          zone.h;
+      y += 34
+    ) {
+      const a =
+        viewportWorldToScreen(
+          zone.x,
+          y,
+          camera,
+          viewport
+        );
+
+      const b =
+        viewportWorldToScreen(
+          zone.x +
+            zone.w,
+          y,
+          camera,
+          viewport
+        );
+
+      ctx.beginPath();
+      ctx.moveTo(a.x,a.y);
+      ctx.lineTo(b.x,b.y);
+      ctx.stroke();
+    }
+  }
+
+  if (
+    camera.zoom > .62 &&
+    zone.name
+  ) {
+    const label =
+      viewportWorldToScreen(
+        zone.x +
+          zone.w / 2,
+        zone.y + 38,
+        camera,
+        viewport
+      );
+
+    ctx.fillStyle =
+      "rgba(28,31,33,.48)";
+
+    ctx.font =
+      `800 ${Math.max(
+        9,
+        13 * camera.zoom
+      )}px system-ui`;
+
+    ctx.textAlign =
+      "center";
+
+    ctx.fillText(
+      zone.name,
+      label.x,
+      label.y
+    );
+  }
+}
+
+function drawWater(
+  water,
+  camera,
+  viewport,
+  time
+) {
+  const p =
+    viewportWorldToScreen(
+      water.x,
+      water.y,
+      camera,
+      viewport
+    );
+
+  ctx.fillStyle =
+    water.color;
+
+  ctx.fillRect(
+    p.x,
+    p.y,
+    water.w *
+      camera.zoom,
+    water.h *
+      camera.zoom
+  );
 
   ctx.strokeStyle =
-    currentMap.colors.grid;
-
-
-  ctx.lineWidth =
-    1;
-
+    "rgba(215,245,245,.16)";
 
   for (
-    let x = startX;
-    x <= endX;
-    x += tile
+    let y =
+      water.y + 30;
+    y <
+      water.y +
+        water.h;
+    y += 65
   ) {
-    const p =
-      worldToScreen(
-        x,
-        0
+    const wave =
+      Math.sin(
+        time * .002 +
+        y * .02
+      ) * 18;
+
+    const a =
+      viewportWorldToScreen(
+        water.x +
+          15 +
+          wave,
+        y,
+        camera,
+        viewport
       );
 
+    const b =
+      viewportWorldToScreen(
+        water.x +
+          water.w -
+          15 +
+          wave,
+        y,
+        camera,
+        viewport
+      );
 
     ctx.beginPath();
-
-    ctx.moveTo(
-      p.x,
-      0
-    );
-
-    ctx.lineTo(
-      p.x,
-      screenHeight
-    );
-
+    ctx.moveTo(a.x,a.y);
+    ctx.lineTo(b.x,b.y);
     ctx.stroke();
   }
-
-
-  for (
-    let y = startY;
-    y <= endY;
-    y += tile
-  ) {
-    const p =
-      worldToScreen(
-        0,
-        y
-      );
-
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-      0,
-      p.y
-    );
-
-    ctx.lineTo(
-      screenWidth,
-      p.y
-    );
-
-    ctx.stroke();
-  }
-
-
-  if (
-    currentMap.water
-  ) {
-    const p =
-      worldToScreen(
-        currentMap.water.x,
-        currentMap.water.y
-      );
-
-
-    ctx.fillStyle =
-      "#347993";
-
-
-    ctx.fillRect(
-      p.x,
-      p.y,
-
-      currentMap.water.w *
-      zoom,
-
-      currentMap.water.h *
-      zoom
-    );
-  }
 }
 
-
-// ============================================================
-// DECORATIONS
-// ============================================================
-
-function drawDecorations() {
-  if (
-    !currentMap ||
-    !currentMap.decorations
-  ) {
-    return;
-  }
-
-
-  const zoom =
-    getZoom();
-
-
-  for (
-    const item
-    of currentMap.decorations
-  ) {
-    const p =
-      worldToScreen(
-        item.x,
-        item.y
-      );
-
-
-    if (
-      item.type ===
-        "yellowStripe" ||
-      item.type ===
-        "roadStripe"
-    ) {
-      ctx.fillStyle =
-        "#d6b637";
-
-
-      ctx.fillRect(
-        p.x,
-        p.y,
-        item.w * zoom,
-        item.h * zoom
-      );
-    }
-
-
-    if (
-      item.type ===
-      "dockLine"
-    ) {
-      ctx.fillStyle =
-        "#e9dd8a";
-
-
-      ctx.fillRect(
-        p.x,
-        p.y,
-        item.w * zoom,
-        item.h * zoom
-      );
-    }
-
-
-    if (
-      item.type ===
-      "waterWave"
-    ) {
-      ctx.fillStyle =
-        "rgba(255,255,255,.12)";
-
-
-      ctx.fillRect(
-        p.x,
-        p.y,
-        item.w * zoom,
-        2 * zoom
-      );
-    }
-
-
-    if (
-      item.type ===
-      "oil"
-    ) {
-      ctx.fillStyle =
-        "rgba(25,28,28,.24)";
-
-
-      ctx.beginPath();
-
-
-      ctx.ellipse(
-        p.x +
-          item.w *
-          zoom /
-          2,
-
-        p.y +
-          item.h *
-          zoom /
-          2,
-
-        item.w *
-          zoom /
-          2,
-
-        item.h *
-          zoom /
-          2,
-
-        0.2,
-        0,
-        Math.PI * 2
-      );
-
-
-      ctx.fill();
-    }
-
-
-    if (
-      item.type ===
-        "cable" ||
-      item.type ===
-        "pipe"
-    ) {
-      ctx.fillStyle =
-        item.type ===
-        "pipe"
-          ? "#596368"
-          : "#292a2d";
-
-
-      ctx.fillRect(
-        p.x,
-        p.y,
-        item.w * zoom,
-        item.h * zoom
-      );
-    }
-
-
-    if (
-      item.type ===
-        "warningBox" ||
-      item.type ===
-        "hazardStripe"
-    ) {
-      ctx.fillStyle =
-        "rgba(216,175,44,.2)";
-
-
-      ctx.fillRect(
-        p.x,
-        p.y,
-        item.w * zoom,
-        item.h * zoom
-      );
-
-
-      ctx.strokeStyle =
-        "#c5a331";
-
-
-      ctx.strokeRect(
-        p.x,
-        p.y,
-        item.w * zoom,
-        item.h * zoom
-      );
-    }
-
-
-    if (
-      item.type ===
-        "floorPlate" ||
-      item.type ===
-        "glassFloor"
-    ) {
-      ctx.fillStyle =
-        item.type ===
-        "glassFloor"
-          ? "rgba(95,180,210,.12)"
-          : "rgba(30,35,38,.08)";
-
-
-      ctx.fillRect(
-        p.x,
-        p.y,
-        item.w * zoom,
-        item.h * zoom
-      );
-    }
-
-
-    if (
-      item.type ===
-      "labLine"
-    ) {
-      ctx.fillStyle =
-        "#735ed0";
-
-
-      ctx.fillRect(
-        p.x,
-        p.y,
-        item.w * zoom,
-        item.h * zoom
-      );
-    }
-
-
-    if (
-      item.type ===
-      "sign"
-    ) {
-      ctx.fillStyle =
-        "rgba(20,22,25,.8)";
-
-
-      ctx.fillRect(
-        p.x,
-        p.y,
-        item.w * zoom,
-        item.h * zoom
-      );
-
-
-      ctx.fillStyle =
-        "#fff";
-
-
-      ctx.font =
-        `800 ${Math.max(
-          8,
-          12 * zoom
-        )}px system-ui`;
-
-
-      ctx.textAlign =
-        "center";
-
-
-      ctx.textBaseline =
-        "middle";
-
-
-      ctx.fillText(
-        item.text || "",
-
-        p.x +
-          item.w *
-          zoom /
-          2,
-
-        p.y +
-          item.h *
-          zoom /
-          2
-      );
-    }
-  }
-}
-
-
-// ============================================================
-// WALLS
-// ============================================================
-
-function drawWalls() {
-  if (!currentMap) {
-    return;
-  }
-
-
-  const zoom =
-    getZoom();
-
-
-  for (
-    const wall
-    of currentMap.walls
-  ) {
-    const p =
-      worldToScreen(
-        wall.x,
-        wall.y
-      );
-
-
-    ctx.fillStyle =
-      "rgba(0,0,0,.2)";
-
-
-    ctx.fillRect(
-      p.x +
-        8 * zoom,
-
-      p.y +
-        8 * zoom,
-
-      wall.w * zoom,
-
-      wall.h * zoom
-    );
-
-
-    ctx.fillStyle =
-      currentMap.colors.wall;
-
-
-    ctx.fillRect(
-      p.x,
-      p.y,
-
-      wall.w * zoom,
-
-      wall.h * zoom
-    );
-
-
-    ctx.fillStyle =
-      currentMap.colors.wallTop;
-
-
-    ctx.fillRect(
-      p.x,
-      p.y,
-
-      wall.w * zoom,
-
-      Math.min(
-        8 * zoom,
-        wall.h * zoom
-      )
-    );
-  }
-}
-
-
-// ============================================================
-// DOORS
-// ============================================================
-
-function drawDoors() {
-  if (!currentMap) {
-    return;
-  }
-
-
-  const zoom =
-    getZoom();
-
-
-  for (
-    const door
-    of currentMap.doors
-  ) {
-    const state =
-      currentDoorStates[
-        door.id
-      ] || {
-        amount: 0
-      };
-
-
-    const amount =
-      Number(
-        state.amount
-      ) || 0;
-
-
-    const p =
-      worldToScreen(
-        door.x,
-        door.y
-      );
-
-
-    const width =
-      door.w *
-      zoom;
-
-
-    const thickness =
-      15 *
-      zoom;
-
-
-    const left =
-      door.hinge !==
-      "right";
-
-
-    const hingeX =
-      left
-        ? p.x
-        : p.x + width;
-
-
-    const hingeY =
-      p.y +
-      thickness / 2;
-
-
-    const angle =
-      (
-        left
-          ? -1
-          : 1
-      ) *
-      amount *
-      Math.PI /
-      2;
-
-
-    ctx.save();
-
-
-    ctx.translate(
-      hingeX,
-      hingeY
-    );
-
-
-    ctx.rotate(
-      angle
-    );
-
-
-    const gradient =
-      ctx.createLinearGradient(
-        0,
-        0,
-        width,
-        0
-      );
-
-
-    gradient.addColorStop(
-      0,
-      "#553014"
-    );
-
-
-    gradient.addColorStop(
-      0.5,
-      "#9c622e"
-    );
-
-
-    gradient.addColorStop(
-      1,
-      "#613817"
-    );
-
-
-    ctx.fillStyle =
-      gradient;
-
-
-    ctx.fillRect(
-      left
-        ? 0
-        : -width,
-
-      -thickness / 2,
-
-      width,
-      thickness
-    );
-
-
-    ctx.strokeStyle =
-      "#3d210e";
-
-
-    ctx.lineWidth =
-      2 * zoom;
-
-
-    ctx.strokeRect(
-      left
-        ? 0
-        : -width,
-
-      -thickness / 2,
-
-      width,
-      thickness
-    );
-
-
-    ctx.fillStyle =
-      "#d6b36b";
-
-
-    ctx.beginPath();
-
-
-    ctx.arc(
-      left
-        ? width -
-          14 * zoom
-        : -width +
-          14 * zoom,
-
-      0,
-
-      3.5 * zoom,
-
-      0,
-      Math.PI * 2
-    );
-
-
-    ctx.fill();
-
-
-    ctx.restore();
-  }
-}
-
-
-// ============================================================
-// FURNITURE
-// ============================================================
-
-function furnitureColor(
-  type
+function drawWall(
+  wall,
+  camera,
+  viewport
 ) {
-  const colors = {
-    machine: "#52595d",
-    compressor: "#4e5d63",
-    generator: "#3f4a50",
-    crate: "#91663b",
-    pallet: "#806044",
-    shelf: "#555b5e",
-    workbench: "#745537",
-    desk: "#86705a",
-    chair: "#404549",
-    locker: "#68747b",
-    hideCabinet: "#646f75",
-    cabinet: "#59636a",
-    chemicalCabinet: "#d5c33b",
-    powerbox: "#596269",
-    electricalCabinet: "#57656b",
-    vent: "#737b80",
-    toolcart: "#b3483d",
-    barrel: "#455359",
-    warningCone: "#e07b2f",
-    coffee: "#4b3c31",
-    trash: "#444c50",
-    fan: "#586268",
-    conveyor: "#596167",
-    computer: "#45515a",
-    terminal: "#3d4851",
-    serverrack: "#303840",
-    scanner: "#829099",
-    microscope: "#d9dcde",
-    sampleRack: "#8aa2ad",
-    plant: "#3e7552",
-    emergency: "#c83d40",
-    medicalCart: "#ced7db",
-    vending: "#39474a",
-    bell: "#b8943d",
-    alarm: "#b63a40",
-    pipeStack: "#59646a",
+  const p =
+    viewportWorldToScreen(
+      wall.x,
+      wall.y,
+      camera,
+      viewport
+    );
 
-    "container-red": "#b83e46",
-    "container-blue": "#3e719b",
-    "container-yellow": "#be8b38",
+  const w =
+    wall.w *
+    camera.zoom;
 
-    forklift: "#c99b32",
-    bollard: "#34383b",
-    radio: "#34393d",
-    rope: "#a58b58",
-    lifeRing: "#da583f",
-    cranePanel: "#4c5a62",
-    bench: "#6f5b45",
-    labtable: "#eef1f2"
-  };
+  const h =
+    wall.h *
+    camera.zoom;
 
+  ctx.fillStyle =
+    "rgba(0,0,0,.19)";
 
-  return (
-    colors[
-      type
-    ] ||
-    "#666"
+  ctx.fillRect(
+    p.x + 4,
+    p.y + 6,
+    w,
+    h
+  );
+
+  let color =
+    "#e0e1de";
+
+  if (
+    wall.material ===
+      "backrooms"
+  ) {
+    color = "#d6c66c";
+  } else if (
+    currentMap.theme ===
+      "monastery"
+  ) {
+    color = "#aaa89c";
+  } else if (
+    currentMap.theme ===
+      "snow"
+  ) {
+    color = "#bbc0c0";
+  }
+
+  ctx.fillStyle =
+    color;
+
+  ctx.fillRect(
+    p.x,p.y,w,h
+  );
+
+  ctx.strokeStyle =
+    "rgba(60,64,66,.35)";
+
+  ctx.strokeRect(
+    p.x,p.y,w,h
   );
 }
 
+const PROP_COLORS = {
+  stage:"#956846",
+  speaker:"#22272a",
+  piano:"#24201e",
+  table:"#8d6a4e",
+  chair:"#6e523f",
+  counter:"#aca18f",
+  fridge:"#d5dddd",
+  sink:"#bac4c5",
+  oven:"#474d50",
+  toiletStall:"#c4d3d4",
+  shelf:"#686c69",
+  locker:"#778589",
+  sofa:"#72777a",
+  mirror:"#aa9683",
+  case:"#4f5356",
+  desk:"#7b6a58",
+  computer:"#313a3f",
+  reception:"#aa9f95",
+  plant:"#5c845c",
+  cabinet:"#785a40",
+  shopShelf:"#858b86",
+  register:"#464d50",
+  vending:"#40474b",
+  labTable:"#8a9899",
+  serverRack:"#272e31",
+  generator:"#606966",
+  toolCart:"#99594e",
+  powerBox:"#6b7573",
+  pew:"#74593f",
+  altar:"#91806d",
+  hay:"#b99d57",
+  trough:"#655744",
+  animalStall:"#7a5c41",
+  lounge:"#777",
+  bench:"#795e44",
+  tree:"#3d6345",
+  snowPine:"#66817b",
+  desertRock:"#92745b",
+  runeStone:"#514a53",
+  deadRock:"#5a5554",
+  rune:"#8c5aa4"
+};
 
-function drawFurniture() {
-  if (!currentMap) {
-    return;
-  }
+function drawProp(
+  prop,
+  camera,
+  viewport
+) {
+  const p =
+    viewportWorldToScreen(
+      prop.x,
+      prop.y,
+      camera,
+      viewport
+    );
 
+  const w =
+    prop.w *
+    camera.zoom;
 
-  const zoom =
-    getZoom();
+  const h =
+    prop.h *
+    camera.zoom;
 
+  ctx.fillStyle =
+    "rgba(0,0,0,.18)";
 
-  for (
-    const item
-    of currentMap.furniture
+  ctx.fillRect(
+    p.x + 4,
+    p.y + 5,
+    w,
+    h
+  );
+
+  ctx.fillStyle =
+    PROP_COLORS[
+      prop.type
+    ] || "#747b7d";
+
+  ctx.fillRect(
+    p.x,
+    p.y,
+    w,
+    h
+  );
+
+  if (
+    prop.type === "vending"
   ) {
-    const p =
-      worldToScreen(
-        item.x,
-        item.y
-      );
-
-
     ctx.fillStyle =
-      "rgba(0,0,0,.16)";
-
+      "#262d30";
 
     ctx.fillRect(
-      p.x +
-        6 * zoom,
-
-      p.y +
-        7 * zoom,
-
-      item.w * zoom,
-
-      item.h * zoom
+      p.x + w*.17,
+      p.y + h*.1,
+      w*.63,
+      h*.55
     );
-
 
     ctx.fillStyle =
-      furnitureColor(
-        item.type
-      );
+      "#61b86e";
 
-
-    ctx.fillRect(
-      p.x,
-      p.y,
-
-      item.w * zoom,
-
-      item.h * zoom
-    );
-
-
-    ctx.strokeStyle =
-      "rgba(0,0,0,.2)";
-
-
-    ctx.strokeRect(
-      p.x,
-      p.y,
-
-      item.w * zoom,
-
-      item.h * zoom
-    );
-
-
-    // ========================================================
-    // VENDING MACHINE
-    // Green glass bottles visible inside
-    // ========================================================
-
-    if (
-      item.type ===
-      "vending"
+    for (
+      let row = 0;
+      row < 3;
+      row += 1
     ) {
-      ctx.fillStyle =
-        "#182225";
-
-
-      ctx.fillRect(
-        p.x +
-          10 * zoom,
-
-        p.y +
-          10 * zoom,
-
-        (
-          item.w -
-          20
-        ) *
-          zoom,
-
-        58 * zoom
-      );
-
-
       for (
-        let row = 0;
-        row < 2;
-        row++
-      ) {
-        for (
-          let column = 0;
-          column < 3;
-          column++
-        ) {
-          const bottleX =
-            p.x +
-            (
-              18 +
-              column *
-              16
-            ) *
-            zoom;
-
-
-          const bottleY =
-            p.y +
-            (
-              18 +
-              row *
-              25
-            ) *
-            zoom;
-
-
-          ctx.fillStyle =
-            "rgba(65,220,105,.8)";
-
-
-          ctx.fillRect(
-            bottleX,
-            bottleY +
-              6 * zoom,
-
-            8 * zoom,
-            13 * zoom
-          );
-
-
-          ctx.fillStyle =
-            "rgba(130,255,160,.9)";
-
-
-          ctx.fillRect(
-            bottleX +
-              2 * zoom,
-
-            bottleY,
-
-            4 * zoom,
-            7 * zoom
-          );
-        }
-      }
-
-
-      ctx.fillStyle =
-        "#53db7e";
-
-
-      ctx.fillRect(
-        p.x +
-          12 * zoom,
-
-        p.y +
-          78 * zoom,
-
-        (
-          item.w -
-          24
-        ) *
-          zoom,
-
-        8 * zoom
-      );
-    }
-
-
-    if (
-      item.type ===
-      "locker" ||
-      item.type ===
-      "hideCabinet"
-    ) {
-      ctx.strokeStyle =
-        "rgba(255,255,255,.18)";
-
-
-      ctx.beginPath();
-
-
-      ctx.moveTo(
-        p.x +
-          item.w *
-          zoom /
-          2,
-
-        p.y
-      );
-
-
-      ctx.lineTo(
-        p.x +
-          item.w *
-          zoom /
-          2,
-
-        p.y +
-          item.h *
-          zoom
-      );
-
-
-      ctx.stroke();
-
-
-      ctx.fillStyle =
-        "#30383c";
-
-
-      ctx.beginPath();
-
-
-      ctx.arc(
-        p.x +
-          item.w *
-          zoom *
-          0.75,
-
-        p.y +
-          item.h *
-          zoom /
-          2,
-
-        2.5 * zoom,
-
-        0,
-        Math.PI * 2
-      );
-
-
-      ctx.fill();
-    }
-
-
-    if (
-      item.type ===
-      "vent"
-    ) {
-      ctx.strokeStyle =
-        "#373d40";
-
-
-      for (
-        let y = 8;
-        y < item.h;
-        y += 10
-      ) {
-        ctx.beginPath();
-
-
-        ctx.moveTo(
-          p.x +
-            8 * zoom,
-
-          p.y +
-            y * zoom
-        );
-
-
-        ctx.lineTo(
-          p.x +
-            (
-              item.w -
-              8
-            ) *
-            zoom,
-
-          p.y +
-            y * zoom
-        );
-
-
-        ctx.stroke();
-      }
-    }
-
-
-    if (
-      item.type.startsWith(
-        "container"
-      )
-    ) {
-      ctx.strokeStyle =
-        "rgba(0,0,0,.25)";
-
-
-      for (
-        let x = 20;
-        x < item.w;
-        x += 28
-      ) {
-        ctx.beginPath();
-
-
-        ctx.moveTo(
-          p.x +
-            x * zoom,
-
-          p.y
-        );
-
-
-        ctx.lineTo(
-          p.x +
-            x * zoom,
-
-          p.y +
-            item.h *
-            zoom
-        );
-
-
-        ctx.stroke();
-      }
-    }
-
-
-    if (
-      item.type ===
-        "computer" ||
-      item.type ===
-        "terminal"
-    ) {
-      ctx.fillStyle =
-        worldState.powerOn
-          ? "#5fd2ff"
-          : "#192023";
-
-
-      ctx.fillRect(
-        p.x +
-          12 * zoom,
-
-        p.y +
-          10 * zoom,
-
-        Math.max(
-          20,
-          item.w - 24
-        ) *
-          zoom,
-
-        Math.min(
-          25,
-          item.h - 18
-        ) *
-          zoom
-      );
-    }
-
-
-    if (
-      item.type ===
-      "serverrack"
-    ) {
-      ctx.fillStyle =
-        worldState.powerOn
-          ? "#57e39c"
-          : "#3c3333";
-
-
-      for (
-        let y = 15;
-        y < item.h;
-        y += 22
+        let col = 0;
+        col < 3;
+        col += 1
       ) {
         ctx.fillRect(
           p.x +
-            10 * zoom,
-
+            w*.25 +
+            col*w*.16,
           p.y +
-            y * zoom,
-
-          8 * zoom,
-
-          3 * zoom
+            h*.18 +
+            row*h*.14,
+          Math.max(
+            3,
+            5*camera.zoom
+          ),
+          Math.max(
+            7,
+            13*camera.zoom
+          )
         );
       }
     }
+  }
 
+  if (
+    prop.type === "piano"
+  ) {
+    ctx.fillStyle =
+      "#efeee8";
 
-    if (
-      item.type ===
-      "bell"
+    for (
+      let i = 0;
+      i < 14;
+      i += 1
     ) {
-      ctx.fillStyle =
-        "#d7b34f";
-
-
-      ctx.beginPath();
-
-
-      ctx.arc(
+      ctx.fillRect(
         p.x +
-          item.w *
-          zoom /
-          2,
-
+          w*.15 +
+          i*w*.05,
         p.y +
-          item.h *
-          zoom /
-          2,
-
-        15 * zoom,
-
-        0,
-        Math.PI * 2
+          h*.16,
+        w*.045,
+        h*.28
       );
-
-
-      ctx.fill();
-    }
-  }
-}
-
-
-// ============================================================
-// INTERACTIONS
-// ============================================================
-
-function drawInteractables() {
-  if (
-    !currentMap
-  ) {
-    return;
-  }
-
-
-  const me =
-    getMyRenderPlayer();
-
-
-  if (!me) {
-    return;
-  }
-
-
-  let nearest =
-    null;
-
-
-  let bestDistance =
-    Infinity;
-
-
-  for (
-    const item
-    of currentMap.interactables
-  ) {
-    const distance =
-      Math.hypot(
-        me.x -
-          item.x,
-
-        me.y -
-          item.y
-      );
-
-
-    if (
-      distance <
-      bestDistance
-    ) {
-      nearest =
-        item;
-
-      bestDistance =
-        distance;
     }
   }
 
-
   if (
-    !nearest ||
-    bestDistance >
-    145
+    prop.type === "locker" ||
+    prop.type === "cabinet"
   ) {
-    return;
+    ctx.strokeStyle =
+      "rgba(20,25,28,.45)";
+
+    ctx.beginPath();
+    ctx.moveTo(
+      p.x+w/2,p.y
+    );
+    ctx.lineTo(
+      p.x+w/2,p.y+h
+    );
+    ctx.stroke();
   }
 
+  if (
+    prop.type === "tree" ||
+    prop.type === "snowPine"
+  ) {
+    ctx.fillStyle =
+      prop.type ===
+        "snowPine"
+        ? "#d9e1df"
+        : "#31533a";
 
-  const p =
-    worldToScreen(
-      nearest.x,
-      nearest.y
+    ctx.beginPath();
+
+    ctx.arc(
+      p.x+w/2,
+      p.y+h/2,
+      Math.min(w,h)*.36,
+      0,
+      Math.PI*2
     );
 
+    ctx.fill();
+  }
+}
 
-  const text =
-    isTouchDevice()
-      ? `AKTION · ${nearest.label}`
-      : `E · ${nearest.label}`;
-
-
-  ctx.font =
-    "700 11px system-ui";
-
-
-  ctx.textAlign =
-    "center";
-
-
-  ctx.textBaseline =
-    "middle";
-
-
-  const width =
-    ctx.measureText(
-      text
-    ).width +
-    20;
-
-
-  ctx.fillStyle =
-    "rgba(10,11,14,.88)";
-
-
-  ctx.beginPath();
-
-
-  ctx.roundRect(
-    p.x -
-      width / 2,
-
-    p.y -
-      48,
-
-    width,
-
-    28,
-
-    8
-  );
-
-
-  ctx.fill();
-
-
-  ctx.fillStyle =
-    "#fff";
-
-
-  ctx.fillText(
-    text,
-    p.x,
-    p.y - 34
+function doorState(id) {
+  return snapshot.doors?.find(
+    (entry) =>
+      entry.id === id
   );
 }
 
-
-// ============================================================
-// PLAYER
-// ============================================================
-
-function drawPlayer(
-  player
+function drawDoor(
+  door,
+  camera,
+  viewport
 ) {
-  const me =
-    player.id ===
-    myId;
+  const state =
+    doorState(door.id);
 
+  const amount =
+    state?.amount || 0;
 
-  if (
-    player.hidden &&
-    !me
-  ) {
-    return;
-  }
-
-
-  const p =
-    worldToScreen(
-      player.x,
-      player.y
+  const center =
+    viewportWorldToScreen(
+      door.x +
+        door.w/2,
+      door.y +
+        door.h/2,
+      camera,
+      viewport
     );
 
-
-  const zoom =
-    getZoom();
-
-
-  const jump =
+  const length =
     (
-      player.jumpHeight ||
-      0
+      door.axis === "vertical"
+        ? door.h
+        : door.w
     ) *
-    zoom;
-
-
-  const bodyY =
-    p.y -
-    jump;
-
+    camera.zoom;
 
   ctx.save();
 
+  ctx.translate(
+    center.x,
+    center.y
+  );
 
-  if (
-    player.hidden &&
-    me
-  ) {
-    ctx.globalAlpha =
-      0.3;
-  }
-
+  ctx.rotate(
+    amount *
+    Math.PI/2
+  );
 
   ctx.fillStyle =
-    "rgba(0,0,0,.24)";
+    state?.locked
+      ? "#6d2b2e"
+      : "#79512f";
 
-
-  ctx.beginPath();
-
-
-  ctx.ellipse(
-    p.x,
-    p.y +
-      15 * zoom,
-
-    18 * zoom,
-    7 * zoom,
-
-    0,
-    0,
-    Math.PI * 2
+  ctx.fillRect(
+    -length/2,
+    -6*camera.zoom,
+    length,
+    12*camera.zoom
   );
-
-
-  ctx.fill();
-
-
-  ctx.fillStyle =
-    me
-      ? "#e33b46"
-      : "#42484c";
-
-
-  ctx.beginPath();
-
-
-  ctx.arc(
-    p.x,
-    bodyY,
-    18 * zoom,
-    0,
-    Math.PI * 2
-  );
-
-
-  ctx.fill();
-
-
-  ctx.strokeStyle =
-    me
-      ? "#fff"
-      : "rgba(255,255,255,.6)";
-
-
-  ctx.lineWidth =
-    me
-      ? 2.5
-      : 1.5;
-
-
-  ctx.stroke();
-
-
-  ctx.font =
-    `700 ${Math.max(
-      10,
-      12 * zoom
-    )}px system-ui`;
-
-
-  ctx.textAlign =
-    "center";
-
-
-  ctx.strokeStyle =
-    "rgba(0,0,0,.7)";
-
-
-  ctx.lineWidth =
-    4;
-
-
-  ctx.strokeText(
-    player.name ||
-      "Spieler",
-
-    p.x,
-
-    bodyY -
-      26 * zoom
-  );
-
-
-  ctx.fillStyle =
-    "#fff";
-
-
-  ctx.fillText(
-    player.name ||
-      "Spieler",
-
-    p.x,
-
-    bodyY -
-      26 * zoom
-  );
-
 
   ctx.restore();
 }
 
+function getSkin(id) {
+  return (
+    CATALOG?.skins.find(
+      (skin) =>
+        skin.id === id
+    ) ||
+    CATALOG?.skins[0]
+  );
+}
 
-// ============================================================
-// LIGHTING
-// ============================================================
+function isFriendEntity(entity) {
+  return (
+    entity.accountId &&
+    friendIds().has(
+      entity.accountId
+    )
+  );
+}
 
-function drawLighting() {
+function drawEntity(
+  entity,
+  camera,
+  viewport,
+  hiddenLayer
+) {
   if (
-    !playing ||
-    !currentMap
+    Boolean(entity.hidden) !==
+    hiddenLayer
   ) {
     return;
   }
 
+  const p =
+    viewportWorldToScreen(
+      entity.renderX,
+      entity.renderY,
+      camera,
+      viewport
+    );
 
   if (
-    worldState.alarmOn
+    p.x <
+      viewport.x - 70 ||
+    p.x >
+      viewport.x +
+        viewport.w +
+        70 ||
+    p.y <
+      viewport.y - 70 ||
+    p.y >
+      viewport.y +
+        viewport.h +
+        70
   ) {
-    const pulse =
-      (
-        Math.sin(
-          performance.now() /
-          180
-        ) +
-        1
-      ) /
-      2;
+    return;
+  }
 
-
+  if (
+    entity.propForm &&
+    currentLobby.mode ===
+      "prophunt"
+  ) {
     ctx.fillStyle =
-      `rgba(190,20,25,${
-        0.05 +
-        pulse *
-        0.08
-      })`;
-
+      PROP_COLORS[
+        entity.propForm
+      ] || "#777";
 
     ctx.fillRect(
-      0,
-      0,
-      screenWidth,
-      screenHeight
+      p.x - 20,
+      p.y - 20,
+      40,
+      40
     );
-  }
 
-
-  if (
-    worldState.lightsOn
-  ) {
     return;
   }
 
+  const skin =
+    getSkin(entity.skin);
+
+  const radius =
+    18 *
+    camera.zoom;
+
+  const jump =
+    (entity.jumpHeight || 0) *
+    camera.zoom;
 
   ctx.save();
 
-
-  ctx.fillStyle =
-    "rgba(4,7,10,.67)";
-
-
-  ctx.fillRect(
-    0,
-    0,
-    screenWidth,
-    screenHeight
+  ctx.translate(
+    p.x,
+    p.y - jump
   );
 
+  ctx.fillStyle =
+    "rgba(0,0,0,.2)";
 
-  const me =
-    getMyRenderPlayer();
+  ctx.beginPath();
 
+  ctx.ellipse(
+    3,
+    radius*.8+jump,
+    radius*.9,
+    radius*.4,
+    0,
+    0,
+    Math.PI*2
+  );
+
+  ctx.fill();
+
+  if (entity.downed) {
+    ctx.rotate(-.7);
+  }
+
+  ctx.fillStyle =
+    skin?.primary ||
+    "#c64a4f";
+
+  ctx.strokeStyle =
+    entity.protected
+      ? "#84dfff"
+      : "rgba(255,255,255,.82)";
+
+  ctx.lineWidth =
+    entity.protected
+      ? 4
+      : 3;
+
+  ctx.beginPath();
+
+  ctx.arc(
+    0,0,radius,
+    0,Math.PI*2
+  );
+
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle =
+    "#202328";
+
+  ctx.beginPath();
+
+  ctx.arc(
+    radius*.25,
+    -radius*.22,
+    Math.max(
+      2,
+      radius*.11
+    ),
+    0,
+    Math.PI*2
+  );
+
+  ctx.fill();
+
+  ctx.fillStyle =
+    skin?.accent ||
+    "#f2c362";
+
+  ctx.fillRect(
+    radius*.55,
+    -radius*.15,
+    radius*.8,
+    radius*.38
+  );
+
+  if (entity.bot) {
+    ctx.fillStyle =
+      "#56bdd0";
+
+    ctx.fillRect(
+      -radius*.6,
+      radius*.75,
+      radius*1.2,
+      3
+    );
+  }
+
+  ctx.restore();
+
+  if (hiddenLayer) return;
+
+  ctx.textAlign =
+    "center";
+
+  ctx.font =
+    `800 ${Math.max(
+      10,
+      11*camera.zoom
+    )}px system-ui`;
+
+  ctx.lineWidth = 4;
+
+  ctx.strokeStyle =
+    "rgba(245,245,245,.75)";
+
+  ctx.strokeText(
+    entity.name,
+    p.x,
+    p.y -
+      jump -
+      radius -
+      10
+  );
+
+  ctx.fillStyle =
+    isFriendEntity(entity)
+      ? "#f2c95f"
+      : entity.bot
+        ? "#25333b"
+        : "#20262b";
+
+  ctx.fillText(
+    entity.name,
+    p.x,
+    p.y -
+      jump -
+      radius -
+      10
+  );
+
+  if (entity.pet) {
+    drawPetFollower(
+      entity,
+      camera,
+      viewport
+    );
+  }
+}
+
+function drawPetFollower(
+  entity,
+  camera,
+  viewport
+) {
+  const pet =
+    CATALOG.pets.find(
+      (item) =>
+        item.id === entity.pet
+    );
+
+  if (!pet) return;
+
+  const p =
+    viewportWorldToScreen(
+      entity.renderX - 38,
+      entity.renderY + 28,
+      camera,
+      viewport
+    );
+
+  ctx.font =
+    `${Math.max(
+      16,
+      20*camera.zoom
+    )}px sans-serif`;
+
+  ctx.textAlign =
+    "center";
+
+  ctx.fillText(
+    pet.icon,
+    p.x,
+    p.y
+  );
+}
+
+function drawSpecial(
+  entity,
+  camera,
+  viewport,
+  time
+) {
+  const p =
+    viewportWorldToScreen(
+      entity.renderX,
+      entity.renderY,
+      camera,
+      viewport
+    );
 
   if (
-    me
+    entity.specialType ===
+      "zombie"
   ) {
-    const p =
-      worldToScreen(
-        me.x,
-        me.y
+    const radius =
+      (
+        entity.variant === "brute"
+          ? 24
+          : 19
+      ) *
+      camera.zoom;
+
+    ctx.fillStyle =
+      entity.variant === "brute"
+        ? "#4a7745"
+        : "#679760";
+
+    ctx.strokeStyle =
+      "#344a34";
+
+    ctx.lineWidth = 3;
+
+    ctx.beginPath();
+
+    ctx.arc(
+      p.x,p.y,radius,
+      0,Math.PI*2
+    );
+
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle =
+      "#554b48";
+
+    ctx.fillRect(
+      p.x-radius*.8,
+      p.y+radius*.45,
+      radius*1.6,
+      radius*.55
+    );
+
+    return;
+  }
+
+  if (
+    entity.specialType ===
+      "scp"
+  ) {
+    if (
+      entity.type ===
+        "scp999"
+    ) {
+      ctx.fillStyle =
+        "#eaa64d";
+
+      ctx.beginPath();
+
+      ctx.arc(
+        p.x,p.y,
+        23*camera.zoom,
+        0,Math.PI*2
       );
 
+      ctx.fill();
 
-    ctx.globalCompositeOperation =
-      "destination-out";
+      return;
+    }
 
+    const color =
+      {
+        scp096:"#d7d3cd",
+        scp173:"#a89a7a",
+        scp049:"#26292b",
+        scp106:"#443d39"
+      }[entity.type] ||
+      "#777";
+
+    ctx.fillStyle =
+      color;
+
+    ctx.fillRect(
+      p.x-18*camera.zoom,
+      p.y-24*camera.zoom,
+      36*camera.zoom,
+      48*camera.zoom
+    );
+
+    return;
+  }
+
+  drawMonster(
+    entity,
+    camera,
+    viewport,
+    time
+  );
+}
+
+function drawMonster(
+  entity,
+  camera,
+  viewport,
+  time
+) {
+  const p =
+    viewportWorldToScreen(
+      entity.renderX,
+      entity.renderY,
+      camera,
+      viewport
+    );
+
+  const form =
+    CATALOG.monsterForms.find(
+      (entry) =>
+        entry.id === entity.form
+    );
+
+  const radius =
+    27 *
+    camera.zoom *
+    (
+      1 +
+      Math.sin(
+        time*.006
+      )*.04
+    );
+
+  ctx.save();
+
+  ctx.translate(
+    p.x,p.y
+  );
+
+  ctx.fillStyle =
+    "#211820";
+
+  ctx.strokeStyle =
+    entity.sprinting
+      ? "#ef5d67"
+      : "#925064";
+
+  ctx.lineWidth =
+    entity.sprinting
+      ? 5
+      : 3;
+
+  if (
+    form?.shape === "spider" ||
+    form?.shape === "twistedSpider"
+  ) {
+    for (
+      let i = 0;
+      i < 8;
+      i += 1
+    ) {
+      const angle =
+        i/8*Math.PI*2;
+
+      ctx.beginPath();
+
+      ctx.moveTo(0,0);
+
+      ctx.lineTo(
+        Math.cos(angle)*
+          radius*1.5,
+        Math.sin(angle)*
+          radius*1.5
+      );
+
+      ctx.stroke();
+    }
+  }
+
+  if (
+    form?.shape === "tentacle"
+  ) {
+    for (
+      let i = 0;
+      i < 5;
+      i += 1
+    ) {
+      const angle =
+        i/5*Math.PI*2 +
+        time*.001;
+
+      ctx.beginPath();
+
+      ctx.moveTo(0,0);
+
+      ctx.quadraticCurveTo(
+        Math.cos(angle)*
+          radius,
+        Math.sin(angle)*
+          radius,
+        Math.cos(angle+.5)*
+          radius*1.8,
+        Math.sin(angle+.5)*
+          radius*1.8
+      );
+
+      ctx.stroke();
+    }
+  }
+
+  ctx.beginPath();
+
+  ctx.arc(
+    0,0,radius,
+    0,Math.PI*2
+  );
+
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle =
+    "#ef626c";
+
+  ctx.beginPath();
+
+  ctx.arc(
+    -radius*.25,
+    -radius*.18,
+    radius*.1,
+    0,Math.PI*2
+  );
+
+  ctx.arc(
+    radius*.25,
+    -radius*.18,
+    radius*.1,
+    0,Math.PI*2
+  );
+
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawVehicle(
+  vehicle,
+  camera,
+  viewport
+) {
+  const p =
+    viewportWorldToScreen(
+      vehicle.x,
+      vehicle.y,
+      camera,
+      viewport
+    );
+
+  ctx.fillStyle =
+    vehicle.type === "boat"
+      ? "#956d4d"
+      : "#596d79";
+
+  ctx.fillRect(
+    p.x-32*camera.zoom,
+    p.y-18*camera.zoom,
+    64*camera.zoom,
+    36*camera.zoom
+  );
+
+  if (
+    vehicle.type === "boat"
+  ) {
+    ctx.fillStyle =
+      "#ded8ca";
+
+    ctx.fillRect(
+      p.x-18*camera.zoom,
+      p.y-11*camera.zoom,
+      36*camera.zoom,
+      10*camera.zoom
+    );
+  }
+}
+
+function drawCat(
+  camera,
+  viewport
+) {
+  const cat =
+    snapshot.world?.cat;
+
+  if (
+    !cat ||
+    !cat.active
+  ) {
+    return;
+  }
+
+  const p =
+    viewportWorldToScreen(
+      cat.x,
+      cat.y,
+      camera,
+      viewport
+    );
+
+  ctx.font =
+    `${Math.max(
+      18,
+      22*camera.zoom
+    )}px sans-serif`;
+
+  ctx.textAlign =
+    "center";
+
+  ctx.fillText(
+    "🐈",
+    p.x,p.y
+  );
+}
+
+function drawPetPickup(
+  camera,
+  viewport
+) {
+  const pickup =
+    snapshot.world
+      ?.petPickup;
+
+  if (!pickup) return;
+
+  const pet =
+    CATALOG.pets.find(
+      (entry) =>
+        entry.id ===
+        pickup.petId
+    );
+
+  if (!pet) return;
+
+  const p =
+    viewportWorldToScreen(
+      pickup.x,
+      pickup.y,
+      camera,
+      viewport
+    );
+
+  ctx.font =
+    `${Math.max(
+      22,
+      28*camera.zoom
+    )}px sans-serif`;
+
+  ctx.textAlign =
+    "center";
+
+  ctx.fillText(
+    pet.icon,
+    p.x,p.y
+  );
+
+  ctx.fillStyle =
+    "#f4d269";
+
+  ctx.font =
+    `800 ${Math.max(
+      8,
+      10*camera.zoom
+    )}px system-ui`;
+
+  ctx.fillText(
+    "SECRET",
+    p.x,
+    p.y-25
+  );
+}
+
+function drawBoss(
+  camera,
+  viewport,
+  time
+) {
+  const boss =
+    snapshot.boss;
+
+  if (!boss) return;
+
+  const p =
+    viewportWorldToScreen(
+      boss.x,
+      boss.y,
+      camera,
+      viewport
+    );
+
+  const radius =
+    80 *
+    camera.zoom;
+
+  const gradient =
+    ctx.createRadialGradient(
+      p.x-radius*.2,
+      p.y-radius*.2,
+      radius*.1,
+      p.x,p.y,radius
+    );
+
+  gradient.addColorStop(
+    0,
+    "#c77add"
+  );
+
+  gradient.addColorStop(
+    .4,
+    "#5a3971"
+  );
+
+  gradient.addColorStop(
+    1,
+    "#25192e"
+  );
+
+  ctx.fillStyle =
+    gradient;
+
+  ctx.strokeStyle =
+    "#d68cec";
+
+  ctx.lineWidth = 5;
+
+  ctx.beginPath();
+
+  ctx.arc(
+    p.x,p.y,radius,
+    0,Math.PI*2
+  );
+
+  ctx.fill();
+  ctx.stroke();
+
+  for (
+    let i = 0;
+    i < 8;
+    i += 1
+  ) {
+    const angle =
+      i/8*Math.PI*2 +
+      time*.0004;
+
+    ctx.strokeStyle =
+      "rgba(196,112,220,.45)";
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+      p.x,p.y
+    );
+
+    ctx.lineTo(
+      p.x +
+        Math.cos(angle)*
+        radius*1.6,
+      p.y +
+        Math.sin(angle)*
+        radius*1.6
+    );
+
+    ctx.stroke();
+  }
+}
+
+function drawBuildBlocks(
+  camera,
+  viewport
+) {
+  if (
+    currentLobby.mode !==
+      "build"
+  ) {
+    return;
+  }
+
+  for (
+    const placed of
+    snapshot.buildBlocks
+  ) {
+    const block =
+      CATALOG.blocks.find(
+        (entry) =>
+          entry.id ===
+          placed.blockId
+      );
+
+    if (!block) continue;
+
+    const p =
+      viewportWorldToScreen(
+        placed.x-22,
+        placed.y-22,
+        camera,
+        viewport
+      );
+
+    ctx.fillStyle =
+      block.color;
+
+    ctx.fillRect(
+      p.x,
+      p.y,
+      44*camera.zoom,
+      44*camera.zoom
+    );
+
+    ctx.strokeStyle =
+      "rgba(0,0,0,.25)";
+
+    ctx.strokeRect(
+      p.x,
+      p.y,
+      44*camera.zoom,
+      44*camera.zoom
+    );
+  }
+}
+
+function drawEffects(
+  camera,
+  viewport,
+  time
+) {
+  for (
+    let i =
+      effects.length-1;
+    i >= 0;
+    i -= 1
+  ) {
+    const effect =
+      effects[i];
+
+    if (
+      time > effect.until
+    ) {
+      effects.splice(i,1);
+      continue;
+    }
+
+    if (
+      effect.type === "beam"
+    ) {
+      const a =
+        viewportWorldToScreen(
+          effect.fromX,
+          effect.fromY,
+          camera,
+          viewport
+        );
+
+      const b =
+        viewportWorldToScreen(
+          effect.toX,
+          effect.toY,
+          camera,
+          viewport
+        );
+
+      ctx.save();
+
+      ctx.strokeStyle =
+        effect.color;
+
+      ctx.lineWidth = 7;
+
+      ctx.shadowColor =
+        effect.color;
+
+      ctx.shadowBlur = 18;
+
+      ctx.globalAlpha =
+        clamp01(
+          (
+            effect.until-time
+          )/350
+        );
+
+      ctx.beginPath();
+
+      ctx.moveTo(a.x,a.y);
+      ctx.lineTo(b.x,b.y);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    if (
+      effect.type ===
+        "shockwave"
+    ) {
+      const p =
+        viewportWorldToScreen(
+          effect.x,
+          effect.y,
+          camera,
+          viewport
+        );
+
+      const progress =
+        1 -
+        clamp01(
+          (
+            effect.until-time
+          )/1800
+        );
+
+      ctx.strokeStyle =
+        `rgba(187,102,211,${1-progress})`;
+
+      ctx.lineWidth = 8;
+
+      ctx.beginPath();
+
+      ctx.arc(
+        p.x,p.y,
+        progress*
+          430*
+          camera.zoom,
+        0,Math.PI*2
+      );
+
+      ctx.stroke();
+    }
+  }
+}
+
+function clamp01(value) {
+  return Math.max(
+    0,
+    Math.min(1,value)
+  );
+}
+
+function drawView(
+  viewport,
+  focusId,
+  camera,
+  time
+) {
+  const focus =
+    renderEntities.get(
+      focusId
+    );
+
+  if (focus) {
+    const targetZoom =
+      innerWidth < 700
+        ? .74
+        : .92;
+
+    camera.zoom +=
+      (
+        targetZoom -
+        camera.zoom
+      )*.04;
+
+    camera.x +=
+      (
+        focus.renderX -
+        camera.x
+      )*.12;
+
+    camera.y +=
+      (
+        focus.renderY -
+        camera.y
+      )*.12;
+  }
+
+  ctx.save();
+
+  ctx.beginPath();
+
+  ctx.rect(
+    viewport.x,
+    viewport.y,
+    viewport.w,
+    viewport.h
+  );
+
+  ctx.clip();
+
+  ctx.fillStyle =
+    "#777";
+
+  ctx.fillRect(
+    viewport.x,
+    viewport.y,
+    viewport.w,
+    viewport.h
+  );
+
+  for (
+    const zone of
+    currentMap.zones
+  ) {
+    drawZone(
+      zone,
+      camera,
+      viewport
+    );
+  }
+
+  for (
+    const water of
+    currentMap.water
+  ) {
+    drawWater(
+      water,
+      camera,
+      viewport,
+      time
+    );
+  }
+
+  const staticObjects =
+    nearbyStatic(
+      camera,
+      viewport
+    );
+
+  /*
+    Physisches Verstecken:
+    versteckte Figur zuerst, Möbel danach.
+  */
+  for (
+    const entity of
+    renderEntities.values()
+  ) {
+    if (entity.hidden) {
+      drawEntity(
+        entity,
+        camera,
+        viewport,
+        true
+      );
+    }
+  }
+
+  for (
+    const wall of
+    staticObjects.walls
+  ) {
+    drawWall(
+      wall,
+      camera,
+      viewport
+    );
+  }
+
+  for (
+    const prop of
+    staticObjects.props
+  ) {
+    drawProp(
+      prop,
+      camera,
+      viewport
+    );
+  }
+
+  for (
+    const door of
+    currentMap.doors
+  ) {
+    drawDoor(
+      door,
+      camera,
+      viewport
+    );
+  }
+
+  drawBuildBlocks(
+    camera,
+    viewport
+  );
+
+  for (
+    const vehicle of
+    snapshot.vehicles || []
+  ) {
+    drawVehicle(
+      vehicle,
+      camera,
+      viewport
+    );
+  }
+
+  drawCat(
+    camera,
+    viewport
+  );
+
+  drawPetPickup(
+    camera,
+    viewport
+  );
+
+  for (
+    const entity of
+    renderEntities.values()
+  ) {
+    if (!entity.hidden) {
+      drawEntity(
+        entity,
+        camera,
+        viewport,
+        false
+      );
+    }
+  }
+
+  for (
+    const entity of
+    renderSpecial.values()
+  ) {
+    drawSpecial(
+      entity,
+      camera,
+      viewport,
+      time
+    );
+  }
+
+  drawBoss(
+    camera,
+    viewport,
+    time
+  );
+
+  drawEffects(
+    camera,
+    viewport,
+    time
+  );
+
+  drawLighting(
+    viewport,
+    focus,
+    time
+  );
+
+  ctx.restore();
+}
+
+function drawLighting(
+  viewport,
+  focus,
+  time
+) {
+  if (
+    !currentMap.dark &&
+    snapshot.world?.powerOn !==
+      false &&
+    snapshot.world?.fogAmount <
+      .1
+  ) {
+    return;
+  }
+
+  const dark =
+    currentMap.dark
+      ? .45
+      : snapshot.world?.powerOn ===
+          false
+        ? .5
+        : 0;
+
+  if (dark > 0) {
+    ctx.fillStyle =
+      `rgba(6,9,12,${dark})`;
+
+    ctx.fillRect(
+      viewport.x,
+      viewport.y,
+      viewport.w,
+      viewport.h
+    );
+  }
+
+  /*
+    Taschenlampenlicht:
+    Kein destination-out auf dem Map-Canvas.
+    Dadurch werden Wände nicht zerstört.
+  */
+  if (
+    focus &&
+    (
+      currentMap.id === "taiga" ||
+      currentMap.dark
+    )
+  ) {
+    const p = {
+      x:
+        viewport.x +
+        viewport.w/2,
+      y:
+        viewport.y +
+        viewport.h/2
+    };
 
     const gradient =
       ctx.createRadialGradient(
-        p.x,
-        p.y,
-        20,
-
-        p.x,
-        p.y,
-        180
+        p.x,p.y,20,
+        p.x,p.y,
+        280
       );
-
 
     gradient.addColorStop(
       0,
-      "rgba(0,0,0,.95)"
+      "rgba(255,244,210,.16)"
     );
 
+    gradient.addColorStop(
+      .55,
+      "rgba(255,244,210,.08)"
+    );
 
     gradient.addColorStop(
       1,
-      "rgba(0,0,0,0)"
+      "rgba(255,244,210,0)"
     );
-
 
     ctx.fillStyle =
       gradient;
 
-
-    ctx.beginPath();
-
-
-    ctx.arc(
-      p.x,
-      p.y,
-      180,
-      0,
-      Math.PI * 2
+    ctx.fillRect(
+      viewport.x,
+      viewport.y,
+      viewport.w,
+      viewport.h
     );
-
-
-    ctx.fill();
   }
 
+  const fog =
+    snapshot.world?.fogAmount ||
+    0;
 
-  ctx.restore();
+  if (fog > 0) {
+    ctx.fillStyle =
+      `rgba(174,184,182,${fog*.24})`;
+
+    ctx.fillRect(
+      viewport.x,
+      viewport.y,
+      viewport.w,
+      viewport.h
+    );
+  }
 }
 
+function drawFrame(time) {
+  if (
+    !inGame ||
+    !currentMap
+  ) {
+    return;
+  }
 
-// ============================================================
-// MINIMAP
-// ============================================================
+  const split =
+    Boolean(
+      splitPlayerId &&
+      secondMe()
+    );
+
+  if (!split) {
+    drawView(
+      {
+        x:0,
+        y:0,
+        w:innerWidth,
+        h:innerHeight
+      },
+      wsClientId,
+      cameras.main,
+      time
+    );
+  } else {
+    const half =
+      innerWidth/2;
+
+    drawView(
+      {
+        x:0,
+        y:0,
+        w:half,
+        h:innerHeight
+      },
+      wsClientId,
+      cameras.main,
+      time
+    );
+
+    drawView(
+      {
+        x:half,
+        y:0,
+        w:half,
+        h:innerHeight
+      },
+      splitPlayerId,
+      cameras.split,
+      time
+    );
+
+    ctx.strokeStyle =
+      "rgba(255,255,255,.4)";
+
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+    ctx.moveTo(half,0);
+    ctx.lineTo(
+      half,
+      innerHeight
+    );
+    ctx.stroke();
+  }
+}
+
+/* ----------------------------------------------------------
+   Minimap
+---------------------------------------------------------- */
 
 function drawMinimap() {
   if (
     !currentMap ||
-    !settings.minimap
+    !SETTINGS.minimap
   ) {
     return;
   }
 
+  const w =
+    minimap.width;
 
-  const width =
-    minimapCanvas.width;
-
-
-  const height =
-    minimapCanvas.height;
-
-
-  minimapCtx.clearRect(
-    0,
-    0,
-    width,
-    height
-  );
-
+  const h =
+    minimap.height;
 
   minimapCtx.fillStyle =
-    "#24262a";
-
+    "#171a1e";
 
   minimapCtx.fillRect(
-    0,
-    0,
-    width,
-    height
+    0,0,w,h
   );
 
+  const scale =
+    Math.min(
+      w/currentMap.width,
+      h/currentMap.height
+    );
 
-  const scaleX =
-    width /
-    currentMap.width;
+  const ox =
+    (
+      w-
+      currentMap.width*scale
+    )/2;
 
+  const oy =
+    (
+      h-
+      currentMap.height*scale
+    )/2;
 
-  const scaleY =
-    height /
-    currentMap.height;
-
-
-  if (
-    currentMap.water
+  for (
+    const zone of
+    currentMap.zones
   ) {
     minimapCtx.fillStyle =
-      "#34758f";
-
+      zone.color;
 
     minimapCtx.fillRect(
-      currentMap.water.x *
-      scaleX,
-
-      currentMap.water.y *
-      scaleY,
-
-      currentMap.water.w *
-      scaleX,
-
-      currentMap.water.h *
-      scaleY
+      ox+zone.x*scale,
+      oy+zone.y*scale,
+      zone.w*scale,
+      zone.h*scale
     );
   }
 
-
-  minimapCtx.fillStyle =
-    "#777c80";
-
-
   for (
-    const wall
-    of currentMap.walls
-  ) {
-    minimapCtx.fillRect(
-      wall.x * scaleX,
-      wall.y * scaleY,
-      wall.w * scaleX,
-      wall.h * scaleY
-    );
-  }
-
-
-  for (
-    const player
-    of renderPlayers.values()
+    const entity of
+    renderEntities.values()
   ) {
     if (
-      player.hidden &&
-      player.id !==
-      myId
+      entity.hidden ||
+      entity.downed ||
+      entity.eliminated
     ) {
       continue;
     }
 
+    minimapCtx.fillStyle =
+      entity.id === wsClientId
+        ? "#fff"
+        : entity.bot
+          ? "#6aa8e2"
+          : isFriendEntity(entity)
+            ? "#f0cc62"
+            : "#e9bd72";
 
     minimapCtx.beginPath();
 
-
     minimapCtx.arc(
-      player.x * scaleX,
-      player.y * scaleY,
-
-      player.id ===
-      myId
-        ? 5
-        : 3,
-
+      ox+
+        entity.renderX*scale,
+      oy+
+        entity.renderY*scale,
+      entity.id ===
+        wsClientId
+        ? 4
+        : 2.5,
       0,
-      Math.PI * 2
+      Math.PI*2
     );
 
+    minimapCtx.fill();
+  }
 
+  for (
+    const monster of
+    snapshot.monsters || []
+  ) {
     minimapCtx.fillStyle =
-      player.id ===
-      myId
-        ? "#ee3f4a"
-        : "#fff";
+      "#d64b59";
 
+    minimapCtx.beginPath();
+
+    minimapCtx.arc(
+      ox+
+        monster.x*scale,
+      oy+
+        monster.y*scale,
+      3,
+      0,
+      Math.PI*2
+    );
 
     minimapCtx.fill();
   }
 }
 
+/* ----------------------------------------------------------
+   HUD
+---------------------------------------------------------- */
 
-// ============================================================
-// CAMERA
-// ============================================================
+function updateWorldUi() {
+  const player =
+    me();
 
-function updateCamera(
-  dt
-) {
-  const me =
-    getMyRenderPlayer();
+  if (!player) return;
 
+  hpText.textContent =
+    Math.round(player.hp);
 
-  if (!me) {
+  hpFill.style.width =
+    `${
+      clamp01(
+        player.hp /
+        Math.max(
+          1,
+          player.maxHp
+        )
+      )*100
+    }%`;
+
+  fishHud.textContent =
+    player.fish || 0;
+
+  const pet =
+    player.pet
+      ? CATALOG.pets.find(
+          (entry) =>
+            entry.id ===
+            player.pet
+        )
+      : null;
+
+  petHud.textContent =
+    player.catTotem
+      ? "🐈"
+      : pet?.icon || "";
+
+  downedOverlay.classList.toggle(
+    "hidden",
+    !player.downed
+  );
+
+  statusHud.textContent =
+    player.hidden
+      ? "VERSTECKT"
+      : player.downed
+        ? "BRAUCHT HILFE"
+        : player.eliminated
+          ? "AUSGESCHIEDEN"
+          : player.protected
+            ? "GESCHÜTZT"
+            : "AKTIV";
+
+  if (snapshot.boss) {
+    show(bossHud);
+
+    bossBar.style.width =
+      `${
+        clamp01(
+          snapshot.boss.hp /
+          snapshot.boss.maxHp
+        )*100
+      }%`;
+  } else {
+    hide(bossHud);
+  }
+
+  updateInteractionPrompt();
+}
+
+function modeUsesWeapons() {
+  return [
+    "battle_royale_ffa",
+    "battle_royale_team",
+    "ctf",
+    "zombie",
+    "stormking"
+  ].includes(
+    currentLobby?.mode
+  );
+}
+
+function updateModeSpecificUi() {
+  const uses =
+    modeUsesWeapons();
+
+  weaponHud.classList.toggle(
+    "hidden",
+    !uses
+  );
+
+  buildToolbar.classList.toggle(
+    "hidden",
+    currentLobby?.mode !==
+      "build"
+  );
+
+  const weapon =
+    CATALOG.weapons.find(
+      (entry) =>
+        entry.id ===
+        selectedWeapon
+    );
+
+  weaponName.textContent =
+    weapon?.name ||
+    "Pulse Carbine";
+}
+
+function nearestInteractive() {
+  const player =
+    me();
+
+  if (
+    !player ||
+    !currentMap
+  ) {
+    return null;
+  }
+
+  if (player.hidden) {
+    return "Versteck verlassen";
+  }
+
+  if (player.vehicleId) {
+    return "Fahrzeug verlassen";
+  }
+
+  for (
+    const vehicle of
+    snapshot.vehicles || []
+  ) {
+    if (
+      !vehicle.driverId &&
+      Math.hypot(
+        vehicle.x -
+          player.renderX,
+        vehicle.y -
+          player.renderY
+      ) < 130
+    ) {
+      return vehicle.type ===
+        "boat"
+        ? "Boot benutzen"
+        : "Fahrzeug benutzen";
+    }
+  }
+
+  const petPickup =
+    snapshot.world
+      ?.petPickup;
+
+  if (
+    petPickup &&
+    Math.hypot(
+      petPickup.x -
+        player.renderX,
+      petPickup.y -
+        player.renderY
+    ) < 130
+  ) {
+    return "Secret-Begleiter aufnehmen";
+  }
+
+  const catState =
+    snapshot.world?.cat;
+
+  if (
+    catState?.active &&
+    !catState.ownerId &&
+    Math.hypot(
+      catState.x -
+        player.renderX,
+      catState.y -
+        player.renderY
+    ) < 120
+  ) {
+    return "Katze füttern";
+  }
+
+  for (
+    const entity of
+    renderEntities.values()
+  ) {
+    if (
+      entity.id !==
+        player.id &&
+      entity.downed &&
+      Math.hypot(
+        entity.renderX -
+          player.renderX,
+        entity.renderY -
+          player.renderY
+      ) < 110
+    ) {
+      return `${entity.name} wiederbeleben`;
+    }
+  }
+
+  for (
+    const hideout of
+    currentMap.hideouts
+  ) {
+    if (
+      Math.hypot(
+        hideout.entranceX -
+          player.renderX,
+        hideout.entranceY -
+          player.renderY
+      ) < 145
+    ) {
+      return hideout.label;
+    }
+  }
+
+  for (
+    const action of
+    currentMap.interactions
+  ) {
+    if (
+      Math.hypot(
+        action.x -
+          player.renderX,
+        action.y -
+          player.renderY
+      ) <
+      (action.radius || 135)
+    ) {
+      return action.label;
+    }
+  }
+
+  for (
+    const npc of
+    currentMap.npcs
+  ) {
+    if (
+      npc.trader &&
+      Math.hypot(
+        npc.x -
+          player.renderX,
+        npc.y -
+          player.renderY
+      ) < 145
+    ) {
+      return "Mit Händler sprechen";
+    }
+  }
+
+  return null;
+}
+
+function updateInteractionPrompt() {
+  const text =
+    nearestInteractive();
+
+  if (!text) {
+    hide(interactionPrompt);
     return;
   }
 
+  interactionPrompt.querySelector(
+    "span"
+  ).textContent =
+    text;
 
-  const factor =
-    1 -
-    Math.exp(
-      -11 *
-      dt
-    );
-
-
-  camera.x +=
-    (
-      me.x -
-      camera.x
-    ) *
-    factor;
-
-
-  camera.y +=
-    (
-      me.y -
-      camera.y
-    ) *
-    factor;
+  show(interactionPrompt);
 }
 
+/* ----------------------------------------------------------
+   Chat
+---------------------------------------------------------- */
 
-// ============================================================
-// RENDER
-// ============================================================
+chatForm.addEventListener(
+  "submit",
+  (event) => {
+    event.preventDefault();
 
-function render(
-  time
-) {
-  const dt =
-    Math.min(
-      (
-        time -
-        lastFrameTime
-      ) /
-      1000,
+    const text =
+      chatInput.value.trim();
 
-      0.05
+    if (!text) return;
+
+    send({
+      type: "chat",
+      text
+    });
+
+    chatInput.value = "";
+    chatInput.blur();
+  }
+);
+
+function addChat(data) {
+  const div =
+    document.createElement(
+      "div"
     );
 
+  div.className =
+    "chat-line";
 
-  lastFrameTime =
-    time;
+  if (data.bot) {
+    div.classList.add("bot");
+  }
 
+  if (data.system) {
+    div.classList.add("system");
+  }
 
-  updateAutoJump(
-    time
-  );
-
-
-  smoothPlayers(
-    dt
-  );
-
-
-  updateCamera(
-    dt
-  );
-
-
-  drawFloor();
-  drawDecorations();
-  drawWalls();
-  drawDoors();
-  drawFurniture();
-
-
-  const sortedPlayers =
-    [
-      ...renderPlayers.values()
-    ].sort(
-      (
-        a,
-        b
-      ) =>
-        a.y -
-        b.y
-    );
-
-
-  for (
-    const player
-    of sortedPlayers
+  if (
+    data.accountId &&
+    friendIds().has(
+      data.accountId
+    )
   ) {
-    drawPlayer(
-      player
+    div.classList.add("friend");
+  }
+
+  div.innerHTML = `
+    <strong>
+      ${escapeHtml(data.from || "SYSTEM")}
+    </strong>:
+    ${escapeHtml(data.text || "")}
+  `;
+
+  chatLog.appendChild(
+    div
+  );
+
+  while (
+    chatLog.children.length >
+    50
+  ) {
+    chatLog.firstChild.remove();
+  }
+
+  chatLog.scrollTop =
+    chatLog.scrollHeight;
+}
+
+$("#chatToggle").addEventListener(
+  "click",
+  () => {
+    chat.classList.toggle(
+      "collapsed"
+    );
+  }
+);
+
+function toast(
+  text,
+  tone = ""
+) {
+  const div =
+    document.createElement(
+      "div"
+    );
+
+  div.className =
+    `toast ${tone}`;
+
+  div.textContent =
+    text;
+
+  notifications.appendChild(
+    div
+  );
+
+  setTimeout(
+    () => div.remove(),
+    3300
+  );
+}
+
+function showEvent(event) {
+  const names = {
+    power_outage:
+      "Stromausfall",
+    fog:
+      "Nebel zieht auf",
+    locked_area:
+      "Bereiche wurden verriegelt",
+    alarm:
+      "Alarm",
+    flood:
+      "Überschwemmung",
+    npc_event:
+      "Ungewöhnliches NPC-Ereignis",
+    secret_room:
+      "Ein Geheimraum wurde geöffnet"
+  };
+
+  toast(
+    names[event] || event,
+    "warning"
+  );
+}
+
+/* ----------------------------------------------------------
+   Input
+---------------------------------------------------------- */
+
+function normalizedInput(state) {
+  let x =
+    (
+      state.right ? 1 : 0
+    ) -
+    (
+      state.left ? 1 : 0
+    );
+
+  let y =
+    (
+      state.down ? 1 : 0
+    ) -
+    (
+      state.up ? 1 : 0
+    );
+
+  if (
+    state === input &&
+    (
+      Math.abs(
+        state.joyX
+      ) > .05 ||
+      Math.abs(
+        state.joyY
+      ) > .05
+    )
+  ) {
+    x = state.joyX;
+    y = state.joyY;
+  }
+
+  const length =
+    Math.hypot(x,y);
+
+  if (length > 1) {
+    x /= length;
+    y /= length;
+  }
+
+  return {x,y};
+}
+
+function sendInputs() {
+  if (
+    !inGame ||
+    paused
+  ) {
+    return;
+  }
+
+  const primary =
+    normalizedInput(input);
+
+  if (
+    Math.abs(
+      primary.x -
+      lastInput.x
+    ) > .001 ||
+    Math.abs(
+      primary.y -
+      lastInput.y
+    ) > .001
+  ) {
+    lastInput =
+      primary;
+
+    send({
+      type: "input",
+      x: primary.x,
+      y: primary.y
+    });
+  }
+
+  if (
+    splitWs &&
+    splitPlayerId
+  ) {
+    const second =
+      normalizedInput(
+        splitInput
+      );
+
+    if (
+      Math.abs(
+        second.x -
+        lastSplitInput.x
+      ) > .001 ||
+      Math.abs(
+        second.y -
+        lastSplitInput.y
+      ) > .001
+    ) {
+      lastSplitInput =
+        second;
+
+      splitSend({
+        type: "input",
+        x: second.x,
+        y: second.y
+      });
+    }
+  }
+}
+
+setInterval(
+  sendInputs,
+  1000/30
+);
+
+window.addEventListener(
+  "keydown",
+  (event) => {
+    if (
+      document.activeElement ===
+        chatInput ||
+      ["INPUT","SELECT"].includes(
+        document.activeElement
+          ?.tagName
+      )
+    ) {
+      return;
+    }
+
+    switch (event.code) {
+      case "KeyW":
+        input.up = true;
+        break;
+
+      case "KeyS":
+        input.down = true;
+        break;
+
+      case "KeyA":
+        input.left = true;
+        break;
+
+      case "KeyD":
+        input.right = true;
+        break;
+
+      case "Space":
+        event.preventDefault();
+
+        if (!jumpHeld) {
+          jumpHeld = true;
+
+          send({
+            type: "jumpHeld",
+            held: true
+          });
+        }
+        break;
+
+      case "KeyE":
+        send({
+          type: "interact"
+        });
+        break;
+
+      case "ArrowUp":
+        splitInput.up = true;
+        break;
+
+      case "ArrowDown":
+        splitInput.down = true;
+        break;
+
+      case "ArrowLeft":
+        splitInput.left = true;
+        break;
+
+      case "ArrowRight":
+        splitInput.right = true;
+        break;
+
+      case "Numpad0":
+      case "ShiftRight":
+        if (!splitJumpHeld) {
+          splitJumpHeld = true;
+
+          splitSend({
+            type: "jumpHeld",
+            held: true
+          });
+        }
+        break;
+
+      case "Enter":
+        if (inGame) {
+          chatInput.focus();
+        }
+        break;
+
+      case "Escape":
+        if (inGame) {
+          togglePause();
+        }
+        break;
+
+      default:
+        break;
+    }
+  }
+);
+
+window.addEventListener(
+  "keyup",
+  (event) => {
+    switch (event.code) {
+      case "KeyW":
+        input.up = false;
+        break;
+
+      case "KeyS":
+        input.down = false;
+        break;
+
+      case "KeyA":
+        input.left = false;
+        break;
+
+      case "KeyD":
+        input.right = false;
+        break;
+
+      case "Space":
+        jumpHeld = false;
+
+        send({
+          type: "jumpHeld",
+          held: false
+        });
+        break;
+
+      case "ArrowUp":
+        splitInput.up = false;
+        break;
+
+      case "ArrowDown":
+        splitInput.down = false;
+        break;
+
+      case "ArrowLeft":
+        splitInput.left = false;
+        break;
+
+      case "ArrowRight":
+        splitInput.right = false;
+        break;
+
+      case "Numpad0":
+      case "ShiftRight":
+        splitJumpHeld = false;
+
+        splitSend({
+          type: "jumpHeld",
+          held: false
+        });
+        break;
+
+      default:
+        break;
+    }
+  }
+);
+
+/* Mobile joystick */
+
+joystick.addEventListener(
+  "pointerdown",
+  (event) => {
+    joystickPointer =
+      event.pointerId;
+
+    joystick.setPointerCapture(
+      event.pointerId
+    );
+
+    updateJoystick(event);
+  }
+);
+
+joystick.addEventListener(
+  "pointermove",
+  (event) => {
+    if (
+      event.pointerId ===
+        joystickPointer
+    ) {
+      updateJoystick(event);
+    }
+  }
+);
+
+joystick.addEventListener(
+  "pointerup",
+  resetJoystick
+);
+
+joystick.addEventListener(
+  "pointercancel",
+  resetJoystick
+);
+
+function updateJoystick(event) {
+  const rect =
+    joystick.getBoundingClientRect();
+
+  const cx =
+    rect.left +
+    rect.width/2;
+
+  const cy =
+    rect.top +
+    rect.height/2;
+
+  let dx =
+    event.clientX-cx;
+
+  let dy =
+    event.clientY-cy;
+
+  const max =
+    rect.width*.34;
+
+  const d =
+    Math.hypot(dx,dy);
+
+  if (d > max) {
+    dx =
+      dx/d*max;
+
+    dy =
+      dy/d*max;
+  }
+
+  input.joyX =
+    dx/max;
+
+  input.joyY =
+    dy/max;
+
+  stick.style.transform =
+    `translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;
+}
+
+function resetJoystick() {
+  joystickPointer = null;
+
+  input.joyX = 0;
+  input.joyY = 0;
+
+  stick.style.transform =
+    "translate(-50%,-50%)";
+}
+
+touchJump.addEventListener(
+  "pointerdown",
+  (event) => {
+    event.preventDefault();
+
+    touchJump.setPointerCapture(
+      event.pointerId
+    );
+
+    jumpHeld = true;
+
+    send({
+      type: "jumpHeld",
+      held: true
+    });
+  }
+);
+
+touchJump.addEventListener(
+  "pointerup",
+  () => {
+    jumpHeld = false;
+
+    send({
+      type: "jumpHeld",
+      held: false
+    });
+  }
+);
+
+touchJump.addEventListener(
+  "pointercancel",
+  () => {
+    jumpHeld = false;
+
+    send({
+      type: "jumpHeld",
+      held: false
+    });
+  }
+);
+
+touchInteract.addEventListener(
+  "pointerdown",
+  (event) => {
+    event.preventDefault();
+
+    send({
+      type: "interact"
+    });
+  }
+);
+
+/* ----------------------------------------------------------
+   Fire / Build touch
+---------------------------------------------------------- */
+
+function screenToWorld(
+  sx,
+  sy,
+  camera,
+  viewport
+) {
+  return {
+    x:
+      camera.x +
+      (
+        sx -
+        (
+          viewport.x +
+          viewport.w/2
+        )
+      ) /
+      camera.zoom,
+
+    y:
+      camera.y +
+      (
+        sy -
+        (
+          viewport.y +
+          viewport.h/2
+        )
+      ) /
+      camera.zoom
+  };
+}
+
+let lastBuildTap = {
+  time: 0,
+  x: 0,
+  y: 0
+};
+
+canvas.addEventListener(
+  "pointerdown",
+  (event) => {
+    if (
+      !inGame ||
+      paused
+    ) {
+      return;
+    }
+
+    const player =
+      me();
+
+    if (!player) return;
+
+    const viewport = {
+      x:0,
+      y:0,
+      w:
+        splitPlayerId
+          ? innerWidth/2
+          : innerWidth,
+      h:innerHeight
+    };
+
+    const world =
+      screenToWorld(
+        event.clientX,
+        event.clientY,
+        cameras.main,
+        viewport
+      );
+
+    clickWorld = world;
+
+    if (
+      currentLobby.mode ===
+        "build"
+    ) {
+      const now =
+        performance.now();
+
+      const doubleTap =
+        now -
+          lastBuildTap.time <
+          280 &&
+        Math.hypot(
+          world.x -
+            lastBuildTap.x,
+          world.y -
+            lastBuildTap.y
+        ) < 90;
+
+      if (doubleTap) {
+        send({
+          type:
+            "buildRemove",
+          x: world.x,
+          y: world.y
+        });
+
+        lastBuildTap.time = 0;
+      } else {
+        send({
+          type:
+            "buildPlace",
+          blockId:
+            buildBlockSelect.value,
+          x: world.x,
+          y: world.y
+        });
+
+        lastBuildTap = {
+          time: now,
+          x: world.x,
+          y: world.y
+        };
+      }
+
+      return;
+    }
+
+    if (
+      modeUsesWeapons()
+    ) {
+      const direction =
+        normalize2(
+          world.x -
+            player.renderX,
+          world.y -
+            player.renderY
+        );
+
+      send({
+        type: "fire",
+        dx: direction.x,
+        dy: direction.y
+      });
+    }
+  }
+);
+
+function normalize2(x,y) {
+  const length =
+    Math.hypot(x,y);
+
+  if (length < .001) {
+    return {
+      x:0,
+      y:0
+    };
+  }
+
+  return {
+    x:x/length,
+    y:y/length
+  };
+}
+
+saveBuildButton.addEventListener(
+  "click",
+  async () => {
+    if (!account) {
+      toast(
+        "Zum Speichern bitte einloggen.",
+        "warning"
+      );
+
+      return;
+    }
+
+    const name =
+      prompt(
+        "Name deiner Map:"
+      ) || "Meine Map";
+
+    try {
+      await api(
+        "/api/build/save",
+        {
+          method: "POST",
+          body:
+            JSON.stringify({
+              name,
+              blocks:
+                snapshot.buildBlocks
+            })
+        }
+      );
+
+      toast(
+        "Bauwelt gespeichert.",
+        "good"
+      );
+    } catch (error) {
+      toast(
+        error.message,
+        "warning"
+      );
+    }
+  }
+);
+
+/* ----------------------------------------------------------
+   Pause
+---------------------------------------------------------- */
+
+function togglePause(force) {
+  paused =
+    typeof force === "boolean"
+      ? force
+      : !paused;
+
+  pauseMenu.classList.toggle(
+    "hidden",
+    !paused
+  );
+
+  if (paused) {
+    send({
+      type: "input",
+      x:0,
+      y:0
+    });
+
+    send({
+      type: "jumpHeld",
+      held:false
+    });
+  }
+}
+
+$("#pauseButton").addEventListener(
+  "click",
+  () => togglePause()
+);
+
+$("#resumeButton").addEventListener(
+  "click",
+  () => togglePause(false)
+);
+
+$("#leaveGameButton").addEventListener(
+  "click",
+  leaveGame
+);
+
+$("#inGameSettingsButton").addEventListener(
+  "click",
+  () => {
+    openPanel("settingsPanel");
+  }
+);
+
+$("#inGameSocialButton").addEventListener(
+  "click",
+  () => {
+    openPanel("socialPanel");
+  }
+);
+
+/* ----------------------------------------------------------
+   Map Vote
+---------------------------------------------------------- */
+
+function renderMapVote(candidates) {
+  voteChoices.innerHTML = "";
+
+  for (const mapId of candidates) {
+    const map =
+      CATALOG.maps.find(
+        (entry) =>
+          entry.id === mapId
+      );
+
+    const button =
+      document.createElement(
+        "button"
+      );
+
+    button.innerHTML = `
+      <strong>
+        ${escapeHtml(map?.name || mapId)}
+      </strong>
+
+      <br>
+
+      <small>
+        ${escapeHtml(map?.subtitle || "")}
+      </small>
+    `;
+
+    button.addEventListener(
+      "click",
+      () => {
+        send({
+          type: "voteMap",
+          mapId
+        });
+
+        toast(
+          `Stimme: ${map?.name || mapId}`,
+          "good"
+        );
+      }
+    );
+
+    voteChoices.appendChild(
+      button
     );
   }
 
+  show(voteOverlay);
+}
 
-  drawInteractables();
-  drawLighting();
-  drawMinimap();
+/* ----------------------------------------------------------
+   Piano
+---------------------------------------------------------- */
 
+const NOTES = [
+  130.81,138.59,146.83,155.56,
+  164.81,174.61,185.00,196.00,
+  207.65,220.00,233.08,246.94,
+  261.63,277.18,293.66,311.13,
+  329.63,349.23,369.99,392.00,
+  415.30,440.00,466.16,493.88,
+  523.25,554.37,587.33,622.25,
+  659.25,698.46,739.99,783.99,
+  830.61,880.00,932.33,987.77
+];
 
-  requestAnimationFrame(
-    render
+function buildPiano() {
+  const container =
+    $("#pianoKeys");
+
+  container.innerHTML = "";
+
+  NOTES.forEach(
+    (frequency,index) => {
+      const black =
+        [1,3,6,8,10].includes(
+          index%12
+        );
+
+      const key =
+        document.createElement(
+          "button"
+        );
+
+      key.className =
+        `piano-key ${black ? "black" : ""}`;
+
+      key.addEventListener(
+        "pointerdown",
+        () =>
+          audio.note(
+            frequency,
+            .48,
+            .18
+          )
+      );
+
+      container.appendChild(
+        key
+      );
+    }
   );
 }
 
-
-// ============================================================
-// START
-// ============================================================
-
-connect();
-
-
-requestAnimationFrame(
-  render
+$("#closePiano").addEventListener(
+  "click",
+  () => hide(pianoOverlay)
 );
+
+$$("[data-drum]").forEach(
+  (button) => {
+    button.addEventListener(
+      "pointerdown",
+      () => {
+        audio.drum(
+          button.dataset.drum
+        );
+      }
+    );
+  }
+);
+
+/* ----------------------------------------------------------
+   Music
+---------------------------------------------------------- */
+
+const audio = {
+  context:null,
+  master:null,
+  timer:null,
+  step:0,
+  nextTime:0,
+
+  ensure() {
+    if (!SETTINGS.music) {
+      return;
+    }
+
+    if (!this.context) {
+      this.context =
+        new (
+          window.AudioContext ||
+          window.webkitAudioContext
+        )();
+
+      this.master =
+        this.context.createGain();
+
+      this.master.connect(
+        this.context.destination
+      );
+    }
+
+    if (
+      this.context.state ===
+        "suspended"
+    ) {
+      this.context.resume();
+    }
+
+    this.updateVolume();
+
+    if (!this.timer) {
+      this.nextTime =
+        this.context.currentTime;
+
+      this.timer =
+        setInterval(
+          () => this.schedule(),
+          25
+        );
+    }
+  },
+
+  updateVolume() {
+    if (!this.master) return;
+
+    this.master.gain.value =
+      SETTINGS.music
+        ? SETTINGS.volume /
+          100 *
+          .28
+        : 0;
+  },
+
+  selectedTrack() {
+    if (!CATALOG) return null;
+
+    return (
+      CATALOG.tracks.find(
+        (track) =>
+          track.id ===
+          musicSelect.value
+      ) ||
+      CATALOG.tracks[0]
+    );
+  },
+
+  schedule() {
+    if (
+      !this.context ||
+      !SETTINGS.music
+    ) {
+      return;
+    }
+
+    const track =
+      this.selectedTrack();
+
+    if (!track) return;
+
+    while (
+      this.nextTime <
+      this.context.currentTime +
+        .12
+    ) {
+      this.playStep(
+        track,
+        this.step,
+        this.nextTime
+      );
+
+      this.step =
+        (this.step+1)%16;
+
+      const beat =
+        60 /
+        track.bpm /
+        4;
+
+      const swing =
+        this.step%2
+          ? beat*.15
+          : -beat*.045;
+
+      this.nextTime +=
+        beat+swing;
+    }
+  },
+
+  osc(
+    type,
+    frequency,
+    time,
+    duration,
+    volume
+  ) {
+    const osc =
+      this.context.createOscillator();
+
+    const gain =
+      this.context.createGain();
+
+    osc.type = type;
+
+    osc.frequency.setValueAtTime(
+      frequency,
+      time
+    );
+
+    gain.gain.setValueAtTime(
+      .0001,
+      time
+    );
+
+    gain.gain.exponentialRampToValueAtTime(
+      Math.max(
+        .0001,
+        volume
+      ),
+      time+.008
+    );
+
+    gain.gain.exponentialRampToValueAtTime(
+      .0001,
+      time+duration
+    );
+
+    osc.connect(gain);
+    gain.connect(this.master);
+
+    osc.start(time);
+    osc.stop(
+      time+duration+.03
+    );
+  },
+
+  noise(
+    time,
+    duration,
+    volume
+  ) {
+    const length =
+      Math.floor(
+        this.context.sampleRate *
+        duration
+      );
+
+    const buffer =
+      this.context.createBuffer(
+        1,
+        length,
+        this.context.sampleRate
+      );
+
+    const data =
+      buffer.getChannelData(0);
+
+    for (
+      let i=0;
+      i<length;
+      i+=1
+    ) {
+      data[i] =
+        Math.random()*2-1;
+    }
+
+    const source =
+      this.context.createBufferSource();
+
+    const gain =
+      this.context.createGain();
+
+    source.buffer =
+      buffer;
+
+    gain.gain.setValueAtTime(
+      volume,
+      time
+    );
+
+    gain.gain.exponentialRampToValueAtTime(
+      .0001,
+      time+duration
+    );
+
+    source.connect(gain);
+    gain.connect(this.master);
+
+    source.start(time);
+  },
+
+  playStep(
+    track,
+    step,
+    time
+  ) {
+    const root =
+      55 *
+      Math.pow(
+        2,
+        (track.root-45)/12
+      );
+
+    if (
+      step === 0 ||
+      step === 8
+    ) {
+      this.osc(
+        "sine",
+        55,
+        time,
+        .13,
+        .24
+      );
+    }
+
+    if (
+      step === 4 ||
+      step === 12
+    ) {
+      this.noise(
+        time,
+        .09,
+        .11
+      );
+    }
+
+    if (step%2===0) {
+      this.noise(
+        time,
+        .022,
+        .018
+      );
+    }
+
+    if (step%4===0) {
+      const sequence =
+        [1,.84,.75,.94];
+
+      this.osc(
+        "triangle",
+        root*
+          sequence[
+            step/4
+          ],
+        time,
+        .22,
+        .1
+      );
+    }
+
+    if (
+      [3,7,11,15].includes(
+        step
+      )
+    ) {
+      const chordRoot =
+        root*2.2;
+
+      this.osc(
+        "triangle",
+        chordRoot,
+        time,
+        .1,
+        .025
+      );
+
+      this.osc(
+        "triangle",
+        chordRoot*1.19,
+        time,
+        .1,
+        .018
+      );
+
+      this.osc(
+        "triangle",
+        chordRoot*1.5,
+        time,
+        .1,
+        .016
+      );
+    }
+  },
+
+  note(
+    frequency,
+    duration,
+    volume
+  ) {
+    this.ensure();
+
+    if (!this.context) {
+      return;
+    }
+
+    this.osc(
+      "triangle",
+      frequency,
+      this.context.currentTime,
+      duration,
+      volume
+    );
+  },
+
+  drum(type) {
+    this.ensure();
+
+    if (!this.context) return;
+
+    const now =
+      this.context.currentTime;
+
+    if (type==="kick") {
+      this.osc(
+        "sine",
+        58,
+        now,
+        .16,
+        .28
+      );
+    } else if (
+      type==="snare"
+    ) {
+      this.noise(
+        now,
+        .11,
+        .2
+      );
+    } else if (
+      type==="hat"
+    ) {
+      this.noise(
+        now,
+        .03,
+        .08
+      );
+    } else {
+      this.osc(
+        "sine",
+        110,
+        now,
+        .13,
+        .16
+      );
+    }
+  }
+};
+
+musicSelect.addEventListener(
+  "change",
+  () => {
+    localStorage.setItem(
+      "duckymaps_track",
+      musicSelect.value
+    );
+
+    audio.step = 0;
+  }
+);
+
+musicEnabled.addEventListener(
+  "change",
+  saveSettings
+);
+
+musicVolume.addEventListener(
+  "input",
+  saveSettings
+);
+
+/* ----------------------------------------------------------
+   Voice Chat
+---------------------------------------------------------- */
+
+const voice = {
+  stream:null,
+  peers:new Map(),
+
+  async enable() {
+    if (this.stream) {
+      send({
+        type:"voiceReady",
+        ready:true
+      });
+
+      return;
+    }
+
+    try {
+      this.stream =
+        await navigator.mediaDevices
+          .getUserMedia({
+            audio:true,
+            video:false
+          });
+
+      send({
+        type:"voiceReady",
+        ready:true
+      });
+    } catch {
+      voiceEnabled.checked =
+        false;
+
+      toast(
+        "Mikrofonzugriff wurde nicht erlaubt.",
+        "warning"
+      );
+    }
+  },
+
+  disable() {
+    send({
+      type:"voiceReady",
+      ready:false
+    });
+
+    for (
+      const peer of
+      this.peers.values()
+    ) {
+      peer.pc.close();
+      peer.audio.remove();
+    }
+
+    this.peers.clear();
+
+    if (this.stream) {
+      for (
+        const track of
+        this.stream.getTracks()
+      ) {
+        track.stop();
+      }
+    }
+
+    this.stream = null;
+  },
+
+  async updatePeers(peers) {
+    if (!this.stream) return;
+
+    const wanted =
+      new Set(
+        peers
+          .filter(
+            (peer) =>
+              peer.id !==
+              wsClientId
+          )
+          .map(
+            (peer) =>
+              peer.id
+          )
+      );
+
+    for (
+      const [
+        id,
+        peer
+      ] of this.peers
+    ) {
+      if (!wanted.has(id)) {
+        peer.pc.close();
+        peer.audio.remove();
+        this.peers.delete(id);
+      }
+    }
+
+    for (const peer of peers) {
+      if (
+        peer.id === wsClientId ||
+        this.peers.has(peer.id)
+      ) {
+        continue;
+      }
+
+      const shouldOffer =
+        wsClientId <
+        peer.id;
+
+      await this.createPeer(
+        peer.id,
+        shouldOffer
+      );
+    }
+  },
+
+  async createPeer(
+    peerId,
+    offer
+  ) {
+    const pc =
+      new RTCPeerConnection({
+        iceServers:[
+          {
+            urls:
+              "stun:stun.l.google.com:19302"
+          }
+        ]
+      });
+
+    for (
+      const track of
+      this.stream.getTracks()
+    ) {
+      pc.addTrack(
+        track,
+        this.stream
+      );
+    }
+
+    const audio =
+      document.createElement(
+        "audio"
+      );
+
+    audio.autoplay = true;
+    audio.playsInline = true;
+
+    document.body.appendChild(
+      audio
+    );
+
+    pc.ontrack =
+      (event) => {
+        audio.srcObject =
+          event.streams[0];
+      };
+
+    pc.onicecandidate =
+      (event) => {
+        if (
+          event.candidate
+        ) {
+          send({
+            type:
+              "voiceSignal",
+            target:
+              peerId,
+            signal:{
+              candidate:
+                event.candidate
+            }
+          });
+        }
+      };
+
+    this.peers.set(
+      peerId,
+      {pc,audio}
+    );
+
+    if (offer) {
+      const description =
+        await pc.createOffer();
+
+      await pc.setLocalDescription(
+        description
+      );
+
+      send({
+        type:"voiceSignal",
+        target:peerId,
+        signal:{
+          description
+        }
+      });
+    }
+  },
+
+  async handleSignal(
+    from,
+    signal
+  ) {
+    if (!this.stream) {
+      return;
+    }
+
+    if (
+      !this.peers.has(from)
+    ) {
+      await this.createPeer(
+        from,
+        false
+      );
+    }
+
+    const peer =
+      this.peers.get(from);
+
+    if (
+      signal.description
+    ) {
+      await peer.pc
+        .setRemoteDescription(
+          signal.description
+        );
+
+      if (
+        signal.description.type ===
+        "offer"
+      ) {
+        const answer =
+          await peer.pc
+            .createAnswer();
+
+        await peer.pc
+          .setLocalDescription(
+            answer
+          );
+
+        send({
+          type:"voiceSignal",
+          target:from,
+          signal:{
+            description:
+              answer
+          }
+        });
+      }
+    }
+
+    if (
+      signal.candidate
+    ) {
+      try {
+        await peer.pc
+          .addIceCandidate(
+            signal.candidate
+          );
+      } catch {}
+    }
+  }
+};
+
+voiceEnabled.addEventListener(
+  "change",
+  () => {
+    if (
+      voiceEnabled.checked &&
+      inGame
+    ) {
+      voice.enable();
+    } else {
+      voice.disable();
+    }
+  }
+);
+
+/* ----------------------------------------------------------
+   Loop
+---------------------------------------------------------- */
+
+function loop(time) {
+  const dt =
+    Math.min(
+      .05,
+      (
+        time -
+        lastFrame
+      )/1000
+    );
+
+  lastFrame = time;
+
+  if (
+    inGame &&
+    currentMap
+  ) {
+    smooth(dt);
+
+    drawFrame(time);
+    drawMinimap();
+  }
+
+  requestAnimationFrame(
+    loop
+  );
+}
+
+/* ----------------------------------------------------------
+   PWA
+---------------------------------------------------------- */
+
+if (
+  "serviceWorker" in navigator
+) {
+  navigator.serviceWorker
+    .register("/sw.js")
+    .catch(() => {});
+}
+
+/* ----------------------------------------------------------
+   Start
+---------------------------------------------------------- */
+
+(async () => {
+  try {
+    await loadCatalog();
+    await loadAccount();
+
+    buildPiano();
+    saveSettings();
+    updateModeLabel();
+
+    connect();
+
+    requestAnimationFrame(
+      loop
+    );
+  } catch (error) {
+    console.error(error);
+
+    toast(
+      "DuckyMaps konnte nicht vollständig geladen werden.",
+      "warning"
+    );
+  }
+})();
