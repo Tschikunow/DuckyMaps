@@ -1,0 +1,11 @@
+{
+  "name": "DuckyMaps 2D",
+  "short_name": "DuckyMaps",
+  "description": "DuckyMaps 2D Multiplayer Game",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d0f12",
+  "theme_color": "#e34246",
+  "orientation": "any",
+  "icons": []
+}
