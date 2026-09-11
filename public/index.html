@@ -1,20 +1,34 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="de">
-
 <head>
-  <meta charset="UTF-8">
+  <meta charset="utf-8">
 
   <meta
     name="viewport"
-    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
   >
 
   <meta
     name="theme-color"
-    content="#0b0c10"
+    content="#111318"
   >
 
-  <title>Ducky Maps</title>
+  <meta
+    name="apple-mobile-web-app-capable"
+    content="yes"
+  >
+
+  <meta
+    name="apple-mobile-web-app-status-bar-style"
+    content="black-translucent"
+  >
+
+  <title>DuckyMaps 2D</title>
+
+  <link
+    rel="manifest"
+    href="/manifest.webmanifest"
+  >
 
   <link
     rel="stylesheet"
@@ -22,930 +36,948 @@
   >
 </head>
 
+<body>
+  <div id="app">
 
-<body data-theme="dark">
-
-  <canvas id="gameCanvas"></canvas>
-
-
-  <!-- ====================================================== -->
-  <!-- INTRO -->
-  <!-- ====================================================== -->
-
-  <section
-    id="introScreen"
-    class="screen introScreen"
-  >
-
-    <div class="introBrand">
-
-      <div class="duckyLogo largeLogo">
-        D
+    <section
+      id="mainMenu"
+      class="screen menu-screen"
+    >
+      <div class="menu-bg">
+        <div class="grid-bg"></div>
+        <div class="red-glow"></div>
       </div>
 
-      <div>
-        <div class="introName">
-          DUCKY MAPS
-        </div>
-
-        <div class="introSmall">
-          ONLINE MULTIPLAYER
-        </div>
-      </div>
-
-    </div>
-
-  </section>
-
-
-  <!-- ====================================================== -->
-  <!-- HAUPTMENÜ -->
-  <!-- ====================================================== -->
-
-  <section
-    id="mainMenu"
-    class="screen menuScreen"
-  >
-
-    <div class="backgroundGlow"></div>
-
-
-    <header class="mainHeader">
-
-      <div class="brand">
-
-        <div class="duckyLogo">
-          D
-        </div>
-
-        <strong>
-          DUCKY MAPS
-        </strong>
-
-      </div>
-
-
-      <div class="onlinePill">
-
-        <span
-          id="connectionDot"
-          class="onlineDot"
-        ></span>
-
-        <span id="connectionText">
-          Verbinden...
-        </span>
-
-      </div>
-
-    </header>
-
-
-    <main class="homeLayout">
-
-      <section class="hero">
-
-        <div class="eyebrow">
-          DUCKYMAPS V4
-        </div>
-
-        <h1>
-          Deine Welt.<br>
-          Dein Weg.
-        </h1>
-
-        <p>
-          Wähle eine Map, entdecke Orte,
-          sammle Coins und spiele gemeinsam
-          mit anderen Spielern.
-        </p>
-
-
-        <div class="profilePreview">
-
-          <div class="profileAvatar">
-            D
-          </div>
-
-          <div>
-            <span>SPIELER</span>
-
-            <strong id="profileName">
-              Spieler
-            </strong>
-          </div>
-
-          <div class="profileCoins">
-
-            <span>COINS</span>
-
-            <strong id="profileCoins">
-              0
-            </strong>
-
-          </div>
-
-        </div>
-
-      </section>
-
-
-      <section class="menuButtons">
-
-        <button
-          id="playButton"
-          class="bigMenuButton primary"
-        >
-
-          <div class="menuIcon">
-            ▶
-          </div>
-
-          <div>
-            <strong>
-              SPIELEN
-            </strong>
-
-            <span id="playMapName">
-              Industrie
-            </span>
-          </div>
-
-        </button>
-
-
-        <button
-          id="mapsButton"
-          class="bigMenuButton"
-        >
-
-          <div class="menuIcon">
-            ◆
-          </div>
-
-          <div>
-            <strong>
-              MAP AUSWÄHLEN
-            </strong>
-
-            <span>
-              Industrie, Hafen & Labs
-            </span>
-          </div>
-
-        </button>
-
-
-        <button
-          id="settingsButton"
-          class="bigMenuButton"
-        >
-
-          <div class="menuIcon">
-            ⚙
-          </div>
-
-          <div>
-            <strong>
-              EINSTELLUNGEN
-            </strong>
-
-            <span>
-              Theme, Audio & Interface
-            </span>
-          </div>
-
-        </button>
-
-      </section>
-
-    </main>
-
-
-    <footer class="menuFooter">
-
-      <span>
-        DUCKY MAPS
-      </span>
-
-      <span id="onlineCount">
-        0 SPIELER ONLINE
-      </span>
-
-    </footer>
-
-  </section>
-
-
-  <!-- ====================================================== -->
-  <!-- MAP SELECT -->
-  <!-- ====================================================== -->
-
-  <section
-    id="mapsMenu"
-    class="screen menuScreen hidden"
-  >
-
-    <header class="subHeader">
-
-      <button
-        id="mapsBackButton"
-        class="backButton"
-      >
-        ←
-      </button>
-
-      <div>
-        <span class="eyebrow">
-          DUCKY MAPS
-        </span>
-
-        <h2>
-          MAP AUSWÄHLEN
-        </h2>
-      </div>
-
-    </header>
-
-
-    <main class="mapGrid">
-
-      <button
-        class="mapCard selected"
-        data-map="industry"
-      >
-
-        <div class="mapImage industryImage">
-
-          <div class="industryBlock a"></div>
-          <div class="industryBlock b"></div>
-          <div class="industryRoad"></div>
-
-        </div>
-
-        <div class="mapText">
-
-          <div>
-            <h3>
-              INDUSTRIE
-            </h3>
-
-            <p>
-              Lagerhallen, Maschinen,
-              Werkstätten und Büros.
-            </p>
-          </div>
-
-          <span class="mapTag red">
-            INDUSTRIAL
-          </span>
-
-        </div>
-
-      </button>
-
-
-      <button
-        class="mapCard"
-        data-map="harbor"
-      >
-
-        <div class="mapImage harborImage">
-
-          <div class="harborWater"></div>
-          <div class="container c1"></div>
-          <div class="container c2"></div>
-          <div class="container c3"></div>
-
-        </div>
-
-        <div class="mapText">
-
-          <div>
-            <h3>
-              HAFEN
-            </h3>
-
-            <p>
-              Containerterminal, Lager,
-              Kaimauer und Hafenbüros.
-            </p>
-          </div>
-
-          <span class="mapTag blue">
-            HARBOR
-          </span>
-
-        </div>
-
-      </button>
-
-
-      <button
-        class="mapCard"
-        data-map="labs"
-      >
-
-        <div class="mapImage labsImage">
-
-          <div class="labRoom"></div>
-          <div class="labLine"></div>
-
-        </div>
-
-        <div class="mapText">
-
-          <div>
-            <h3>
-              LABS
-            </h3>
-
-            <p>
-              Forschung, Serverräume,
-              Technik und Labore.
-            </p>
-          </div>
-
-          <span class="mapTag purple">
-            RESEARCH
-          </span>
-
-        </div>
-
-      </button>
-
-    </main>
-
-  </section>
-
-
-  <!-- ====================================================== -->
-  <!-- SETTINGS -->
-  <!-- ====================================================== -->
-
-  <section
-    id="settingsMenu"
-    class="screen menuScreen hidden"
-  >
-
-    <header class="subHeader">
-
-      <button
-        id="settingsBackButton"
-        class="backButton"
-      >
-        ←
-      </button>
-
-      <div>
-        <span class="eyebrow">
-          DUCKY MAPS
-        </span>
-
-        <h2>
-          EINSTELLUNGEN
-        </h2>
-      </div>
-
-    </header>
-
-
-    <main class="settingsWrapper">
-
-      <section class="settingsCard">
-
-        <div class="settingsTitle">
-
-          <h3>
-            PROFIL
-          </h3>
-
-          <p>
-            Dein Name im Spiel.
-          </p>
-
-        </div>
-
-
-        <div class="settingRow">
-
-          <div>
-            <strong>
-              Spielername
-            </strong>
-
-            <span>
-              Maximal 20 Zeichen
-            </span>
-          </div>
-
-          <input
-            id="nameInput"
-            class="modernInput"
-            maxlength="20"
-            autocomplete="off"
-            placeholder="Spieler"
-          >
-
-        </div>
-
-      </section>
-
-
-      <section class="settingsCard">
-
-        <div class="settingsTitle">
-
-          <h3>
-            DESIGN
-          </h3>
-
-          <p>
-            Passe DuckyMaps an dich an.
-          </p>
-
-        </div>
-
-
-        <div class="settingRow">
-
-          <div>
-            <strong>
-              Theme
-            </strong>
-
-            <span>
-              Hintergrund und Akzentfarben
-            </span>
-          </div>
-
-          <select
-            id="themeSelect"
-            class="modernInput"
-          >
-
-            <option value="dark">
-              Dark
-            </option>
-
-            <option value="crimson">
-              Crimson
-            </option>
-
-            <option value="ocean">
-              Ocean
-            </option>
-
-            <option value="violet">
-              Violet
-            </option>
-
-          </select>
-
-        </div>
-
-
-        <div class="settingRow">
-
-          <div>
-            <strong>
-              Minimap
-            </strong>
-
-            <span>
-              Karte im Spiel anzeigen
-            </span>
-          </div>
-
-          <label class="switch">
-
-            <input
-              id="minimapToggle"
-              type="checkbox"
-              checked
-            >
-
-            <span></span>
-
-          </label>
-
-        </div>
-
-
-        <div class="settingRow">
-
-          <div>
-            <strong>
-              Spielerliste
-            </strong>
-
-            <span>
-              Andere Spieler anzeigen
-            </span>
-          </div>
-
-          <label class="switch">
-
-            <input
-              id="playerListToggle"
-              type="checkbox"
-              checked
-            >
-
-            <span></span>
-
-          </label>
-
-        </div>
-
-
-        <div class="settingRow columnSetting">
-
-          <div class="settingLine">
-
-            <div>
-              <strong>
-                Kamera-Zoom
-              </strong>
-
-              <span>
-                Sichtfeld der Spielkamera
-              </span>
-            </div>
-
-            <b id="zoomValue">
-              100%
-            </b>
-
-          </div>
-
-          <input
-            id="zoomSlider"
-            class="slider"
-            type="range"
-            min="75"
-            max="125"
-            value="100"
-          >
-
-        </div>
-
-      </section>
-
-
-      <section class="settingsCard">
-
-        <div class="settingsTitle">
-
-          <h3>
-            AUDIO
-          </h3>
-
-          <p>
-            Musik und Interface-Sounds.
-          </p>
-
-        </div>
-
-
-        <div class="settingRow">
-
-          <div>
-            <strong>
-              Musik
-            </strong>
-
-            <span>
-              Hintergrundatmosphäre
-            </span>
-          </div>
-
-          <label class="switch">
-
-            <input
-              id="musicToggle"
-              type="checkbox"
-              checked
-            >
-
-            <span></span>
-
-          </label>
-
-        </div>
-
-
-        <div class="settingRow columnSetting">
-
-          <div class="settingLine">
-
-            <div>
-              <strong>
-                Musiklautstärke
-              </strong>
-
-              <span>
-                Hintergrundmusik
-              </span>
-            </div>
-
-            <b id="musicVolumeValue">
-              30%
-            </b>
-
-          </div>
-
-          <input
-            id="musicVolume"
-            class="slider"
-            type="range"
-            min="0"
-            max="100"
-            value="30"
-          >
-
-        </div>
-
-
-        <div class="settingRow">
-
-          <div>
-            <strong>
-              Sounds
-            </strong>
-
-            <span>
-              Buttons und Belohnungen
-            </span>
-          </div>
-
-          <label class="switch">
-
-            <input
-              id="soundToggle"
-              type="checkbox"
-              checked
-            >
-
-            <span></span>
-
-          </label>
-
-        </div>
-
-      </section>
-
-
-      <button
-        id="saveSettingsButton"
-        class="saveButton"
-      >
-        EINSTELLUNGEN SPEICHERN
-      </button>
-
-    </main>
-
-  </section>
-
-
-  <!-- ====================================================== -->
-  <!-- MAP INTRO -->
-  <!-- ====================================================== -->
-
-  <section
-    id="mapIntro"
-    class="screen mapIntro hidden"
-  >
-
-    <div>
-
-      <span class="eyebrow">
-        DUCKY MAPS
-      </span>
-
-      <h2 id="introMapName">
-        INDUSTRIE
-      </h2>
-
-      <p id="introMapSubtitle">
-        Lagerhallen & Maschinenpark
-      </p>
-
-    </div>
-
-  </section>
-
-
-  <!-- ====================================================== -->
-  <!-- GAME HUD -->
-  <!-- ====================================================== -->
-
-  <div
-    id="gameHud"
-    class="gameHud hidden"
-  >
-
-    <div class="hudTop">
-
-      <div class="mapHud">
-
-        <div class="duckyLogo hudLogo">
-          D
-        </div>
+      <header class="brand">
+        <div class="brand-logo">D</div>
 
         <div>
-          <strong id="hudMapName">
-            INDUSTRIE
-          </strong>
+          <h1>DuckyMaps</h1>
+          <span>2D</span>
+        </div>
 
-          <span id="hudPlayers">
-            1 SPIELER
+        <div
+          id="accountBadge"
+          class="account-badge"
+        >
+          Gast
+        </div>
+      </header>
+
+      <main class="home-layout">
+        <section class="hero">
+          <small>
+            MULTIPLAYER • SURVIVAL • SANDBOX
+          </small>
+
+          <h2>
+            DuckyMaps<br>2D
+          </h2>
+
+          <p>
+            50 Maps, Bots, Monster, Minigames,
+            Build Mode, Battle Modes, Pets,
+            Secrets und Multiplayer.
+          </p>
+
+          <div class="hero-buttons">
+            <button
+              id="quickPlay"
+              class="primary"
+            >
+              Spiel starten
+            </button>
+
+            <button
+              id="createServer"
+            >
+              Server erstellen
+            </button>
+
+            <button
+              id="joinServer"
+            >
+              Server beitreten
+            </button>
+          </div>
+        </section>
+
+        <section class="home-card">
+          <div class="home-card-header">
+            <span class="online-dot"></span>
+            <span id="networkStatus">
+              Verbinde …
+            </span>
+          </div>
+
+          <div class="selected-preview">
+            <strong id="selectedMapTitle">
+              Konzerthalle
+            </strong>
+
+            <p id="selectedMapDescription">
+              Helle Veranstaltungshalle
+            </p>
+          </div>
+
+          <div class="selected-details">
+            <div>
+              <small>MODUS</small>
+              <strong id="selectedModeLabel">
+                Monster Hunt
+              </strong>
+            </div>
+
+            <div>
+              <small>BOTS</small>
+              <strong id="selectedBotsLabel">
+                7
+              </strong>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <nav class="menu-nav">
+        <button data-panel="playPanel">
+          Spielen
+        </button>
+
+        <button data-panel="mapsPanel">
+          Maps
+        </button>
+
+        <button data-panel="lockerPanel">
+          Spind
+        </button>
+
+        <button data-panel="shopPanel">
+          Item-Shop
+        </button>
+
+        <button data-panel="battlePassPanel">
+          Battle Pass
+        </button>
+
+        <button data-panel="bestiaryPanel">
+          Bestiarium
+        </button>
+
+        <button data-panel="socialPanel">
+          Freunde
+        </button>
+
+        <button data-panel="settingsPanel">
+          Einstellungen
+        </button>
+
+        <button data-panel="accountPanel">
+          Account
+        </button>
+      </nav>
+    </section>
+
+    <section
+      id="panelOverlay"
+      class="panel-overlay hidden"
+    >
+      <div class="panel-shell">
+        <button
+          id="closePanel"
+          class="close-button"
+        >
+          ×
+        </button>
+
+        <section
+          id="playPanel"
+          class="menu-panel"
+        >
+          <h2>Spielen</h2>
+
+          <div class="form-grid">
+            <label>
+              Modus
+
+              <select id="modeSelect">
+                <option value="monster_hunt">
+                  Monster Hunt
+                </option>
+
+                <option value="horror">
+                  Horror
+                </option>
+
+                <option value="fog">
+                  The Fog Is Coming
+                </option>
+
+                <option value="scp">
+                  SCP-Modus
+                </option>
+
+                <option value="stormking">
+                  Sturmkönig
+                </option>
+
+                <option value="battle_royale_ffa">
+                  Battle Royale FFA
+                </option>
+
+                <option value="battle_royale_team">
+                  Battle Royale Teams
+                </option>
+
+                <option value="ctf">
+                  Capture the Flag
+                </option>
+
+                <option value="zombie">
+                  Zombie Survival
+                </option>
+
+                <option value="prophunt">
+                  Prop Hunt
+                </option>
+
+                <option value="build">
+                  Baumodus
+                </option>
+
+                <option value="neon">
+                  Neon Boroughs
+                </option>
+
+                <option value="minigame">
+                  Minigames
+                </option>
+              </select>
+            </label>
+
+            <label>
+              Minigame
+              <select id="minigameSelect"></select>
+            </label>
+
+            <label>
+              Bots
+
+              <input
+                id="botCount"
+                type="range"
+                min="0"
+                max="20"
+                value="7"
+              >
+
+              <output id="botCountValue">
+                7
+              </output>
+            </label>
+
+            <label>
+              Monsterform
+              <select id="monsterSelect"></select>
+            </label>
+
+            <label class="toggle-row">
+              Bunnyhop
+              <input
+                id="bhopToggle"
+                type="checkbox"
+                checked
+              >
+            </label>
+
+            <label class="toggle-row">
+              Zufalls-Events
+              <input
+                id="eventsToggle"
+                type="checkbox"
+                checked
+              >
+            </label>
+
+            <label class="toggle-row">
+              Privater Server
+              <input
+                id="privateToggle"
+                type="checkbox"
+              >
+            </label>
+
+            <label class="toggle-row desktop-only">
+              Splitscreen
+              <input
+                id="splitToggle"
+                type="checkbox"
+              >
+            </label>
+          </div>
+
+          <div class="modifier-box">
+            <h3>Runden-Modifikatoren</h3>
+
+            <label>
+              <input
+                type="checkbox"
+                value="monster_fast"
+                class="modifier"
+              >
+              Monster schneller
+            </label>
+
+            <label>
+              <input
+                type="checkbox"
+                value="no_healing"
+                class="modifier"
+              >
+              Keine Heilung
+            </label>
+
+            <label>
+              <input
+                type="checkbox"
+                value="double_loot"
+                class="modifier"
+              >
+              Doppelter Loot
+            </label>
+
+            <label>
+              <input
+                type="checkbox"
+                value="random_locked_doors"
+                class="modifier"
+              >
+              Zufällige Türsperren
+            </label>
+
+            <label>
+              <input
+                type="checkbox"
+                value="night_mode"
+                class="modifier"
+              >
+              Nachtmodus
+            </label>
+
+            <label>
+              <input
+                type="checkbox"
+                value="two_monsters"
+                class="modifier"
+              >
+              Zwei Monster
+            </label>
+          </div>
+        </section>
+
+        <section
+          id="mapsPanel"
+          class="menu-panel hidden"
+        >
+          <h2>50 Maps</h2>
+          <div
+            id="mapGrid"
+            class="card-grid map-grid"
+          ></div>
+        </section>
+
+        <section
+          id="lockerPanel"
+          class="menu-panel hidden"
+        >
+          <h2>Spind</h2>
+
+          <div class="tabs">
+            <button data-locker-tab="skins">
+              Skins
+            </button>
+
+            <button data-locker-tab="pets">
+              Begleiter
+            </button>
+
+            <button data-locker-tab="weapons">
+              Ausrüstung
+            </button>
+          </div>
+
+          <div
+            id="lockerGrid"
+            class="card-grid"
+          ></div>
+        </section>
+
+        <section
+          id="shopPanel"
+          class="menu-panel hidden"
+        >
+          <h2>Item-Shop</h2>
+
+          <p>
+            Pets sind Secret-Funde und nicht kaufbar.
+            Secret- und Challenge-Skins werden durch
+            Aufgaben freigeschaltet.
+          </p>
+
+          <div
+            id="shopGrid"
+            class="card-grid"
+          ></div>
+        </section>
+
+        <section
+          id="battlePassPanel"
+          class="menu-panel hidden"
+        >
+          <h2>Battle Pass</h2>
+
+          <div
+            id="battlePassGrid"
+            class="pass-grid"
+          ></div>
+        </section>
+
+        <section
+          id="bestiaryPanel"
+          class="menu-panel hidden"
+        >
+          <h2>Bestiarium</h2>
+
+          <div
+            id="bestiaryGrid"
+            class="card-grid"
+          ></div>
+        </section>
+
+        <section
+          id="socialPanel"
+          class="menu-panel hidden"
+        >
+          <h2>Freunde & Gruppen</h2>
+
+          <div class="social-layout">
+            <div>
+              <h3>Freund hinzufügen</h3>
+
+              <form id="friendForm">
+                <input
+                  id="friendUsername"
+                  placeholder="Benutzername"
+                >
+
+                <button>
+                  Anfrage
+                </button>
+              </form>
+
+              <div id="friendsList"></div>
+            </div>
+
+            <div>
+              <h3>Gruppe erstellen</h3>
+
+              <form id="groupForm">
+                <input
+                  id="groupName"
+                  placeholder="Gruppenname"
+                >
+
+                <button>
+                  Erstellen
+                </button>
+              </form>
+
+              <div id="groupsList"></div>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="settingsPanel"
+          class="menu-panel hidden"
+        >
+          <h2>Einstellungen</h2>
+
+          <div class="form-grid">
+            <label>
+              Spielername
+              <input
+                id="displayName"
+                maxlength="24"
+              >
+            </label>
+
+            <label>
+              Musik
+              <select id="musicSelect"></select>
+            </label>
+
+            <label>
+              Lautstärke
+              <input
+                id="musicVolume"
+                type="range"
+                min="0"
+                max="100"
+                value="32"
+              >
+            </label>
+
+            <label class="toggle-row">
+              Musik
+              <input
+                id="musicEnabled"
+                type="checkbox"
+                checked
+              >
+            </label>
+
+            <label class="toggle-row">
+              Minimap
+              <input
+                id="minimapEnabled"
+                type="checkbox"
+                checked
+              >
+            </label>
+
+            <label class="toggle-row">
+              InGame-Chat
+              <input
+                id="chatEnabled"
+                type="checkbox"
+                checked
+              >
+            </label>
+
+            <label class="toggle-row">
+              Sprachchat
+              <input
+                id="voiceEnabled"
+                type="checkbox"
+              >
+            </label>
+
+            <label>
+              Menü-Farbe
+
+              <select id="themeSelect">
+                <option value="red">
+                  Ducky Red
+                </option>
+
+                <option value="blue">
+                  Night Blue
+                </option>
+
+                <option value="violet">
+                  Violet
+                </option>
+
+                <option value="green">
+                  Forest
+                </option>
+
+                <option value="mono">
+                  Mono
+                </option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <section
+          id="accountPanel"
+          class="menu-panel hidden"
+        >
+          <h2>Account</h2>
+
+          <div
+            id="loggedOutAccount"
+            class="account-columns"
+          >
+            <form id="loginForm">
+              <h3>Login</h3>
+
+              <input
+                id="loginUsername"
+                placeholder="Benutzername"
+              >
+
+              <input
+                id="loginPassword"
+                type="password"
+                placeholder="Passwort"
+              >
+
+              <button class="primary">
+                Einloggen
+              </button>
+            </form>
+
+            <form id="registerForm">
+              <h3>Registrieren</h3>
+
+              <input
+                id="registerUsername"
+                placeholder="Benutzername"
+              >
+
+              <input
+                id="registerDisplayName"
+                placeholder="Anzeigename"
+              >
+
+              <input
+                id="registerPassword"
+                type="password"
+                placeholder="Passwort"
+              >
+
+              <button class="primary">
+                Account erstellen
+              </button>
+            </form>
+          </div>
+
+          <div
+            id="loggedInAccount"
+            class="hidden"
+          >
+            <h3 id="accountName"></h3>
+
+            <p id="accountStats"></p>
+
+            <button id="logoutButton">
+              Ausloggen
+            </button>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section
+      id="joinOverlay"
+      class="small-overlay hidden"
+    >
+      <div class="dialog">
+        <h2>Server beitreten</h2>
+
+        <input
+          id="serverCodeInput"
+          maxlength="6"
+          placeholder="ABC123"
+        >
+
+        <button
+          id="joinServerConfirm"
+          class="primary"
+        >
+          Beitreten
+        </button>
+
+        <button id="joinCancel">
+          Abbrechen
+        </button>
+      </div>
+    </section>
+
+    <section
+      id="gameScreen"
+      class="screen game-screen hidden"
+    >
+      <canvas id="gameCanvas"></canvas>
+
+      <div
+        id="gameDarkness"
+        class="game-darkness"
+      ></div>
+
+      <header class="game-top">
+        <button id="pauseButton">
+          ☰
+        </button>
+
+        <div class="game-title">
+          <small id="gameModeText">
+            MONSTER HUNT
+          </small>
+
+          <strong id="gameMapText">
+            Konzerthalle
+          </strong>
+        </div>
+
+        <div class="server-code">
+          SERVER
+          <strong id="serverCodeText">
+            ------
+          </strong>
+        </div>
+      </header>
+
+      <aside
+        id="minimapWrap"
+        class="minimap-wrap"
+      >
+        <canvas
+          id="minimap"
+          width="240"
+          height="165"
+        ></canvas>
+      </aside>
+
+      <div
+        id="interactionPrompt"
+        class="interaction-prompt hidden"
+      >
+        <kbd>E</kbd>
+        <span>Interagieren</span>
+      </div>
+
+      <div
+        id="notifications"
+        class="notifications"
+      ></div>
+
+      <aside class="survival-hud">
+        <div class="hp-header">
+          <div>
+            <small>HP</small>
+            <strong id="hpText">100</strong>
+          </div>
+
+          <span id="petHud"></span>
+        </div>
+
+        <div class="hp-bar">
+          <div id="hpFill"></div>
+        </div>
+
+        <div class="hud-row">
+          <span>
+            🐟
+            <strong id="fishHud">
+              0
+            </strong>
+          </span>
+
+          <span id="statusHud">
+            AKTIV
           </span>
         </div>
 
-      </div>
+        <div
+          id="bossHud"
+          class="boss-hud hidden"
+        >
+          <small>STURMKÖNIG</small>
 
+          <div>
+            <span id="bossBar"></span>
+          </div>
+        </div>
+      </aside>
 
-      <div class="coinHud">
+      <section
+        id="chat"
+        class="chat"
+      >
+        <div
+          id="chatLog"
+          class="chat-log"
+        ></div>
 
-        <span class="coinIcon">
-          D
-        </span>
+        <form id="chatForm">
+          <input
+            id="chatInput"
+            maxlength="220"
+            autocomplete="off"
+            placeholder="Chat / Bot-Command …"
+          >
 
-        <strong id="coinCount">
-          0
-        </strong>
-
-      </div>
-
+          <button>
+            ↵
+          </button>
+        </form>
+      </section>
 
       <button
-        id="pauseButton"
-        class="pauseButton"
+        id="chatToggle"
+        class="chat-toggle"
       >
-        ☰
+        💬
       </button>
 
-    </div>
-
-
-    <div
-      id="speedHud"
-      class="speedHud hidden"
-    >
-      SPEED
-      <strong id="speedValue">
-        100%
-      </strong>
-    </div>
-
-
-    <div
-      id="playerListPanel"
-      class="playerListPanel"
-    >
-
-      <span class="miniTitle">
-        ONLINE
-      </span>
-
-      <div id="playerList"></div>
-
-    </div>
-
-
-    <div
-      id="minimapPanel"
-      class="minimapPanel"
-    >
-      <canvas
-        id="minimapCanvas"
-        width="240"
-        height="150"
-      ></canvas>
-    </div>
-
-
-    <div id="notifications"></div>
-
-
-    <!-- MOBILE -->
-
-    <div
-      id="mobileControls"
-      class="mobileControls"
-    >
-
       <div
-        id="moveZone"
-        class="moveZone"
+        id="mobileControls"
+        class="mobile-controls"
       >
-
         <div
           id="joystick"
           class="joystick"
         >
-
           <div
-            id="joystickStick"
-            class="joystickStick"
+            id="stick"
+            class="stick"
           ></div>
-
         </div>
 
-      </div>
+        <div class="mobile-buttons">
+          <button id="touchInteract">
+            E
+          </button>
 
-
-      <div class="mobileActions">
-
-        <button
-          id="actionButton"
-          class="actionButton secondaryAction"
-        >
-          AKTION
-        </button>
-
-        <button
-          id="jumpButton"
-          class="actionButton jumpButton"
-        >
-          SPRUNG
-        </button>
-
-      </div>
-
-    </div>
-
-
-    <div class="desktopHint">
-      WASD · LEERTASTE ZUM SPRINGEN
-    </div>
-
-  </div>
-
-
-  <!-- ====================================================== -->
-  <!-- PAUSE -->
-  <!-- ====================================================== -->
-
-  <section
-    id="pauseMenu"
-    class="overlay hidden"
-  >
-
-    <div class="pausePanel">
-
-      <div class="pauseBrand">
-
-        <div class="duckyLogo">
-          D
+          <button
+            id="touchJump"
+            class="jump-button"
+          >
+            ↥
+          </button>
         </div>
+      </div>
 
-        <strong>
-          DUCKY MAPS
+      <div
+        id="weaponHud"
+        class="weapon-hud hidden"
+      >
+        <strong id="weaponName">
+          Pulse Carbine
         </strong>
 
+        <small>
+          Klick / Touch rechts zum Schießen
+        </small>
       </div>
 
-
-      <span class="miniTitle">
-        SPIELMENÜ
-      </span>
-
-
-      <button
-        id="continueButton"
-        class="pauseItem primaryPause"
+      <div
+        id="buildToolbar"
+        class="build-toolbar hidden"
       >
-        ▶ SPIEL FORTSETZEN
-      </button>
+        <select id="buildBlockSelect"></select>
 
+        <span>
+          1× Tippen = bauen • 2× Tippen = abbauen
+        </span>
 
-      <button
-        id="pauseSettingsButton"
-        class="pauseItem"
+        <button id="saveBuildButton">
+          Map speichern
+        </button>
+      </div>
+
+      <section
+        id="pauseMenu"
+        class="pause-menu hidden"
       >
-        ⚙ EINSTELLUNGEN
-      </button>
+        <div class="pause-card">
+          <div class="brand compact">
+            <div class="brand-logo">
+              D
+            </div>
 
+            <div>
+              <h1>DuckyMaps</h1>
+              <span>2D</span>
+            </div>
+          </div>
 
-      <div class="divider"></div>
+          <button
+            id="resumeButton"
+            class="primary"
+          >
+            Spiel fortsetzen
+          </button>
 
+          <button
+            id="inGameSettingsButton"
+          >
+            Einstellungen
+          </button>
 
-      <button
-        id="exitButton"
-        class="pauseItem exitItem"
+          <button
+            id="inGameSocialButton"
+          >
+            Freunde
+          </button>
+
+          <button
+            id="leaveGameButton"
+          >
+            Hauptmenü
+          </button>
+        </div>
+      </section>
+
+      <section
+        id="pianoOverlay"
+        class="piano-overlay hidden"
       >
-        ZURÜCK ZUM HAUPTMENÜ
-      </button>
+        <div class="piano-card">
+          <button
+            id="closePiano"
+            class="close-button"
+          >
+            ×
+          </button>
 
-    </div>
+          <h2>Musikboard</h2>
 
-  </section>
+          <div
+            id="pianoKeys"
+            class="piano-keys"
+          ></div>
 
+          <div class="drums">
+            <button data-drum="kick">
+              KICK
+            </button>
+
+            <button data-drum="snare">
+              SNARE
+            </button>
+
+            <button data-drum="hat">
+              HI-HAT
+            </button>
+
+            <button data-drum="tom">
+              TOM
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="voteOverlay"
+        class="vote-overlay hidden"
+      >
+        <div class="dialog wide">
+          <h2>Map-Voting</h2>
+
+          <div
+            id="voteChoices"
+            class="vote-choices"
+          ></div>
+        </div>
+      </section>
+
+      <section
+        id="downedOverlay"
+        class="downed-overlay hidden"
+      >
+        <strong>DU BRAUCHST HILFE</strong>
+
+        <span>
+          Ein Mitspieler oder Bot kann dich wiederbeleben.
+        </span>
+      </section>
+    </section>
+  </div>
 
   <script src="/game.js"></script>
-
 </body>
-
 </html>
