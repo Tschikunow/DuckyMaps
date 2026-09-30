@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+  <title>Wildreach Online</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div id="game"></div>
+
+  <div id="start">
+    <div class="panel start-panel">
+      <div class="eyebrow">ONLINE SURVIVAL</div>
+      <h1>WILDREACH</h1>
+      <p>Wake on a hostile island. Gather, craft, build, and survive together.</p>
+      <input id="nameInput" maxlength="18" placeholder="Survivor name" />
+      <button id="playBtn">ENTER THE WILDS</button>
+      <small>WASD move · Shift sprint · Mouse look · E gather · B build · F eat · R drink</small>
+    </div>
+  </div>
+
+  <div id="hud" class="hidden">
+    <div id="topbar">
+      <div class="brand">WILDREACH</div>
+      <div id="playersOnline">1 ONLINE</div>
+    </div>
+
+    <div id="vitals">
+      <div class="vital"><span>HP</span><div><i id="hpBar"></i></div><b id="hpText">100</b></div>
+      <div class="vital"><span>FOOD</span><div><i id="foodBar"></i></div><b id="foodText">100</b></div>
+      <div class="vital"><span>WATER</span><div><i id="waterBar"></i></div><b id="waterText">100</b></div>
+      <div class="vital"><span>STAM</span><div><i id="staminaBar"></i></div><b id="staminaText">100</b></div>
+    </div>
+
+    <div id="crosshair"><span></span><span></span></div>
+    <div id="targetLabel"></div>
+    <div id="toast"></div>
+    <div id="feed"></div>
+
+    <div id="hotbar">
+      <button class="slot active" data-slot="hands"><kbd>1</kbd><span>Hands</span></button>
+      <button class="slot" data-slot="axe"><kbd>2</kbd><span>Axe</span><b id="axeCount">0</b></button>
+      <button class="slot" data-slot="spear"><kbd>3</kbd><span>Spear</span><b id="spearCount">0</b></button>
+      <button class="slot" id="buildBtn"><kbd>B</kbd><span>Build</span></button>
+    </div>
+
+    <div id="inventory" class="panel hidden">
+      <div class="panel-title">CRAFTING</div>
+      <div class="resources">
+        <div>WOOD <b id="wood">0</b></div>
+        <div>STONE <b id="stone">0</b></div>
+        <div>FIBER <b id="fiber">0</b></div>
+        <div>BERRIES <b id="berries">0</b></div>
+        <div>HIDE <b id="hide">0</b></div>
+      </div>
+      <div class="recipes">
+        <button data-craft="axe">Stone Axe <small>3 wood · 4 stone · 2 fiber</small></button>
+        <button data-craft="spear">Stone Spear <small>5 wood · 2 stone · 3 fiber</small></button>
+        <button data-craft="campfire">Campfire <small>6 wood · 6 stone</small></button>
+        <button data-craft="foundation">Foundation <small>8 wood · 4 fiber</small></button>
+        <button data-craft="wall">Wood Wall <small>7 wood · 3 fiber</small></button>
+      </div>
+    </div>
+
+    <div id="buildMenu" class="panel hidden">
+      <div class="panel-title">BUILD</div>
+      <button data-build="foundation">Foundation <b id="foundationCount">0</b></button>
+      <button data-build="wall">Wall <b id="wallCount">0</b></button>
+      <button data-build="campfire">Campfire <b id="campfireCount">0</b></button>
+      <small>Click to place · B to close</small>
+    </div>
+
+    <button id="craftToggle">CRAFT</button>
+
+    <div id="mobile" class="mobile-only">
+      <div id="joy"><div id="stick"></div></div>
+      <div id="lookPad"></div>
+      <button id="mobileHit">HIT</button>
+      <button id="mobileUse">USE</button>
+      <button id="mobileSprint">RUN</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script type="module" src="./game.js"></script>
+</body>
+</html>
